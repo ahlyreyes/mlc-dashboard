@@ -216,6 +216,7 @@ async function fetchPancakeSalesByDate() {
         dateStr = formatDate(d);
       } catch(e) { continue; }
       const status = (row['Status'] || '').trim().toUpperCase();
+      if (status.includes('CANCEL')) continue;
       if (!salesByDate[dateStr]) salesByDate[dateStr] = {};
       if (!salesByDate[dateStr][adId]) salesByDate[dateStr][adId] = {
         sales: 0, orders: 0,
