@@ -10,6 +10,8 @@ const app = express();
 const PORT = process.env.PORT || 8080;
 
 const META_ACCESS_TOKEN = process.env.META_ACCESS_TOKEN || '';
+const META_TOKEN_1 = process.env.META_TOKEN_1 || META_ACCESS_TOKEN;
+const META_TOKEN_2 = process.env.META_TOKEN_2 || META_ACCESS_TOKEN;
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
@@ -112,13 +114,12 @@ const PANCAKE_CSV_URLS = [
 ];
 
 const AD_ACCOUNTS = [
-  // --- CLEAR SIGHT ---
-  { id: 'act_2825452284312899', name: 'Clear Sight Optical Care', currency: 'PHP', product: 'CLEAR SIGHT', token: META_ACCESS_TOKEN },
-  { id: 'act_827911349880726',  name: 'Cheska Del Mundo',         currency: 'PHP', product: 'CLEAR SIGHT', token: META_ACCESS_TOKEN },
-  { id: 'act_553848412391460',  name: 'Iniwan Lang Pala',         currency: 'PHP', product: 'CLEAR SIGHT', token: META_ACCESS_TOKEN },
-  { id: 'act_1349525489385685', name: 'Monlex Alma',              currency: 'PHP', product: 'CLEAR SIGHT', token: META_ACCESS_TOKEN },
-  { id: 'act_1264536714635179', name: 'Nhur Lita',                currency: 'PHP', product: 'CLEAR SIGHT', token: META_ACCESS_TOKEN },
-  { id: 'act_596747133200717',  name: 'Tris Ha',                  currency: 'PHP', product: 'CLEAR SIGHT', token: META_ACCESS_TOKEN },
+  // --- CLEAR SIGHT --- Token 1
+  { id: 'act_553848412391460',  name: 'Iniwan Lang Pala', currency: 'PHP', product: 'CLEAR SIGHT', token: META_TOKEN_1 },
+  { id: 'act_2825452284312899', name: 'Ad Account 2',     currency: 'PHP', product: 'CLEAR SIGHT', token: META_TOKEN_1 },
+  { id: 'act_827911349880726',  name: 'Cheska Del Mundo', currency: 'PHP', product: 'CLEAR SIGHT', token: META_TOKEN_1 },
+  // --- CLEAR SIGHT --- Token 2
+  { id: 'act_1264536714635179', name: 'Nhur Lita',        currency: 'PHP', product: 'CLEAR SIGHT', token: META_TOKEN_2 },
 ];
 
 // Currency conversion to PHP (update as needed)
