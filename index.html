@@ -401,6 +401,26 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); }
   border-bottom: 0.5px solid var(--border);
   margin-bottom: 10px;
 }
+.analytics-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  background: var(--card);
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 0.5px solid var(--border);
+}
+.ctrl-input {
+  font-size: 13px;
+  font-family: inherit;
+  border: 0.5px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 8px;
+  background: var(--surface);
+  color: var(--text);
+}
 .overall-label { font-size: 14px; color: var(--muted); }
 .overall-roas {
   font-size: 24px;
@@ -870,15 +890,11 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); }
     <div id="tab-analytics" class="tab-content">
       <div class="page-wrap">
         <!-- Analytics Controls -->
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px;background:var(--card);padding:10px 14px;border-radius:8px;border:0.5px solid var(--border)">
+        <div class="analytics-controls">
           <span class="topbar-label">From</span>
-          <input type="date" id="analyticsStart" style="font-size:13px">
+          <input type="date" id="analyticsStart" class="ctrl-input">
           <span class="topbar-label">To</span>
-          <input type="date" id="analyticsEnd" style="font-size:13px">
-          <select id="analyticsBrand" style="font-size:13px">
-            <option value="ALL">All Brands</option>
-            <option value="CLEARSIGHT">Clear Sight</option>
-          </select>
+          <input type="date" id="analyticsEnd" class="ctrl-input">
           <button class="btn-refresh" onclick="loadAnalytics()">Load</button>
           <span class="last-updated-txt" id="analyticsUpdated"></span>
         </div>
@@ -1875,16 +1891,13 @@ async function loadAnalytics() {
   destroyCharts();
 
   try {
-    const r    = await fetch(`/api/ndap?endDate=${end}&days=${diffDays}`);
+    const r = await fetch(`/api/ndap?endDate=${end}&days=${diffDays}`);
+    const ct = r.headers.get('content-type') || '';
+    if (!ct.includes('json')) throw new Error('Session expired. Please reload the page and log in again.');
     const data = await r.json();
     if (data.error) throw new Error(data.error);
 
-    const NATURALS_P = new Set(NATURALS_PRODUCTS);
-    const EYECARE_P  = new Set(EYECARE_PRODUCTS);
-
     let campaigns = data.campaigns;
-    if (brand === 'NATURALS') campaigns = campaigns.filter(c => NATURALS_P.has((c.product||'').toUpperCase()));
-    if (brand === 'EYECARE')  campaigns = campaigns.filter(c => EYECARE_P.has((c.product||'').toUpperCase()));
 
     // Aggregate by date
     const byDate = {};
