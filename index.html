@@ -421,6 +421,32 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); }
   background: var(--surface);
   color: var(--text);
 }
+.an-kpis { margin-bottom: 16px; }
+.an-charts-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 16px;
+}
+@media (max-width: 900px) { .an-charts-grid { grid-template-columns: 1fr; } }
+.an-chart-card {
+  background: var(--card);
+  border: 0.5px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+.an-chart-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.an-chart-wrap {
+  position: relative;
+  height: 180px;
+}
 .overall-label { font-size: 14px; color: var(--muted); }
 .overall-roas {
   font-size: 24px;
@@ -902,52 +928,28 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); }
         <div class="loading-wrap" id="loading-analytics" style="display:none">Loading analytics...</div>
 
         <!-- KPI summary row -->
-        <div class="kpi-grid" id="analyticsKpis" style="display:none;margin-bottom:16px">
+        <div class="kpi-grid an-kpis" id="analyticsKpis" style="display:none">
           <div class="kpi-card"><div class="kpi-label">Avg ROAS</div><div class="kpi-value" id="an-roas">—</div><div class="kpi-sub">Period average</div></div>
           <div class="kpi-card"><div class="kpi-label">Total Spend</div><div class="kpi-value" id="an-spend">—</div><div class="kpi-sub">Period total</div></div>
           <div class="kpi-card"><div class="kpi-label">Total Sales</div><div class="kpi-value" id="an-sales">—</div><div class="kpi-sub">Gross revenue</div></div>
           <div class="kpi-card"><div class="kpi-label">Total Orders</div><div class="kpi-value" id="an-orders">—</div><div class="kpi-sub">Pancake orders</div></div>
           <div class="kpi-card"><div class="kpi-label">Avg CVR</div><div class="kpi-value" id="an-cvr">—</div><div class="kpi-sub">Inquiries → orders</div></div>
-          <div class="kpi-card"><div class="kpi-label">Avg CPM</div><div class="kpi-value" id="an-cpm">—</div><div class="kpi-sub">Spend / inquiry</div></div>
+          <div class="kpi-card"><div class="kpi-label">Avg AOV</div><div class="kpi-value" id="an-aov">—</div><div class="kpi-sub">Average order value</div></div>
         </div>
 
-        <!-- Charts grid -->
-        <div id="analyticsCharts" style="display:none">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
-            <!-- ROAS Trend -->
-            <div style="background:var(--card);border:0.5px solid var(--border);border-radius:10px;padding:16px">
-              <div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:12px">ROAS Trend</div>
-              <canvas id="chartRoas" height="180"></canvas>
-            </div>
-            <!-- Daily Spend vs Sales -->
-            <div style="background:var(--card);border:0.5px solid var(--border);border-radius:10px;padding:16px">
-              <div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:12px">Daily Spend vs Gross Sales</div>
-              <canvas id="chartSpendSales" height="180"></canvas>
-            </div>
+        <!-- Charts — ROAS, CVR, AOV only -->
+        <div class="an-charts-grid" id="analyticsCharts" style="display:none">
+          <div class="an-chart-card">
+            <div class="an-chart-title">ROAS Trend</div>
+            <div class="an-chart-wrap"><canvas id="chartRoas"></canvas></div>
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
-            <!-- CVR Trend -->
-            <div style="background:var(--card);border:0.5px solid var(--border);border-radius:10px;padding:16px">
-              <div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:12px">CVR Trend (Inquiries → Orders)</div>
-              <canvas id="chartCvr" height="180"></canvas>
-            </div>
-            <!-- CPM Trend -->
-            <div style="background:var(--card);border:0.5px solid var(--border);border-radius:10px;padding:16px">
-              <div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:12px">CPM Trend (Spend per Inquiry)</div>
-              <canvas id="chartCpm" height="180"></canvas>
-            </div>
+          <div class="an-chart-card">
+            <div class="an-chart-title">CVR Trend</div>
+            <div class="an-chart-wrap"><canvas id="chartCvr"></canvas></div>
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
-            <!-- Orders per Day -->
-            <div style="background:var(--card);border:0.5px solid var(--border);border-radius:10px;padding:16px">
-              <div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:12px">Daily Orders & Inquiries</div>
-              <canvas id="chartOrders" height="180"></canvas>
-            </div>
-            <!-- ROAS by Product -->
-            <div style="background:var(--card);border:0.5px solid var(--border);border-radius:10px;padding:16px">
-              <div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:12px">ROAS by Product</div>
-              <canvas id="chartProductRoas" height="180"></canvas>
-            </div>
+          <div class="an-chart-card">
+            <div class="an-chart-title">AOV Trend</div>
+            <div class="an-chart-wrap"><canvas id="chartAov"></canvas></div>
           </div>
         </div>
 
@@ -1940,59 +1942,32 @@ async function loadAnalytics() {
     const totSales  = salesArr.reduce((a,b)=>a+b,0);
     const totOrders = ordersArr.reduce((a,b)=>a+b,0);
     const totInq    = inqArr.reduce((a,b)=>a+b,0);
+    const totAov = totOrders > 0 ? totSales / totOrders : 0;
     document.getElementById('an-roas').textContent   = totSpend>0 ? FMT2(totSales/totSpend) : '—';
     document.getElementById('an-spend').textContent  = PHP(totSpend);
     document.getElementById('an-sales').textContent  = PHP(totSales);
     document.getElementById('an-orders').textContent = NUM(totOrders);
     document.getElementById('an-cvr').textContent    = totInq>0 ? (totOrders/totInq*100).toFixed(1)+'%' : '—';
-    document.getElementById('an-cpm').textContent    = totInq>0 ? PHP(totSpend/totInq) : '—';
+    document.getElementById('an-aov').textContent    = totOrders>0 ? PHP(totAov) : '—';
     document.getElementById('analyticsKpis').style.display = 'grid';
 
-    const chartDefaults = { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ labels:{ font:{ family:'DM Sans', size:10 }, boxWidth:10 } } }, scales:{ x:{ ticks:{ font:{ family:'DM Sans', size:10 } }, grid:{ color:'rgba(0,0,0,0.04)' } }, y:{ ticks:{ font:{ family:'DM Sans', size:10 } }, grid:{ color:'rgba(0,0,0,0.04)' } } } };
+    const aovArr = dates.map(d => byDate[d].orders > 0 ? +(byDate[d].sales / byDate[d].orders).toFixed(2) : 0);
 
-    // ROAS Trend
+    const chartDefaults = { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ x:{ ticks:{ font:{ size:10 } }, grid:{ color:'rgba(0,0,0,0.04)' } }, y:{ ticks:{ font:{ size:10 } }, grid:{ color:'rgba(0,0,0,0.04)' } } } };
+
     chartInstances.roas = new Chart(document.getElementById('chartRoas'), {
-      type:'line', data:{ labels, datasets:[{ label:'ROAS', data:roasArr, borderColor:'#ffb800', backgroundColor:'rgba(255,184,0,0.08)', tension:0.35, pointRadius:3, pointBackgroundColor:'#ffb800', fill:true }] },
-      options:{ ...chartDefaults, plugins:{ ...chartDefaults.plugins, annotation:{ annotations:{ scale:{ type:'line', yMin:3, yMax:3, borderColor:'#16a34a', borderWidth:1, borderDash:[4,4] }, stay:{ type:'line', yMin:2.7, yMax:2.7, borderColor:'#d97706', borderWidth:1, borderDash:[4,4] } } } } }
-    });
-
-    // Spend vs Sales
-    chartInstances.spendSales = new Chart(document.getElementById('chartSpendSales'), {
-      type:'bar', data:{ labels, datasets:[
-        { label:'Gross Sales', data:salesArr, backgroundColor:'rgba(22,163,74,0.7)', borderRadius:4 },
-        { label:'Ad Spend',    data:spendArr, backgroundColor:'rgba(220,38,38,0.6)', borderRadius:4 }
-      ]},
+      type:'line', data:{ labels, datasets:[{ label:'ROAS', data:roasArr, borderColor:'#2563EB', backgroundColor:'rgba(37,99,235,0.08)', tension:0.35, pointRadius:3, pointBackgroundColor:'#2563EB', fill:true }] },
       options:{ ...chartDefaults }
     });
 
-    // CVR Trend
     chartInstances.cvr = new Chart(document.getElementById('chartCvr'), {
       type:'line', data:{ labels, datasets:[{ label:'CVR %', data:cvrArr, borderColor:'#7c3aed', backgroundColor:'rgba(124,58,237,0.07)', tension:0.35, pointRadius:3, pointBackgroundColor:'#7c3aed', fill:true }] },
       options:{ ...chartDefaults }
     });
 
-    // CPM Trend
-    chartInstances.cpm = new Chart(document.getElementById('chartCpm'), {
-      type:'line', data:{ labels, datasets:[{ label:'CPM (₱)', data:cpmArr, borderColor:'#0891b2', backgroundColor:'rgba(8,145,178,0.07)', tension:0.35, pointRadius:3, pointBackgroundColor:'#0891b2', fill:true }] },
+    chartInstances.aov = new Chart(document.getElementById('chartAov'), {
+      type:'line', data:{ labels, datasets:[{ label:'AOV (₱)', data:aovArr, borderColor:'#10B981', backgroundColor:'rgba(16,185,129,0.07)', tension:0.35, pointRadius:3, pointBackgroundColor:'#10B981', fill:true }] },
       options:{ ...chartDefaults }
-    });
-
-    // Orders & Inquiries
-    chartInstances.orders = new Chart(document.getElementById('chartOrders'), {
-      type:'bar', data:{ labels, datasets:[
-        { label:'Inquiries', data:inqArr,    backgroundColor:'rgba(124,58,237,0.55)', borderRadius:4 },
-        { label:'Orders',    data:ordersArr, backgroundColor:'rgba(22,163,74,0.7)',   borderRadius:4 }
-      ]},
-      options:{ ...chartDefaults }
-    });
-
-    // ROAS by Product (horizontal bar)
-    const prodLabels = Object.keys(byProduct);
-    const prodRoas   = prodLabels.map(p => byProduct[p].spend > 0 ? +(byProduct[p].sales / byProduct[p].spend).toFixed(2) : 0);
-    const prodColors = prodLabels.map(p => prodRoas[prodLabels.indexOf(p)] >= 3 ? 'rgba(22,163,74,0.75)' : prodRoas[prodLabels.indexOf(p)] >= 2.7 ? 'rgba(217,119,6,0.75)' : 'rgba(220,38,38,0.65)');
-    chartInstances.productRoas = new Chart(document.getElementById('chartProductRoas'), {
-      type:'bar', data:{ labels:prodLabels, datasets:[{ label:'ROAS', data:prodRoas, backgroundColor:prodColors, borderRadius:4 }] },
-      options:{ ...chartDefaults, indexAxis:'y' }
     });
 
     document.getElementById('analyticsCharts').style.display = 'block';
