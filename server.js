@@ -9,17 +9,7 @@ const { Strategy: GoogleStrategy } = require('passport-google-oauth20');
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-// Per-product Meta tokens — set each in Railway environment variables
-const TOKENS = {
-  CLEARSIGHT: process.env.META_TOKEN_CLEARSIGHT || '',
-  SINUXYL:    process.env.META_TOKEN_SINUXYL    || '',
-  SINUXYL2:   process.env.META_TOKEN_SINUXYL2   || '',
-  CANPRO:     process.env.META_TOKEN_CANPRO     || '',
-  AUDICURE:   process.env.META_TOKEN_AUDICURE   || '',
-  GINSENG1:   process.env.META_TOKEN_GINSENG1   || '',
-  GINSENG2:   process.env.META_TOKEN_GINSENG2   || '',
-  PTERYGIUM:  process.env.META_TOKEN_PTERYGIUM  || '',
-};
+const META_ACCESS_TOKEN = process.env.META_ACCESS_TOKEN || '';
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
@@ -27,10 +17,8 @@ const BASE_URL = process.env.BASE_URL || 'https://sellershub-fsd.com';
 
 // Authorized users
 const AUTHORIZED_USERS = [
-  { email: 'ahlyssar.work@gmail.com',              name: 'Aly', role: 'admin' },
-  { email: 'asst.marketingmanager.sh17@gmail.com', name: 'BK',  role: 'admin' },
-  { email: 'geniusmaker.sh@gmail.com',             name: 'Gen', role: 'admin' },
-  { email: 'marketingmanager.sh17@gmail.com',      name: 'Gen', role: 'admin' },
+  { email: 'ronatocharlonejrs@gmail.com', name: 'Charlone', role: 'admin' },
+  { email: 'ahlyssar.work@gmail.com',     name: 'Aly',      role: 'admin' },
 ];
 
 // PostgreSQL setup
@@ -121,57 +109,12 @@ const PANCAKE_CSV_URLS = [
 
 const AD_ACCOUNTS = [
   // --- CLEAR SIGHT ---
-  { id: 'act_3434238573515137', name: 'Jay Bataller Arevalo',         currency: 'PHP', product: 'CLEAR SIGHT', token: TOKENS.CLEARSIGHT },
-  { id: 'act_2278987382623415', name: 'Jio Valencia',                 currency: 'PHP', product: 'CLEAR SIGHT', token: TOKENS.CLEARSIGHT },
-  { id: 'act_979947527029782',  name: 'Brt Saludares',                currency: 'PHP', product: 'CLEAR SIGHT', token: TOKENS.CLEARSIGHT },
-  { id: 'act_953146045807248',  name: 'Ronnie Bangate Gocoyo',        currency: 'PHP', product: 'CLEAR SIGHT', token: TOKENS.CLEARSIGHT },
-  { id: 'act_799126171777823',  name: 'Kher Kher Solitario Capamul',  currency: 'PHP', product: 'CLEAR SIGHT', token: TOKENS.CLEARSIGHT },
-  { id: 'act_739483299091478',  name: 'ミカ アルパス',                  currency: 'PHP', product: 'CLEAR SIGHT', token: TOKENS.CLEARSIGHT },
-  { id: 'act_702996426183068',  name: 'Leru Haybu',                   currency: 'PHP', product: 'CLEAR SIGHT', token: TOKENS.CLEARSIGHT },
-  { id: 'act_610867214239439',  name: 'Angelica Roque',               currency: 'PHP', product: 'CLEAR SIGHT', token: TOKENS.CLEARSIGHT },
-  { id: 'act_606237178379570',  name: 'Shiana Fate Ollurg',           currency: 'PHP', product: 'CLEAR SIGHT', token: TOKENS.CLEARSIGHT },
-  { id: 'act_194846810178959',  name: 'Account 194846810178959',      currency: 'PHP', product: 'CLEAR SIGHT', token: TOKENS.CLEARSIGHT },
-
-  // --- SINUXYL ---
-  { id: 'act_840999170284511',  name: 'Cyril Dela Cruz',              currency: 'PHP', product: 'SINUXYL', token: TOKENS.SINUXYL },
-  { id: 'act_755440939519187',  name: 'Edgar Endona',                 currency: 'PHP', product: 'SINUXYL', token: TOKENS.SINUXYL },
-  { id: 'act_797268656216737',  name: 'Jhon Gwyneth',                 currency: 'PHP', product: 'SINUXYL', token: TOKENS.SINUXYL },
-  { id: 'act_1267045513451375', name: 'Abing Duahaylongsod',          currency: 'PHP', product: 'SINUXYL', token: TOKENS.SINUXYL },
-  { id: 'act_360300679848609',  name: 'Mhin Molina',                  currency: 'PHP', product: 'SINUXYL', token: TOKENS.SINUXYL },
-
-  // --- SINUXYL 2 ---
-  { id: 'act_1427472249032253', name: 'Rosan Rivera',                 currency: 'PHP', product: 'SINUXYL 2', token: TOKENS.SINUXYL2 },
-
-  // --- CANPRO ---
-  { id: 'act_741513060785614',  name: 'Phink Phin',                   currency: 'PHP', product: 'CANPRO', token: TOKENS.CANPRO },
-  { id: 'act_1236742063704613', name: 'Nesa Fajardo',                 currency: 'PHP', product: 'CANPRO', token: TOKENS.CANPRO },
-
-  // --- AUDICURE ---
-  { id: 'act_659731548956503',  name: 'Ella Marie Apostol',           currency: 'PHP', product: 'AUDICURE', token: TOKENS.AUDICURE },
-  { id: 'act_3380042265639162', name: 'Faith',                        currency: 'PHP', product: 'AUDICURE', token: TOKENS.AUDICURE },
-  { id: 'act_24408718792110689',name: 'Nyhl Basco',                   currency: 'PHP', product: 'AUDICURE', token: TOKENS.AUDICURE },
-
-  // --- GINSENG 1 ---
-  { id: 'act_900570401065505',  name: 'Alexander Kim',                currency: 'PHP', product: 'GINSENG', token: TOKENS.GINSENG1 },
-  { id: 'act_7922170147903224', name: 'Ruffamae Moreno',              currency: 'PHP', product: 'GINSENG', token: TOKENS.GINSENG1 },
-  { id: 'act_1967577197417225', name: 'Khloe Basid',                  currency: 'PHP', product: 'GINSENG', token: TOKENS.GINSENG1 },
-  { id: 'act_995878991523246',  name: 'Jay Ortega',                   currency: 'PHP', product: 'GINSENG', token: TOKENS.GINSENG1 },
-
-  // --- GINSENG 2 ---
-  { id: 'act_1518757959545977', name: 'Princess Lyca Geanga Roquero', currency: 'PHP', product: 'GINSENG', token: TOKENS.GINSENG2 },
-
-  // --- PTERYGIUM ---
-  { id: 'act_1066809277682536', name: 'Pterygium Acct 1',  currency: 'PHP', product: 'PTERYGIUM', token: TOKENS.PTERYGIUM },
-  { id: 'act_181393188044686',  name: 'Pterygium Acct 2',  currency: 'PHP', product: 'PTERYGIUM', token: TOKENS.PTERYGIUM },
-  { id: 'act_148018314875070',  name: 'Pterygium Acct 3',  currency: 'PHP', product: 'PTERYGIUM', token: TOKENS.PTERYGIUM },
-  { id: 'act_789006742705048',  name: 'Pterygium Acct 4',  currency: 'PHP', product: 'PTERYGIUM', token: TOKENS.PTERYGIUM },
-  { id: 'act_832275321747334',  name: 'Pterygium Acct 5',  currency: 'PHP', product: 'PTERYGIUM', token: TOKENS.PTERYGIUM },
-  { id: 'act_1556228824784908', name: 'Pterygium Acct 6',  currency: 'PHP', product: 'PTERYGIUM', token: TOKENS.PTERYGIUM },
-  { id: 'act_1053880909314540', name: 'Pterygium Acct 7',  currency: 'PHP', product: 'PTERYGIUM', token: TOKENS.PTERYGIUM },
-  { id: 'act_1499117904240917', name: 'Pterygium Acct 8',  currency: 'PHP', product: 'PTERYGIUM', token: TOKENS.PTERYGIUM },
-  { id: 'act_685160276784453',  name: 'Pterygium Acct 9',  currency: 'PHP', product: 'PTERYGIUM', token: TOKENS.PTERYGIUM },
-  { id: 'act_739657401473064',  name: 'Pterygium Acct 10', currency: 'PHP', product: 'PTERYGIUM', token: TOKENS.PTERYGIUM },
-  { id: 'act_704828111952403',  name: 'Pterygium Acct 11', currency: 'PHP', product: 'PTERYGIUM', token: TOKENS.PTERYGIUM },
+  { id: 'act_2825452284312899', name: 'Clear Sight Optical Care', currency: 'PHP', product: 'CLEAR SIGHT', token: META_ACCESS_TOKEN },
+  { id: 'act_827911349880726',  name: 'Cheska Del Mundo',         currency: 'PHP', product: 'CLEAR SIGHT', token: META_ACCESS_TOKEN },
+  { id: 'act_553848412391460',  name: 'Iniwan Lang Pala',         currency: 'PHP', product: 'CLEAR SIGHT', token: META_ACCESS_TOKEN },
+  { id: 'act_1349525489385685', name: 'Monlex Alma',              currency: 'PHP', product: 'CLEAR SIGHT', token: META_ACCESS_TOKEN },
+  { id: 'act_1264536714635179', name: 'Nhur Lita',                currency: 'PHP', product: 'CLEAR SIGHT', token: META_ACCESS_TOKEN },
+  { id: 'act_596747133200717',  name: 'Tris Ha',                  currency: 'PHP', product: 'CLEAR SIGHT', token: META_ACCESS_TOKEN },
 ];
 
 // Currency conversion to PHP (update as needed)
