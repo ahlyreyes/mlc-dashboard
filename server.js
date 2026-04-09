@@ -345,8 +345,25 @@ app.get('/logo.svg', (_req, res) => res.sendFile(path.join(__dirname, 'logo.svg'
 app.get('/login', (req, res) => res.sendFile(path.join(__dirname, 'login.html')));
 app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 app.get('/auth/google/callback',
-  passport.authenticate('google', { failureRedirect: '/login?error=unauthorized' }),
-  (req, res) => res.redirect('/home')
+  (req, res, next) => {
+    passport.authenticate('google', (err, user, info) => {
+      if (err) {
+        console.error('OAuth callback error:', err.message || err);
+        return res.redirect('/login?error=oauth_error');
+      }
+      if (!user) {
+        console.warn('OAuth: unauthorized user', info);
+        return res.redirect('/login?error=unauthorized');
+      }
+      req.logIn(user, (loginErr) => {
+        if (loginErr) {
+          console.error('Login session error:', loginErr.message || loginErr);
+          return res.redirect('/login?error=session_error');
+        }
+        return res.redirect('/home');
+      });
+    })(req, res, next);
+  }
 );
 app.get('/logout', (req, res) => { req.logout(() => res.redirect('/login')); });
 app.get('/api/me', requireAuth, (req, res) => res.json(req.user));
