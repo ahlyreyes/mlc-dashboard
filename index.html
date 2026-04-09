@@ -1,0 +1,2113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seller's Hub FSD — NDAP</title>
+<meta name="application-name" content="Seller's Hub FSD">
+<meta property="og:title" content="Seller's Hub FSD — NDAP">
+<meta property="og:site_name" content="Seller's Hub FSD">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --amber:      #ffb800;
+  --amber-light:#FEF3C7;
+  --amber-dark: #7a6000;
+  --bg:         #f5f4ef;
+  --surface:    #fafaf7;
+  --card:       #ffffff;
+  --border:     #e8e7e2;
+  --text:       #1a1a1a;
+  --muted:      #888888;
+  --muted2:     #aaaaaa;
+  --scale:      #16a34a;
+  --scale-bg:   #dcfce7;
+  --scale-text: #166534;
+  --stay:       #cc9400;
+  --stay-bg:    #fef3c7;
+  --stay-text:  #7a6000;
+  --kill:       #dc2626;
+  --kill-bg:    #fee2e2;
+  --kill-text:  #991b1b;
+  --observe:    #7c3aed;
+  --observe-bg: #ede9fe;
+  --observe-text:#5b21b6;
+  --scaledown-bg:#fff7ed;
+  --scaledown-text:#9a3412;
+  --sidebar-w:  190px;
+}
+
+body {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-weight: 400;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* ── APP SHELL ── */
+.app { display: flex; min-height: 100vh; }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
+  background: var(--card);
+  border-right: 0.5px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  z-index: 50;
+  transition: width 0.22s ease, min-width 0.22s ease;
+  overflow: hidden;
+}
+.sidebar.collapsed {
+  width: 0;
+  min-width: 0;
+}
+
+.sidebar-brand {
+  padding: 20px 16px 16px;
+  border-bottom: 0.5px solid var(--border);
+}
+.sidebar-brand .brand-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+  letter-spacing: -0.2px;
+}
+.sidebar-brand .brand-sub {
+  font-size: 14px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 15px;
+  color: var(--muted);
+  transition: all 0.15s;
+  user-select: none;
+}
+.nav-item:hover { background: var(--surface); color: var(--text); }
+.nav-item.active {
+  background: var(--amber-light);
+  color: var(--amber-dark);
+  border-left: 2px solid var(--amber);
+  padding-left: 8px;
+}
+.nav-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--muted2);
+  flex-shrink: 0;
+}
+.nav-item.active .nav-dot { background: var(--amber); }
+
+.sidebar-footer {
+  padding: 12px 16px;
+  border-top: 0.5px solid var(--border);
+  font-size: 14px;
+  color: var(--muted2);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ── MAIN ── */
+.main {
+  margin-left: var(--sidebar-w);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  transition: margin-left 0.22s ease;
+}
+.sidebar.collapsed ~ .main { margin-left: 0; }
+
+/* ── AMBER HEADER ── */
+.app-header {
+  background: #ffb800;
+  padding: 9px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.app-header-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: 0.2px;
+}
+
+/* ── TOP BAR ── */
+.topbar {
+  background: var(--card);
+  border-bottom: 0.5px solid var(--border);
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.topbar-label {
+  font-size: 14px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+input[type="date"], select {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 9px;
+  font-size: 15px;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  color: var(--text);
+  outline: none;
+}
+input[type="date"]:focus, select:focus { border-color: var(--amber); }
+
+.btn-refresh {
+  background: var(--amber);
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: 6px 16px;
+  font-size: 15px;
+  font-weight: 500;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-refresh:hover { background: #cc9400; }
+.btn-refresh:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; }
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.user-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 14px;
+  color: var(--text);
+}
+.online-dot {
+  width: 6px; height: 6px;
+  background: var(--scale);
+  border-radius: 50%;
+}
+.last-updated-txt { font-size: 14px; color: var(--muted2); }
+
+/* ── LEGEND STRIP ── */
+.legend-strip {
+  background: #fafaf7;
+  border-bottom: 0.5px solid var(--border);
+  padding: 6px 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 14px;
+  color: var(--muted);
+}
+.legend-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+}
+
+/* ── TAB CONTENT ── */
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* ── PAGE WRAP ── */
+.page-wrap { padding: 16px 20px; }
+
+/* ── KPI GRID ── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+@media (max-width: 1200px) { .kpi-grid { grid-template-columns: repeat(3, 1fr); } }
+
+.kpi-card {
+  background: var(--card);
+  border: 0.5px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+.kpi-label {
+  font-size: 14px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 4px;
+}
+.kpi-value {
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.1;
+}
+.kpi-sub { font-size: 14px; color: var(--muted2); margin-top: 2px; }
+
+/* ── LOADING / ERROR ── */
+.loading-wrap {
+  text-align: center;
+  padding: 60px;
+  color: var(--muted);
+  font-size: 15px;
+}
+.error-msg { color: var(--kill); padding: 20px; font-size: 15px; }
+
+/* ── BRAND BLOCK ── */
+.brand-block { margin-bottom: 20px; border-radius: 10px; overflow: hidden; border: 0.5px solid var(--border); }
+
+.brand-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  color: #fff;
+}
+.brand-name-txt { font-size: 14px; font-weight: 500; letter-spacing: 0.2px; }
+.brand-count-pill {
+  background: rgba(255,255,255,0.15);
+  border-radius: 20px;
+  padding: 2px 8px;
+  font-size: 14px;
+}
+
+/* ── PRODUCT SUBHEADER ── */
+.product-section { background: var(--card); }
+.product-subheader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  background: var(--surface);
+  border-bottom: 0.5px solid var(--border);
+}
+.product-pill {
+  border-radius: 20px;
+  padding: 2px 10px;
+  font-size: 14px;
+  font-weight: 500;
+}
+.product-stats {
+  display: flex;
+  gap: 14px;
+  font-size: 14px;
+  color: var(--muted);
+  margin-left: auto;
+}
+.product-stats span { color: var(--text); }
+
+/* ── CAMPAIGN CARD ── */
+.camp-card {
+  border-bottom: 0.5px solid var(--border);
+  padding: 14px 16px;
+  background: var(--card);
+}
+.camp-card:last-child { border-bottom: none; }
+
+/* Campaign header row */
+.camp-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.camp-title-block { flex: 1; min-width: 0; }
+.camp-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.camp-meta-row {
+  font-size: 14px;
+  color: var(--muted);
+  margin-top: 3px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.account-pill {
+  background: #f5f4ef;
+  border: 0.5px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.camp-overall {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.overall-label { font-size: 14px; color: var(--muted); }
+.overall-roas {
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1;
+}
+.roas-scale   { color: var(--scale); }
+.roas-stay    { color: var(--stay); }
+.roas-kill    { color: var(--kill); }
+.roas-empty   { color: var(--muted2); }
+
+/* Action badge */
+.action-badge {
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.ab-scale     { background: var(--scale-bg);    color: var(--scale-text); }
+.ab-stay      { background: var(--stay-bg);     color: var(--stay-text); }
+.ab-kill      { background: var(--kill-bg);     color: var(--kill-text); }
+.ab-observe   { background: var(--observe-bg);  color: var(--observe-text); }
+.ab-scaledown { background: var(--scaledown-bg);color: var(--scaledown-text); }
+.ab-empty     { background: var(--surface);     color: var(--muted2); }
+
+/* Totals strip */
+.camp-totals {
+  display: flex;
+  gap: 0;
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+.totals-item {
+  flex: 1;
+  padding: 8px 12px;
+  border-right: 0.5px solid var(--border);
+  text-align: center;
+}
+.totals-item:last-child { border-right: none; }
+.totals-label { font-size: 14px; color: var(--muted); margin-bottom: 3px; }
+.totals-val   { font-size: 15px; font-weight: 500; color: var(--text); }
+
+/* Log action button */
+.btn-log-action {
+  background: transparent;
+  border: 0.5px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 14px;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-log-action:hover { border-color: var(--amber); color: var(--amber-dark); }
+
+.logged-entry {
+  font-size: 14px;
+  color: var(--scale);
+  margin-top: 2px;
+}
+
+/* ── DAY CARDS ROW ── */
+.day-cards-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px;
+}
+
+.day-card {
+  border: 0.5px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--surface);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.day-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.07);
+}
+.day-card.latest {
+  border: 1.5px solid var(--amber);
+  background: #fffdf7;
+}
+.day-card.latest:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(245,158,11,0.2);
+}
+
+.day-card-header {
+  padding: 6px 10px;
+  border-bottom: 0.5px solid var(--border);
+  font-size: 14px;
+  color: var(--muted);
+  background: var(--surface);
+}
+.day-card.latest .day-card-header {
+  background: var(--amber-light);
+  color: var(--amber-dark);
+  border-bottom-color: #fde68a;
+}
+
+.day-card-body { }
+.day-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 10px;
+  border-bottom: 0.5px solid var(--border);
+  font-size: 14px;
+}
+.day-row:last-child { border-bottom: none; }
+.day-row-label { color: var(--muted); }
+.day-row-val   { font-weight: 500; color: var(--text); }
+.val-scale   { color: var(--scale); }
+.val-stay    { color: var(--stay); }
+.val-kill    { color: var(--kill); }
+.val-muted   { color: var(--muted2); }
+
+.day-card-footer {
+  padding: 6px 10px;
+  text-align: center;
+  border-top: 0.5px solid var(--border);
+  background: var(--surface);
+}
+.day-card.latest .day-card-footer {
+  background: var(--amber-light);
+  border-top-color: #fde68a;
+}
+
+/* ── CHECKLIST ── */
+.checklist-wrap {
+  background: var(--card);
+  border: 0.5px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.checklist-table { width: 100%; border-collapse: collapse; min-width: 700px; }
+.checklist-table th {
+  background: #1a1a2e;
+  color: #fff;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+  letter-spacing: 0.3px;
+}
+.checklist-table td {
+  border-bottom: 0.5px solid var(--border);
+  padding: 8px 12px;
+  font-size: 15px;
+  text-align: center;
+}
+.checklist-table tr:last-child td { border-bottom: none; }
+.checklist-table .page-name { text-align: left; font-weight: 500; color: var(--text); }
+.checklist-table .total-row td { background: #1a1a2e; color: #fff; font-weight: 500; }
+.pct-good { color: var(--scale); }
+.pct-warn { color: var(--stay); }
+.pct-bad  { color: var(--kill); }
+
+/* ── HISTORY ── */
+.history-wrap {
+  background: var(--card);
+  border: 0.5px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* ── MODAL ── */
+.modal-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.35);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(2px);
+}
+.modal-overlay.show { display: flex; }
+.modal {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 420px;
+  width: 90%;
+  border: 0.5px solid var(--border);
+}
+.modal h3 { font-size: 15px; font-weight: 500; margin-bottom: 4px; }
+.modal-sub { font-size: 14px; color: var(--muted); margin-bottom: 16px; }
+.modal label {
+  font-size: 14px;
+  color: var(--muted);
+  display: block;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.modal input, .modal select, .modal textarea {
+  width: 100%;
+  padding: 7px 10px;
+  border: 0.5px solid var(--border);
+  border-radius: 6px;
+  font-size: 15px;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  margin-bottom: 12px;
+  outline: none;
+  background: var(--surface);
+  color: var(--text);
+}
+.modal input:focus, .modal select:focus, .modal textarea:focus { border-color: var(--amber); }
+.modal-btns { display: flex; gap: 8px; justify-content: flex-end; }
+.btn-cancel {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 15px;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  cursor: pointer;
+  color: var(--muted);
+}
+.btn-confirm {
+  background: var(--amber);
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 15px;
+  font-weight: 500;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  cursor: pointer;
+  color: #fff;
+}
+.btn-confirm:hover { background: #cc9400; }
+
+/* ── SIDEBAR TOGGLE ── */
+.btn-sidebar-toggle {
+  background: none;
+  border: 0.5px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 9px;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+.btn-sidebar-toggle:hover { border-color: var(--amber); color: var(--amber-dark); }
+
+/* ── NAV SUB-MENU ── */
+.nav-group { display: flex; flex-direction: column; }
+.nav-item-parent {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--muted);
+  transition: all 0.15s;
+  user-select: none;
+}
+.nav-item-parent:hover { background: var(--surface); color: var(--text); }
+.nav-item-parent.active {
+  background: var(--amber-light);
+  color: var(--amber-dark);
+  border-left: 2px solid var(--amber);
+  padding-left: 8px;
+}
+.nav-item-parent.active .nav-dot { background: var(--amber); }
+.nav-arrow {
+  margin-left: auto;
+  font-size: 10px;
+  transition: transform 0.2s;
+  opacity: 0.6;
+}
+.nav-group.open .nav-arrow { transform: rotate(180deg); }
+.nav-submenu {
+  display: none;
+  flex-direction: column;
+  gap: 1px;
+  padding: 2px 0 4px 22px;
+}
+.nav-group.open .nav-submenu { display: flex; }
+.nav-subitem {
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--muted);
+  transition: all 0.15s;
+  user-select: none;
+}
+.nav-subitem:hover { background: var(--surface); color: var(--text); }
+.nav-subitem.active { color: var(--amber-dark); background: var(--amber-light); }
+
+.nav-subitem-disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ── NAV SUB-SUBMENUS (product level) ── */
+.nav-subitem-parent { display: flex; align-items: center; }
+.nav-sub-arrow { margin-left: auto; font-size: 9px; transition: transform 0.2s; opacity: 0.5; }
+.nav-subgroup.open .nav-sub-arrow { transform: rotate(180deg); }
+.nav-subsubmenu { display: none; flex-direction: column; gap: 1px; padding: 2px 0 2px 14px; }
+.nav-subgroup.open .nav-subsubmenu { display: flex; }
+.nav-subsubitem {
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--muted2);
+  transition: all 0.15s;
+  user-select: none;
+}
+.nav-subsubitem:hover { background: var(--surface); color: var(--text); }
+.nav-subsubitem.active { color: var(--amber-dark); background: var(--amber-light); }
+
+/* ── ROW HOVER ── */
+.day-row:hover { background: rgba(0,0,0,0.03); border-radius: 4px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-name">SH Group — FSD</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-group open" id="ndapGroup">
+        <div class="nav-item-parent active" onclick="toggleNdapMenu()" data-tab="ndap">
+          <span class="nav-dot"></span>
+          NDAP
+          <span class="nav-arrow">▾</span>
+        </div>
+        <div class="nav-submenu">
+          <!-- SH Naturals sub-group -->
+          <div class="nav-subgroup" id="naturalsGroup">
+            <div class="nav-subitem nav-subitem-parent" onclick="toggleSubGroup('naturalsGroup'); switchTab('naturals', this)" data-tab="naturals">SH Naturals <span class="nav-sub-arrow">▾</span></div>
+            <div class="nav-subsubmenu">
+              <div class="nav-subsubitem" onclick="switchTab('audicure', this)" data-tab="audicure">AudiCure</div>
+              <div class="nav-subsubitem" onclick="switchTab('canpro', this)" data-tab="canpro">CanPro</div>
+              <div class="nav-subsubitem" onclick="switchTab('ginseng', this)" data-tab="ginseng">Ginseng</div>
+              <div class="nav-subsubitem" onclick="switchTab('sinuxyl', this)" data-tab="sinuxyl">Sinuxyl</div>
+            </div>
+          </div>
+          <!-- SH Eyecare sub-group -->
+          <div class="nav-subgroup" id="eyecareGroup">
+            <div class="nav-subitem nav-subitem-parent" onclick="toggleSubGroup('eyecareGroup'); switchTab('eyecare', this)" data-tab="eyecare">SH Eyecare <span class="nav-sub-arrow">▾</span></div>
+            <div class="nav-subsubmenu">
+              <div class="nav-subsubitem" onclick="switchTab('clearsight', this)" data-tab="clearsight">Clear Sight</div>
+              <div class="nav-subsubitem" onclick="switchTab('pterygium', this)" data-tab="pterygium">Pterygium</div>
+            </div>
+          </div>
+          <div class="nav-subitem" onclick="switchTab('analytics', this)" data-tab="analytics">Data Analytics</div>
+          <div class="nav-subitem" onclick="switchTab('history', this)" data-tab="history">Action History</div>
+        </div>
+      </div>
+      <div class="nav-group" id="reportsGroup" style="margin-top:8px">
+        <div class="nav-item-parent" onclick="document.getElementById('reportsGroup').classList.toggle('open')">
+          <span class="nav-dot"></span>
+          Reports
+          <span class="nav-arrow">▾</span>
+        </div>
+        <div class="nav-submenu">
+          <div class="nav-subitem nav-subitem-disabled" title="Coming soon">ROAS Report</div>
+          <div class="nav-subitem nav-subitem-disabled" title="Coming soon">Income Statement</div>
+          <div class="nav-subitem nav-subitem-disabled" title="Coming soon">AOV &amp; CVR Report</div>
+          <div class="nav-subitem nav-subitem-disabled" title="Coming soon">Sales Report</div>
+        </div>
+      </div>
+    </nav>
+    <div class="sidebar-footer">Settings</div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- AMBER HEADER -->
+    <div class="app-header">
+      <div class="app-header-title">Facebook Sales Department — NDAP</div>
+    </div>
+
+    <!-- TOP BAR -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="btn-sidebar-toggle" onclick="toggleSidebar()" title="Toggle menu">☰</button>
+        <span class="topbar-label">End Date</span>
+        <input type="date" id="endDate">
+        <span class="topbar-label">Days</span>
+        <select id="daysSelect">
+          <option value="1">1 day</option>
+          <option value="3" selected>3 days</option>
+          <option value="5">5 days</option>
+          <option value="7">7 days</option>
+        </select>
+        <button class="btn-refresh" id="refreshBtn" onclick="loadData()">Refresh</button>
+      </div>
+      <div class="topbar-right">
+        <div class="user-pill"><span class="online-dot"></span><span id="userBadge">Loading...</span></div>
+        <span class="last-updated-txt" id="lastUpdated"></span>
+        <button class="btn-cancel" onclick="window.location='/logout'" style="border-radius:20px">Logout</button>
+      </div>
+    </header>
+
+    <!-- LEGEND -->
+    <div class="legend-strip" id="ndap-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--scale)"></div>Scale (>=3.0)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--stay)"></div>Stay (2.7–2.99)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#111111"></div>Black Stay (consistent)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--observe)"></div>Observe (<2.7)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--kill)"></div>Kill (all bad)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ea580c"></div>Scale Down (3 consec. bad)</div>
+    </div>
+
+    <!-- NDAP TAB (all brands combined) -->
+    <div id="tab-ndap" class="tab-content active">
+      <div class="page-wrap">
+
+        <!-- KPI BAR -->
+        <div class="kpi-grid" id="kpiGrid" style="display:none">
+          <div class="kpi-card">
+            <div class="kpi-label">Avg ROAS</div>
+            <div class="kpi-value" id="kpi-roas">—</div>
+            <div class="kpi-sub">Revenue / peso spent</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Avg AOV</div>
+            <div class="kpi-value" id="kpi-aov">—</div>
+            <div class="kpi-sub">Average order value</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">CVR</div>
+            <div class="kpi-value" id="kpi-cvr">—</div>
+            <div class="kpi-sub">Inquiries to orders</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Avg CPM</div>
+            <div class="kpi-value" id="kpi-cpm">—</div>
+            <div class="kpi-sub">Spend / inquiry</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Total Spend</div>
+            <div class="kpi-value" id="kpi-spend">—</div>
+            <div class="kpi-sub" id="kpi-spend-sub">All accounts</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Total Sales</div>
+            <div class="kpi-value" id="kpi-sales">—</div>
+            <div class="kpi-sub" id="kpi-sales-sub">Gross (Pancake)</div>
+          </div>
+        </div>
+
+        <div class="loading-wrap" id="loading">Loading NDAP data...</div>
+        <div id="tableContainer"></div>
+
+      </div>
+    </div>
+
+    <!-- SH NATURALS TAB -->
+    <div id="tab-naturals" class="tab-content">
+      <div class="page-wrap">
+        <div class="kpi-grid" id="kpiGrid-naturals" style="display:none">
+          <div class="kpi-card"><div class="kpi-label">Avg ROAS</div><div class="kpi-value" id="kpi-naturals-roas">—</div><div class="kpi-sub">Revenue / peso spent</div></div>
+          <div class="kpi-card"><div class="kpi-label">Total Spend</div><div class="kpi-value" id="kpi-naturals-spend">—</div><div class="kpi-sub" id="kpi-naturals-spend-sub">All accounts</div></div>
+          <div class="kpi-card"><div class="kpi-label">Total Sales</div><div class="kpi-value" id="kpi-naturals-sales">—</div><div class="kpi-sub" id="kpi-naturals-sales-sub">Gross (Pancake)</div></div>
+          <div class="kpi-card"><div class="kpi-label">CVR</div><div class="kpi-value" id="kpi-naturals-cvr">—</div><div class="kpi-sub">Inquiries to orders</div></div>
+          <div class="kpi-card"><div class="kpi-label">Avg CPM</div><div class="kpi-value" id="kpi-naturals-cpm">—</div><div class="kpi-sub">Spend / inquiry</div></div>
+          <div class="kpi-card"><div class="kpi-label">Avg AOV</div><div class="kpi-value" id="kpi-naturals-aov">—</div><div class="kpi-sub">Average order value</div></div>
+        </div>
+        <div class="loading-wrap" id="loading-naturals" style="display:none">Loading...</div>
+        <div id="tableContainer-naturals"></div>
+      </div>
+    </div>
+
+    <!-- SH EYECARE TAB -->
+    <div id="tab-eyecare" class="tab-content">
+      <div class="page-wrap">
+        <div class="kpi-grid" id="kpiGrid-eyecare" style="display:none">
+          <div class="kpi-card"><div class="kpi-label">Avg ROAS</div><div class="kpi-value" id="kpi-eyecare-roas">—</div><div class="kpi-sub">Revenue / peso spent</div></div>
+          <div class="kpi-card"><div class="kpi-label">Total Spend</div><div class="kpi-value" id="kpi-eyecare-spend">—</div><div class="kpi-sub" id="kpi-eyecare-spend-sub">All accounts</div></div>
+          <div class="kpi-card"><div class="kpi-label">Total Sales</div><div class="kpi-value" id="kpi-eyecare-sales">—</div><div class="kpi-sub" id="kpi-eyecare-sales-sub">Gross (Pancake)</div></div>
+          <div class="kpi-card"><div class="kpi-label">CVR</div><div class="kpi-value" id="kpi-eyecare-cvr">—</div><div class="kpi-sub">Inquiries to orders</div></div>
+          <div class="kpi-card"><div class="kpi-label">Avg CPM</div><div class="kpi-value" id="kpi-eyecare-cpm">—</div><div class="kpi-sub">Spend / inquiry</div></div>
+          <div class="kpi-card"><div class="kpi-label">Avg AOV</div><div class="kpi-value" id="kpi-eyecare-aov">—</div><div class="kpi-sub">Average order value</div></div>
+        </div>
+        <div class="loading-wrap" id="loading-eyecare" style="display:none">Loading...</div>
+        <div id="tableContainer-eyecare"></div>
+      </div>
+    </div>
+
+    <!-- PRODUCT TABS: SH NATURALS -->
+    <div id="tab-audicure" class="tab-content"><div class="page-wrap">
+      <div class="kpi-grid" id="kpiGrid-audicure" style="display:none">
+        <div class="kpi-card"><div class="kpi-label">Avg ROAS</div><div class="kpi-value" id="kpi-audicure-roas">—</div><div class="kpi-sub">Revenue / peso spent</div></div>
+        <div class="kpi-card"><div class="kpi-label">Total Spend</div><div class="kpi-value" id="kpi-audicure-spend">—</div><div class="kpi-sub" id="kpi-audicure-spend-sub">All accounts</div></div>
+        <div class="kpi-card"><div class="kpi-label">Total Sales</div><div class="kpi-value" id="kpi-audicure-sales">—</div><div class="kpi-sub" id="kpi-audicure-sales-sub">Gross (Pancake)</div></div>
+        <div class="kpi-card"><div class="kpi-label">CVR</div><div class="kpi-value" id="kpi-audicure-cvr">—</div><div class="kpi-sub">Inquiries to orders</div></div>
+        <div class="kpi-card"><div class="kpi-label">Avg CPM</div><div class="kpi-value" id="kpi-audicure-cpm">—</div><div class="kpi-sub">Spend / inquiry</div></div>
+        <div class="kpi-card"><div class="kpi-label">Avg AOV</div><div class="kpi-value" id="kpi-audicure-aov">—</div><div class="kpi-sub">Average order value</div></div>
+      </div>
+      <div class="loading-wrap" id="loading-audicure" style="display:none">Loading...</div>
+      <div id="tableContainer-audicure"></div>
+    </div></div>
+
+    <div id="tab-canpro" class="tab-content"><div class="page-wrap">
+      <div class="kpi-grid" id="kpiGrid-canpro" style="display:none">
+        <div class="kpi-card"><div class="kpi-label">Avg ROAS</div><div class="kpi-value" id="kpi-canpro-roas">—</div><div class="kpi-sub">Revenue / peso spent</div></div>
+        <div class="kpi-card"><div class="kpi-label">Total Spend</div><div class="kpi-value" id="kpi-canpro-spend">—</div><div class="kpi-sub" id="kpi-canpro-spend-sub">All accounts</div></div>
+        <div class="kpi-card"><div class="kpi-label">Total Sales</div><div class="kpi-value" id="kpi-canpro-sales">—</div><div class="kpi-sub" id="kpi-canpro-sales-sub">Gross (Pancake)</div></div>
+        <div class="kpi-card"><div class="kpi-label">CVR</div><div class="kpi-value" id="kpi-canpro-cvr">—</div><div class="kpi-sub">Inquiries to orders</div></div>
+        <div class="kpi-card"><div class="kpi-label">Avg CPM</div><div class="kpi-value" id="kpi-canpro-cpm">—</div><div class="kpi-sub">Spend / inquiry</div></div>
+        <div class="kpi-card"><div class="kpi-label">Avg AOV</div><div class="kpi-value" id="kpi-canpro-aov">—</div><div class="kpi-sub">Average order value</div></div>
+      </div>
+      <div class="loading-wrap" id="loading-canpro" style="display:none">Loading...</div>
+      <div id="tableContainer-canpro"></div>
+    </div></div>
+
+    <div id="tab-ginseng" class="tab-content"><div class="page-wrap">
+      <div class="kpi-grid" id="kpiGrid-ginseng" style="display:none">
+        <div class="kpi-card"><div class="kpi-label">Avg ROAS</div><div class="kpi-value" id="kpi-ginseng-roas">—</div><div class="kpi-sub">Revenue / peso spent</div></div>
+        <div class="kpi-card"><div class="kpi-label">Total Spend</div><div class="kpi-value" id="kpi-ginseng-spend">—</div><div class="kpi-sub" id="kpi-ginseng-spend-sub">All accounts</div></div>
+        <div class="kpi-card"><div class="kpi-label">Total Sales</div><div class="kpi-value" id="kpi-ginseng-sales">—</div><div class="kpi-sub" id="kpi-ginseng-sales-sub">Gross (Pancake)</div></div>
+        <div class="kpi-card"><div class="kpi-label">CVR</div><div class="kpi-value" id="kpi-ginseng-cvr">—</div><div class="kpi-sub">Inquiries to orders</div></div>
+        <div class="kpi-card"><div class="kpi-label">Avg CPM</div><div class="kpi-value" id="kpi-ginseng-cpm">—</div><div class="kpi-sub">Spend / inquiry</div></div>
+        <div class="kpi-card"><div class="kpi-label">Avg AOV</div><div class="kpi-value" id="kpi-ginseng-aov">—</div><div class="kpi-sub">Average order value</div></div>
+      </div>
+      <div class="loading-wrap" id="loading-ginseng" style="display:none">Loading...</div>
+      <div id="tableContainer-ginseng"></div>
+    </div></div>
+
+    <div id="tab-sinuxyl" class="tab-content"><div class="page-wrap">
+      <div class="kpi-grid" id="kpiGrid-sinuxyl" style="display:none">
+        <div class="kpi-card"><div class="kpi-label">Avg ROAS</div><div class="kpi-value" id="kpi-sinuxyl-roas">—</div><div class="kpi-sub">Revenue / peso spent</div></div>
+        <div class="kpi-card"><div class="kpi-label">Total Spend</div><div class="kpi-value" id="kpi-sinuxyl-spend">—</div><div class="kpi-sub" id="kpi-sinuxyl-spend-sub">All accounts</div></div>
+        <div class="kpi-card"><div class="kpi-label">Total Sales</div><div class="kpi-value" id="kpi-sinuxyl-sales">—</div><div class="kpi-sub" id="kpi-sinuxyl-sales-sub">Gross (Pancake)</div></div>
+        <div class="kpi-card"><div class="kpi-label">CVR</div><div class="kpi-value" id="kpi-sinuxyl-cvr">—</div><div class="kpi-sub">Inquiries to orders</div></div>
+        <div class="kpi-card"><div class="kpi-label">Avg CPM</div><div class="kpi-value" id="kpi-sinuxyl-cpm">—</div><div class="kpi-sub">Spend / inquiry</div></div>
+        <div class="kpi-card"><div class="kpi-label">Avg AOV</div><div class="kpi-value" id="kpi-sinuxyl-aov">—</div><div class="kpi-sub">Average order value</div></div>
+      </div>
+      <div class="loading-wrap" id="loading-sinuxyl" style="display:none">Loading...</div>
+      <div id="tableContainer-sinuxyl"></div>
+    </div></div>
+
+    <!-- PRODUCT TABS: SH EYECARE -->
+    <div id="tab-clearsight" class="tab-content"><div class="page-wrap">
+      <div class="kpi-grid" id="kpiGrid-clearsight" style="display:none">
+        <div class="kpi-card"><div class="kpi-label">Avg ROAS</div><div class="kpi-value" id="kpi-clearsight-roas">—</div><div class="kpi-sub">Revenue / peso spent</div></div>
+        <div class="kpi-card"><div class="kpi-label">Total Spend</div><div class="kpi-value" id="kpi-clearsight-spend">—</div><div class="kpi-sub" id="kpi-clearsight-spend-sub">All accounts</div></div>
+        <div class="kpi-card"><div class="kpi-label">Total Sales</div><div class="kpi-value" id="kpi-clearsight-sales">—</div><div class="kpi-sub" id="kpi-clearsight-sales-sub">Gross (Pancake)</div></div>
+        <div class="kpi-card"><div class="kpi-label">CVR</div><div class="kpi-value" id="kpi-clearsight-cvr">—</div><div class="kpi-sub">Inquiries to orders</div></div>
+        <div class="kpi-card"><div class="kpi-label">Avg CPM</div><div class="kpi-value" id="kpi-clearsight-cpm">—</div><div class="kpi-sub">Spend / inquiry</div></div>
+        <div class="kpi-card"><div class="kpi-label">Avg AOV</div><div class="kpi-value" id="kpi-clearsight-aov">—</div><div class="kpi-sub">Average order value</div></div>
+      </div>
+      <div class="loading-wrap" id="loading-clearsight" style="display:none">Loading...</div>
+      <div id="tableContainer-clearsight"></div>
+    </div></div>
+
+    <div id="tab-pterygium" class="tab-content"><div class="page-wrap">
+      <div class="kpi-grid" id="kpiGrid-pterygium" style="display:none">
+        <div class="kpi-card"><div class="kpi-label">Avg ROAS</div><div class="kpi-value" id="kpi-pterygium-roas">—</div><div class="kpi-sub">Revenue / peso spent</div></div>
+        <div class="kpi-card"><div class="kpi-label">Total Spend</div><div class="kpi-value" id="kpi-pterygium-spend">—</div><div class="kpi-sub" id="kpi-pterygium-spend-sub">All accounts</div></div>
+        <div class="kpi-card"><div class="kpi-label">Total Sales</div><div class="kpi-value" id="kpi-pterygium-sales">—</div><div class="kpi-sub" id="kpi-pterygium-sales-sub">Gross (Pancake)</div></div>
+        <div class="kpi-card"><div class="kpi-label">CVR</div><div class="kpi-value" id="kpi-pterygium-cvr">—</div><div class="kpi-sub">Inquiries to orders</div></div>
+        <div class="kpi-card"><div class="kpi-label">Avg CPM</div><div class="kpi-value" id="kpi-pterygium-cpm">—</div><div class="kpi-sub">Spend / inquiry</div></div>
+        <div class="kpi-card"><div class="kpi-label">Avg AOV</div><div class="kpi-value" id="kpi-pterygium-aov">—</div><div class="kpi-sub">Average order value</div></div>
+      </div>
+      <div class="loading-wrap" id="loading-pterygium" style="display:none">Loading...</div>
+      <div id="tableContainer-pterygium"></div>
+    </div></div>
+
+    <!-- DATA ANALYTICS TAB -->
+    <div id="tab-analytics" class="tab-content">
+      <div class="page-wrap">
+        <!-- Analytics Controls -->
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px;background:var(--card);padding:10px 14px;border-radius:8px;border:0.5px solid var(--border)">
+          <span class="topbar-label">From</span>
+          <input type="date" id="analyticsStart" style="font-size:13px">
+          <span class="topbar-label">To</span>
+          <input type="date" id="analyticsEnd" style="font-size:13px">
+          <select id="analyticsBrand" style="font-size:13px">
+            <option value="ALL">All Brands</option>
+            <option value="NATURALS">SH Naturals</option>
+            <option value="EYECARE">SH Eyecare</option>
+          </select>
+          <button class="btn-refresh" onclick="loadAnalytics()">Load</button>
+          <span class="last-updated-txt" id="analyticsUpdated"></span>
+        </div>
+
+        <div class="loading-wrap" id="loading-analytics" style="display:none">Loading analytics...</div>
+
+        <!-- KPI summary row -->
+        <div class="kpi-grid" id="analyticsKpis" style="display:none;margin-bottom:16px">
+          <div class="kpi-card"><div class="kpi-label">Avg ROAS</div><div class="kpi-value" id="an-roas">—</div><div class="kpi-sub">Period average</div></div>
+          <div class="kpi-card"><div class="kpi-label">Total Spend</div><div class="kpi-value" id="an-spend">—</div><div class="kpi-sub">Period total</div></div>
+          <div class="kpi-card"><div class="kpi-label">Total Sales</div><div class="kpi-value" id="an-sales">—</div><div class="kpi-sub">Gross revenue</div></div>
+          <div class="kpi-card"><div class="kpi-label">Total Orders</div><div class="kpi-value" id="an-orders">—</div><div class="kpi-sub">Pancake orders</div></div>
+          <div class="kpi-card"><div class="kpi-label">Avg CVR</div><div class="kpi-value" id="an-cvr">—</div><div class="kpi-sub">Inquiries → orders</div></div>
+          <div class="kpi-card"><div class="kpi-label">Avg CPM</div><div class="kpi-value" id="an-cpm">—</div><div class="kpi-sub">Spend / inquiry</div></div>
+        </div>
+
+        <!-- Charts grid -->
+        <div id="analyticsCharts" style="display:none">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+            <!-- ROAS Trend -->
+            <div style="background:var(--card);border:0.5px solid var(--border);border-radius:10px;padding:16px">
+              <div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:12px">ROAS Trend</div>
+              <canvas id="chartRoas" height="180"></canvas>
+            </div>
+            <!-- Daily Spend vs Sales -->
+            <div style="background:var(--card);border:0.5px solid var(--border);border-radius:10px;padding:16px">
+              <div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:12px">Daily Spend vs Gross Sales</div>
+              <canvas id="chartSpendSales" height="180"></canvas>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+            <!-- CVR Trend -->
+            <div style="background:var(--card);border:0.5px solid var(--border);border-radius:10px;padding:16px">
+              <div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:12px">CVR Trend (Inquiries → Orders)</div>
+              <canvas id="chartCvr" height="180"></canvas>
+            </div>
+            <!-- CPM Trend -->
+            <div style="background:var(--card);border:0.5px solid var(--border);border-radius:10px;padding:16px">
+              <div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:12px">CPM Trend (Spend per Inquiry)</div>
+              <canvas id="chartCpm" height="180"></canvas>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+            <!-- Orders per Day -->
+            <div style="background:var(--card);border:0.5px solid var(--border);border-radius:10px;padding:16px">
+              <div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:12px">Daily Orders & Inquiries</div>
+              <canvas id="chartOrders" height="180"></canvas>
+            </div>
+            <!-- ROAS by Product -->
+            <div style="background:var(--card);border:0.5px solid var(--border);border-radius:10px;padding:16px">
+              <div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:12px">ROAS by Product</div>
+              <canvas id="chartProductRoas" height="180"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div id="analyticsEmpty" style="display:none;text-align:center;padding:60px;color:var(--muted);font-size:13px">Select a date range and click Load.</div>
+      </div>
+    </div>
+
+    <!-- HISTORY TAB -->
+    <div id="tab-history" class="tab-content">
+      <div class="page-wrap">
+        <div style="font-size:12px;font-weight:500;margin-bottom:12px">Action History — All Advertisers</div>
+        <div class="history-wrap"><div id="historyContainer" style="padding:16px;color:var(--muted)">Loading...</div></div>
+      </div>
+    </div>
+
+    <!-- CHECKLIST TAB (kept for data, not shown in menu) -->
+    <div id="tab-checklist" class="tab-content">
+      <div class="page-wrap">
+        <div class="loading-wrap" id="checklistLoading" style="display:none">Loading...</div>
+        <div id="checklistContainer"></div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ACTION MODAL -->
+<div class="modal-overlay" id="actionModal">
+  <div class="modal">
+    <h3>Log Action</h3>
+    <div class="modal-sub" id="modalCampaignInfo"></div>
+    <label>Action Taken</label>
+    <select id="modalAction">
+      <option value="SCALED">SCALED — increased budget</option>
+      <option value="KILLED">KILLED — stopped campaign</option>
+      <option value="SCALE DOWN">SCALED DOWN — reduced budget</option>
+      <option value="MONITORING">MONITORING — will check tomorrow</option>
+      <option value="SKIPPED">SKIPPED — no action taken</option>
+    </select>
+    <label>New Budget (if scaled/down)</label>
+    <input type="number" id="modalBudget" placeholder="e.g. 4160" />
+    <label>Notes (optional)</label>
+    <textarea id="modalNotes" rows="2" placeholder="Any additional notes..."></textarea>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-confirm" onclick="submitAction()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentActionData = null;
+let actionLogs = {};
+let currentUser = null;
+
+fetch('/api/me').then(r=>r.json()).then(u=>{
+  currentUser = u;
+  document.getElementById('userBadge').textContent = u.name + ' · ' + u.role;
+  if (u.role === 'admin') {
+    document.getElementById('historyTab').style.display = '';
+    document.getElementById('historyTabBar').style.display = '';
+  }
+});
+
+fetch('/api/action-logs').then(r=>r.json()).then(logs=>{
+  logs.forEach(l => {
+    if (!actionLogs[l.campaign_key]) actionLogs[l.campaign_key] = [];
+    actionLogs[l.campaign_key].push(l);
+  });
+});
+
+function openActionModal(campaignKey, campaignName, adAccount, recommendation) {
+  currentActionData = { campaignKey, campaignName, adAccount, recommendation };
+  document.getElementById('modalCampaignInfo').innerHTML =
+    '<b>' + campaignName + '</b><br>Recommended: <b>' + (recommendation||'N/A') + '</b>';
+  document.getElementById('modalAction').value = recommendation === 'SCALE' ? 'SCALED' :
+    recommendation === 'KILL' ? 'KILLED' :
+    recommendation === 'SCALE DOWN' ? 'SCALE DOWN' : 'MONITORING';
+  document.getElementById('modalBudget').value = '';
+  document.getElementById('modalNotes').value = '';
+  document.getElementById('actionModal').classList.add('show');
+}
+function closeModal() {
+  document.getElementById('actionModal').classList.remove('show');
+  currentActionData = null;
+}
+async function submitAction() {
+  if (!currentActionData) return;
+  const action = document.getElementById('modalAction').value;
+  const budget = document.getElementById('modalBudget').value;
+  const notes  = document.getElementById('modalNotes').value;
+  const res = await fetch('/api/action-log', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      campaign_key: currentActionData.campaignKey,
+      campaign_name: currentActionData.campaignName,
+      ad_account: currentActionData.adAccount,
+      recommendation: currentActionData.recommendation,
+      action_taken: action, new_budget: budget ? parseFloat(budget) : null, notes
+    })
+  });
+  const data = await res.json();
+  if (data.success) {
+    if (!actionLogs[currentActionData.campaignKey]) actionLogs[currentActionData.campaignKey] = [];
+    actionLogs[currentActionData.campaignKey].unshift({
+      action_taken: action, new_budget: budget||null,
+      done_by_name: currentUser.name, created_at: new Date().toLocaleString('en-PH')
+    });
+    closeModal(); loadData();
+  }
+}
+
+document.getElementById('endDate').value = new Date().toISOString().split('T')[0];
+
+const PHP  = n => '₱' + Number(n||0).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
+const FMT2 = n => Number(n||0).toFixed(2);
+const NUM  = n => Number(n||0).toLocaleString('en-PH');
+
+function roasClass(roas, spend) {
+  if (!spend || spend === 0) return 'c-empty';
+  if (roas >= 3.0) return 'c-scale';
+  if (roas >= 2.7) return 'c-stay';
+  if (roas > 0)    return 'c-below';
+  return 'c-kill';
+}
+
+function actionForDay(campaign, dates, targetDateIdx) {
+  const datesUpTo = dates.slice(0, targetDateIdx + 1);
+  const spendDays = datesUpTo.filter(d => campaign.dates[d] && campaign.dates[d].spend > 0);
+  if (spendDays.length === 0) return { text: '', cls: 'ab-empty' };
+  const roasValues = spendDays.map(d => campaign.dates[d].roas);
+  const n = roasValues.length;
+  let consecutiveBad = 0;
+  for (let i = n-1; i >= 0; i--) { if (roasValues[i] < 2.7) consecutiveBad++; else break; }
+  const stayDays = roasValues.filter(r => r >= 2.7 && r < 3.0).length;
+  const totalActiveDays = spendDays.length;
+  const latestRoas = roasValues[n-1];
+  if (latestRoas >= 3.0) return { text:'SCALE', cls:'ab-scale' };
+  if (latestRoas >= 2.7 && consecutiveBad === 0) {
+    if (stayDays >= Math.ceil(totalActiveDays * 0.6)) return { text:'STAY', cls:'ab-stay' };
+    return { text:'STAY', cls:'ab-stay' };
+  }
+  if (consecutiveBad >= 3 && totalActiveDays > consecutiveBad) return { text:'SCALE DOWN', cls:'ab-scaledown' };
+  if (consecutiveBad === totalActiveDays) return { text:'KILL', cls:'ab-kill' };
+  if (consecutiveBad > 0) return { text:'OBSERVE', cls:'ab-observe' };
+  return { text:'STAY', cls:'ab-stay' };
+}
+
+function dayLabel(ds) {
+  const d = new Date(ds + 'T00:00:00');
+  const D = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const M = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${M[d.getMonth()]} ${d.getDate()} · ${D[d.getDay()]}`;
+}
+
+async function loadData() {
+  const endDate = document.getElementById('endDate').value;
+  const days    = document.getElementById('daysSelect').value;
+  const btn     = document.getElementById('refreshBtn');
+  btn.disabled = true; btn.textContent = 'Loading...';
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('tableContainer').innerHTML = '';
+  document.getElementById('kpiGrid').style.display = 'none';
+  try {
+    const r = await fetch(`/api/ndap?endDate=${endDate}&days=${days}`);
+    const data = await r.json();
+    if (data.error) throw new Error(data.error);
+    renderKPIs(data);
+    render(data);
+    document.getElementById('lastUpdated').textContent = 'Updated ' + new Date().toLocaleTimeString('en-PH');
+  } catch(e) {
+    document.getElementById('tableContainer').innerHTML = `<div class="error-msg">${e.message}</div>`;
+  } finally {
+    document.getElementById('loading').style.display = 'none';
+    btn.disabled = false; btn.textContent = 'Refresh';
+  }
+}
+
+function renderKPIs({ dates, campaigns }) {
+  let totalSpend=0, totalSales=0, totalOrders=0, totalInquiries=0;
+  for (const c of campaigns) {
+    totalSpend    += c.totalSpend  || 0;
+    totalSales    += c.totalSales  || 0;
+    totalOrders   += c.totalOrders || 0;
+    for (const d of Object.values(c.dates)) {
+      totalInquiries += d.messagesStarted || 0;
+    }
+  }
+  const avgRoas = totalSpend > 0 ? totalSales / totalSpend : 0;
+  const aov     = totalOrders > 0 ? totalSales / totalOrders : 0;
+  const cvr     = totalInquiries > 0 ? totalOrders / totalInquiries * 100 : 0;
+  const cpm     = totalInquiries > 0 ? totalSpend / totalInquiries : 0;
+  const days    = parseInt(document.getElementById('daysSelect').value) || 1;
+  const dayLabel = days === 1 ? 'for 1 day' : `for ${days} days`;
+  document.getElementById('kpi-roas').textContent  = FMT2(avgRoas);
+  document.getElementById('kpi-aov').textContent   = PHP(aov);
+  document.getElementById('kpi-cvr').textContent   = cvr.toFixed(1) + '%';
+  document.getElementById('kpi-cpm').textContent   = PHP(cpm);
+  document.getElementById('kpi-spend').textContent = PHP(totalSpend);
+  document.getElementById('kpi-sales').textContent = PHP(totalSales);
+  document.getElementById('kpi-spend-sub').textContent = dayLabel;
+  document.getElementById('kpi-sales-sub').textContent = dayLabel;
+  document.getElementById('kpiGrid').style.display = 'grid';
+}
+
+// ── PRODUCT PILL COLORS ──
+const PRODUCT_PILLS = {
+  'SINUXYL':     { bg:'#dbeafe', color:'#1e3a8a' },
+  'SINUXYL 2':   { bg:'#dbeafe', color:'#1e3a8a' },
+  'GINSENG':     { bg:'#dcfce7', color:'#14532d' },
+  'CANPRO':      { bg:'#fef3c7', color:'#78350f' },
+  'AUDICURE':    { bg:'#fce7f3', color:'#9d174d' },
+  'CLEAR SIGHT': { bg:'#ede9fe', color:'#4c1d95' },
+  'PTERYGIUM':   { bg:'#ccfbf1', color:'#134e4a' },
+};
+
+const BRAND_MAP = [
+  { brand:'SH Naturals Brand', bg:'#1a1a2e', products:['CANPRO','AUDICURE','SINUXYL','SINUXYL 2','GINSENG'] },
+  { brand:'SH Eyecare Brand',  bg:'#0c2d48', products:['CLEAR SIGHT','PTERYGIUM'] },
+];
+
+function roasColorClass(roas, spend) {
+  if (!spend || spend === 0) return 'val-muted';
+  if (roas >= 3.0) return 'val-scale';
+  if (roas >= 2.7) return 'val-stay';
+  return 'val-kill';
+}
+
+function overallRoasClass(roas) {
+  if (roas >= 3.0) return 'roas-scale';
+  if (roas >= 2.7) return 'roas-stay';
+  if (roas > 0)    return 'roas-kill';
+  return 'roas-empty';
+}
+
+function render({ dates, campaigns }) {
+  const byProduct = {};
+  for (const c of campaigns) {
+    const prod = (c.product || 'Other').toUpperCase();
+    if (!byProduct[prod]) byProduct[prod] = [];
+    byProduct[prod].push(c);
+  }
+
+  const renderedProducts = new Set();
+  let html = '';
+
+  for (const { brand, bg, products } of BRAND_MAP) {
+    const activeProd = products.filter(p => byProduct[p] && byProduct[p].length > 0);
+    if (!activeProd.length) continue;
+
+    const totalCamps = activeProd.reduce((s,p)=>s+byProduct[p].length,0);
+
+    html += `<div class="brand-block">
+      <div class="brand-header" style="background:${bg}">
+        <span class="brand-name-txt">${brand}</span>
+        <span class="brand-count-pill">${totalCamps} campaigns</span>
+      </div>`;
+
+    for (const prod of activeProd) {
+      renderedProducts.add(prod);
+      const camps = byProduct[prod];
+      const prodSpend = camps.reduce((s,c)=>s+c.totalSpend,0);
+      const prodSales = camps.reduce((s,c)=>s+c.totalSales,0);
+      const prodRoas  = prodSpend > 0 ? prodSales / prodSpend : 0;
+      const pill = PRODUCT_PILLS[prod] || { bg:'#f5f4ef', color:'#555' };
+
+      html += `<div class="product-section">
+        <div class="product-subheader">
+          <span class="product-pill" style="background:${pill.bg};color:${pill.color}">${prod}</span>
+          <span style="font-size:10px;color:var(--muted)">${camps.length} campaigns</span>
+          <div class="product-stats">
+            Spend: <span>${PHP(prodSpend)}</span>
+            &nbsp;&nbsp;Sales: <span>${PHP(prodSales)}</span>
+            &nbsp;&nbsp;ROAS: <span style="color:${prodRoas>=3?'var(--scale)':prodRoas>=2.7?'var(--stay)':'var(--kill)'}">${FMT2(prodRoas)}</span>
+          </div>
+        </div>`;
+
+      for (const c of camps) {
+        const overallAP   = actionForDay(c, dates, dates.length - 1);
+        const latestDay   = c.dates[dates[dates.length - 1]];
+        const latestRoas  = latestDay ? latestDay.roas : 0;
+        const roasCls     = overallRoasClass(latestRoas);
+        const loggedList  = (actionLogs[c.campaignId] || []).slice(0,1);
+
+        // Totals strip
+        const totalsHtml = `<div class="camp-totals">
+          <div class="totals-item"><div class="totals-label">Total Gross Sales</div><div class="totals-val">${PHP(c.totalSales)}</div></div>
+          <div class="totals-item"><div class="totals-label">Total Ads Spent</div><div class="totals-val">${PHP(c.totalSpend)}</div></div>
+          <div class="totals-item"><div class="totals-label">Budget / day</div><div class="totals-val">${PHP(c.budget)}</div></div>
+          <div class="totals-item"><div class="totals-label">Ad ID</div><div class="totals-val" style="font-size:10px;font-family:monospace">${c.adId}</div></div>
+        </div>`;
+
+        // Day cards
+        const dayCardsHtml = `<div class="day-cards-row">
+          ${dates.map((d, i) => {
+            const dd = c.dates[d];
+            const isLatest = i === dates.length - 1;
+            const ap = actionForDay(c, dates, i);
+            const roas  = dd ? dd.roas   : 0;
+            const spend = dd ? dd.spend  : 0;
+            const cvr   = dd && dd.messagesStarted > 0 ? (dd.orders / dd.messagesStarted * 100) : 0;
+            const aov   = dd && dd.orders > 0 ? dd.grossSales / dd.orders : 0;
+            const cpm   = dd ? dd.cpm    : 0;
+            const rCls  = roasColorClass(roas, spend);
+
+            return `<div class="day-card${isLatest?' latest':''}">
+              <div class="day-card-header">${dayLabel(d)}</div>
+              <div class="day-card-body">
+                <div class="day-row"><span class="day-row-label">ROAS</span><span class="day-row-val ${rCls}">${spend>0?FMT2(roas):'—'}</span></div>
+                <div class="day-row"><span class="day-row-label">CVR</span><span class="day-row-val">${dd&&dd.messagesStarted>0?cvr.toFixed(1)+'%':'—'}</span></div>
+                <div class="day-row"><span class="day-row-label">AOV</span><span class="day-row-val">${dd&&dd.orders>0?PHP(aov):'—'}</span></div>
+                <div class="day-row"><span class="day-row-label">CPM</span><span class="day-row-val">${spend>0?PHP(cpm):'—'}</span></div>
+                <div class="day-row"><span class="day-row-label">Gross Sales</span><span class="day-row-val">${dd?PHP(dd.grossSales):'—'}</span></div>
+                <div class="day-row"><span class="day-row-label">Actual Adspent</span><span class="day-row-val">${spend>0?PHP(spend):'—'}</span></div>
+                <div class="day-row"><span class="day-row-label">Declared Budget</span><span class="day-row-val">${PHP(c.budget)}</span></div>
+                <div class="day-row"><span class="day-row-label">Inquiries</span><span class="day-row-val">${dd&&dd.messagesStarted>0?NUM(dd.messagesStarted):'—'}</span></div>
+                <div class="day-row"><span class="day-row-label">Orders</span><span class="day-row-val">${dd?dd.orders:'—'}</span></div>
+                <div class="day-row"><span class="day-row-label">Delivery Rate</span><span class="day-row-val">${dd&&dd.delRate!=null?dd.delRate.toFixed(1)+'%':'—'}</span></div>
+              </div>
+              <div class="day-card-footer">
+                ${ap.text ? `<span class="action-badge ${ap.cls}">${ap.text}</span>` : '<span style="color:var(--muted2);font-size:10px">—</span>'}
+              </div>
+            </div>`;
+          }).join('')}
+        </div>`;
+
+        html += `<div class="camp-card">
+          <div class="camp-header">
+            <div class="camp-title-block">
+              <div class="camp-name">${c.campaignName}</div>
+              <div class="camp-meta-row">
+                <span class="account-pill">${c.accountName}</span>
+                ${loggedList.map(l=>`<span class="logged-entry">&#10003; ${l.action_taken}${l.new_budget?' →₱'+Number(l.new_budget).toLocaleString():''} · ${l.done_by_name}</span>`).join('')}
+              </div>
+            </div>
+            <div class="camp-overall">
+              <span class="overall-label">Latest ROAS</span>
+              <span class="overall-roas ${roasCls}">${latestDay && latestDay.spend > 0 ? FMT2(latestRoas) : '—'}</span>
+              <span class="action-badge ${overallAP.cls}">${overallAP.text||'—'}</span>
+              <button class="btn-log-action"
+                onclick="openActionModal('${c.campaignId}','${c.campaignName.replace(/'/g,"\\'").replace(/"/g,'&quot;')}','${c.accountName}','${overallAP.text}')">
+                Log Action
+              </button>
+            </div>
+          </div>
+          ${totalsHtml}
+          ${dayCardsHtml}
+        </div>`;
+      }
+      html += `</div>`; // /product-section
+    }
+    html += `</div>`; // /brand-block
+  }
+
+  // Fallback for unmapped products
+  for (const [prod, camps] of Object.entries(byProduct)) {
+    if (renderedProducts.has(prod)) continue;
+    const pill = { bg:'#f5f4ef', color:'#555' };
+    html += `<div class="brand-block">
+      <div class="brand-header" style="background:#333">
+        <span class="brand-name-txt">${prod}</span>
+        <span class="brand-count-pill">${camps.length} campaigns</span>
+      </div>
+      <div class="product-section">`;
+    for (const c of camps) {
+      const overallAP   = actionForDay(c, dates, dates.length-1);
+      const latestDayFb = c.dates[dates[dates.length - 1]];
+      const latestRoasFb = latestDayFb ? latestDayFb.roas : 0;
+      const roasCls     = overallRoasClass(latestRoasFb);
+      html += `<div class="camp-card">
+        <div class="camp-header">
+          <div class="camp-title-block">
+            <div class="camp-name">${c.campaignName}</div>
+            <div class="camp-meta-row"><span class="account-pill">${c.accountName}</span></div>
+          </div>
+          <div class="camp-overall">
+            <span class="overall-label">Latest ROAS</span>
+            <span class="overall-roas ${roasCls}">${latestDayFb && latestDayFb.spend > 0 ? FMT2(latestRoasFb) : '—'}</span>
+            <span class="action-badge ${overallAP.cls}">${overallAP.text||'—'}</span>
+            <button class="btn-log-action" onclick="openActionModal('${c.campaignId}','${c.campaignName.replace(/'/g,"\\'").replace(/"/g,'&quot;')}','${c.accountName}','${overallAP.text}')">Log Action</button>
+          </div>
+        </div>
+        <div class="camp-totals">
+          <div class="totals-item"><div class="totals-label">Total Gross Sales</div><div class="totals-val">${PHP(c.totalSales)}</div></div>
+          <div class="totals-item"><div class="totals-label">Total Ads Spent</div><div class="totals-val">${PHP(c.totalSpend)}</div></div>
+          <div class="totals-item"><div class="totals-label">Budget / day</div><div class="totals-val">${PHP(c.budget)}</div></div>
+          <div class="totals-item"><div class="totals-label">Ad ID</div><div class="totals-val" style="font-size:10px;font-family:monospace">${c.adId}</div></div>
+        </div>
+        <div class="day-cards-row">
+          ${dates.map((d,i)=>{
+            const dd=c.dates[d]; const isLatest=i===dates.length-1;
+            const ap=actionForDay(c,dates,i);
+            const roas=dd?dd.roas:0; const spend=dd?dd.spend:0;
+            const cvr=dd&&dd.messagesStarted>0?(dd.orders/dd.messagesStarted*100):0;
+            const aov=dd&&dd.orders>0?dd.grossSales/dd.orders:0;
+            const rCls=roasColorClass(roas,spend);
+            return `<div class="day-card${isLatest?' latest':''}">
+              <div class="day-card-header">${dayLabel(d)}</div>
+              <div class="day-card-body">
+                <div class="day-row"><span class="day-row-label">ROAS</span><span class="day-row-val ${rCls}">${spend>0?FMT2(roas):'—'}</span></div>
+                <div class="day-row"><span class="day-row-label">CVR</span><span class="day-row-val">${dd&&dd.messagesStarted>0?cvr.toFixed(1)+'%':'—'}</span></div>
+                <div class="day-row"><span class="day-row-label">AOV</span><span class="day-row-val">${dd&&dd.orders>0?PHP(aov):'—'}</span></div>
+                <div class="day-row"><span class="day-row-label">CPM</span><span class="day-row-val">${spend>0?PHP(dd.cpm):'—'}</span></div>
+                <div class="day-row"><span class="day-row-label">Gross Sales</span><span class="day-row-val">${dd?PHP(dd.grossSales):'—'}</span></div>
+                <div class="day-row"><span class="day-row-label">Actual Adspent</span><span class="day-row-val">${spend>0?PHP(spend):'—'}</span></div>
+                <div class="day-row"><span class="day-row-label">Declared Budget</span><span class="day-row-val">${PHP(c.budget)}</span></div>
+                <div class="day-row"><span class="day-row-label">Inquiries</span><span class="day-row-val">${dd&&dd.messagesStarted>0?NUM(dd.messagesStarted):'—'}</span></div>
+                <div class="day-row"><span class="day-row-label">Orders</span><span class="day-row-val">${dd?dd.orders:'—'}</span></div>
+                <div class="day-row"><span class="day-row-label">Delivery Rate</span><span class="day-row-val">${dd&&dd.delRate!=null?dd.delRate.toFixed(1)+'%':'—'}</span></div>
+              </div>
+              <div class="day-card-footer">${ap.text?`<span class="action-badge ${ap.cls}">${ap.text}</span>`:'<span style="color:var(--muted2);font-size:10px">—</span>'}</div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+    }
+    html += `</div></div>`;
+  }
+
+  document.getElementById('tableContainer').innerHTML = html;
+}
+
+loadData();
+
+// PAGE MAP
+const PAGE_MAP = [
+  { page:'CSED PH',        fullName:'Clear Sight Eye Drops PH',    product:'Clear Sight',          keywords:['csed','eye drop ph','clearsight eye','clear sight eye drops ph'] },
+  { page:'Clear Sight CC', fullName:'Clear Sight Cataract Care',   product:'Clear Sight',          keywords:['clear sight cc','cataract','cscc'] },
+  { page:'PT Boutique',    fullName:'Pterygium Eye Drops Boutique', product:'Pterygium Eye Drops',  keywords:['pterygium','pt boutique','eye drops boutique'] },
+  { page:'Golden Rosary',  fullName:'Vatican Holy Golden Rosary',   product:'Vatican Golden Rosary',keywords:['rosary','golden','vatican','blessed','by grace'] },
+  { page:'Ginseng Serum',  fullName:'Ginseng Serum',               product:'Ginseng Serum',        keywords:['ginseng'] },
+  { page:'Sinuxyl',        fullName:'Sinuxyl',                     product:'Sinuxyl Inhaler',      keywords:['sinuxyl'] },
+];
+
+function matchPage(campaignName) {
+  const cn = (campaignName || '').toLowerCase();
+  for (const p of PAGE_MAP) {
+    if (p.keywords.some(k => cn.includes(k))) return p.page;
+  }
+  return null;
+}
+
+function toggleSidebar() {
+  document.querySelector('.sidebar').classList.toggle('collapsed');
+}
+
+function toggleNdapMenu() {
+  const group = document.getElementById('ndapGroup');
+  group.classList.toggle('open');
+  // Also switch to NDAP tab if not already there
+  const ndapContent = document.getElementById('tab-ndap');
+  if (!ndapContent.classList.contains('active')) {
+    switchTab('ndap', null);
+  }
+}
+
+const PRODUCT_TABS = {
+  'audicure':   ['AUDICURE'],
+  'canpro':     ['CANPRO'],
+  'ginseng':    ['GINSENG'],
+  'sinuxyl':    ['SINUXYL', 'SINUXYL 2'],
+  'clearsight': ['CLEAR SIGHT'],
+  'pterygium':  ['PTERYGIUM'],
+};
+const PRODUCT_TAB_NAMES = {
+  'audicure':   'AudiCure',
+  'canpro':     'CanPro',
+  'ginseng':    'Ginseng',
+  'sinuxyl':    'Sinuxyl',
+  'clearsight': 'Clear Sight',
+  'pterygium':  'Pterygium',
+};
+
+function toggleSubGroup(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+
+function switchTab(tab, el) {
+  document.querySelectorAll('.nav-item-parent, .nav-subitem, .nav-subsubitem').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  if (tab === 'ndap') {
+    document.querySelector('.nav-item-parent[data-tab="ndap"]').classList.add('active');
+  } else if (PRODUCT_TABS[tab]) {
+    const sub = document.querySelector(`.nav-subsubitem[data-tab="${tab}"]`);
+    if (sub) sub.classList.add('active');
+  } else {
+    const sub = document.querySelector(`.nav-subitem[data-tab="${tab}"]`);
+    if (sub) sub.classList.add('active');
+  }
+  const productTabs = Object.keys(PRODUCT_TABS);
+  const showLegend = (tab === 'ndap' || tab === 'naturals' || tab === 'eyecare' || productTabs.includes(tab));
+  document.getElementById('ndap-legend').style.display = showLegend ? 'flex' : 'none';
+  if (tab === 'naturals')  loadBrandTab('NATURALS');
+  if (tab === 'eyecare')   loadBrandTab('EYECARE');
+  if (PRODUCT_TABS[tab])   loadProductTab(tab);
+  if (tab === 'analytics') document.getElementById('analyticsEmpty').style.display = 'block';
+  if (tab === 'checklist') loadChecklist();
+  if (tab === 'history')   loadHistory();
+}
+
+async function loadHistory() {
+  try {
+    const r = await fetch('/api/action-logs');
+    const logs = await r.json();
+    if (!logs.length) {
+      document.getElementById('historyContainer').innerHTML = '<div style="padding:16px;color:var(--muted)">No actions logged yet.</div>';
+      return;
+    }
+    let h = `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;min-width:600px">
+      <thead><tr style="background:#1a1a2e;color:#fff">
+        <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:500">DATE</th>
+        <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:500">CAMPAIGN</th>
+        <th style="padding:8px 12px;text-align:center;font-size:10px;font-weight:500">RECOMMENDATION</th>
+        <th style="padding:8px 12px;text-align:center;font-size:10px;font-weight:500">ACTION TAKEN</th>
+        <th style="padding:8px 12px;text-align:right;font-size:10px;font-weight:500">NEW BUDGET</th>
+        <th style="padding:8px 12px;text-align:center;font-size:10px;font-weight:500">BY</th>
+        <th style="padding:8px 12px;text-align:center;font-size:10px;font-weight:500">TIMESTAMP</th>
+      </tr></thead><tbody>`;
+    logs.forEach((l, i) => {
+      const bg = i%2===0?'var(--surface)':'var(--card)';
+      const aColor = l.action_taken==='SCALED'?'var(--scale)':l.action_taken==='KILLED'?'var(--kill)':l.action_taken==='SCALE DOWN'?'var(--observe)':'var(--muted)';
+      h += `<tr style="background:${bg}">
+        <td style="padding:7px 12px;font-size:10px;color:var(--muted)">${l.date||'—'}</td>
+        <td style="padding:7px 12px;font-size:11px;max-width:200px;overflow:hidden;text-overflow:ellipsis">${l.campaign_name||l.campaign_key}</td>
+        <td style="padding:7px 12px;font-size:10px;text-align:center;color:var(--stay)">${l.recommendation||'—'}</td>
+        <td style="padding:7px 12px;font-size:10px;text-align:center;font-weight:500;color:${aColor}">${l.action_taken}</td>
+        <td style="padding:7px 12px;font-size:10px;text-align:right">${l.new_budget?'₱'+Number(l.new_budget).toLocaleString():'—'}</td>
+        <td style="padding:7px 12px;font-size:10px;text-align:center">${l.done_by_name}</td>
+        <td style="padding:7px 12px;font-size:10px;color:var(--muted2);text-align:center">${new Date(l.created_at).toLocaleString('en-PH')}</td>
+      </tr>`;
+    });
+    h += '</tbody></table></div>';
+    document.getElementById('historyContainer').innerHTML = h;
+  } catch(e) {
+    document.getElementById('historyContainer').innerHTML = `<div style="padding:16px;color:var(--kill)">Error loading history.</div>`;
+  }
+}
+
+async function loadChecklist() {
+  document.getElementById('checklistLoading').style.display = 'block';
+  document.getElementById('checklistContainer').innerHTML = '';
+  try {
+    const endDate = document.getElementById('endDate').value || new Date().toISOString().split('T')[0];
+    const [ndapRes, budgetRes] = await Promise.all([
+      fetch(`/api/ndap?endDate=${endDate}&days=1`),
+      fetch(`/api/budgets/${endDate}`)
+    ]);
+    const data = await ndapRes.json();
+    const savedBudgets = await budgetRes.json();
+    if (data.error) throw new Error(data.error);
+    document.getElementById('checklistUpdated').textContent = 'Updated: ' + new Date().toLocaleTimeString('en-PH');
+    renderChecklist(data, endDate, savedBudgets);
+  } catch(e) {
+    document.getElementById('checklistContainer').innerHTML = `<div class="error-msg">${e.message}</div>`;
+  } finally {
+    document.getElementById('checklistLoading').style.display = 'none';
+  }
+}
+
+async function toggleBudgetLock(pageKey, date, cellId) {
+  const cell = document.getElementById(cellId);
+  const isLocked = cell.dataset.locked === 'true';
+  if (isLocked) {
+    const budget = parseFloat(cell.dataset.budget || 0);
+    cell.dataset.locked = 'false';
+    cell.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;gap:4px">
+      <span style="color:var(--muted2);font-size:10px">₱</span>
+      <input type="number" value="${budget>0?budget.toFixed(0):''}" placeholder="Enter budget"
+        style="width:80px;padding:3px 6px;border:0.5px solid var(--amber);border-radius:4px;font-size:10px;text-align:right;font-family:'DM Sans',system-ui;outline:none;background:var(--surface)">
+      <button onclick="toggleBudgetLock('${pageKey}','${date}','${cellId}')"
+        style="background:var(--amber);border:none;border-radius:4px;padding:3px 8px;font-size:10px;cursor:pointer;color:#fff;font-family:'DM Sans',system-ui">Lock</button>
+    </div>`;
+    cell.querySelector('input').focus();
+  } else {
+    const val = cell.querySelector('input')?.value;
+    if (!val || isNaN(parseFloat(val))) { alert('Enter a valid budget first'); return; }
+    const budget = parseFloat(val);
+    const res = await fetch('/api/budget', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ page_key:pageKey, date, budget, locked:true })
+    });
+    const data = await res.json();
+    if (!data.success) { alert('Save failed: '+(data.error||'Unknown')); return; }
+    cell.dataset.locked = 'true';
+    cell.dataset.budget = budget;
+    cell.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;gap:6px">
+      <span style="font-weight:500;color:var(--text);font-size:11px">₱${budget.toLocaleString('en-PH',{minimumFractionDigits:2})}</span>
+      <button onclick="toggleBudgetLock('${pageKey}','${date}','${cellId}')"
+        style="background:var(--surface);border:0.5px solid var(--border);border-radius:4px;padding:2px 7px;font-size:10px;cursor:pointer;color:var(--muted);font-family:'DM Sans',system-ui">Edit</button>
+    </div>`;
+  }
+}
+
+function renderChecklist({ dates, campaigns }, endDate, savedBudgets = {}) {
+  const day = dates[0];
+  const pageData = {};
+  for (const p of PAGE_MAP) {
+    pageData[p.page] = { ...p, spend:0, sales:0, orders:0, impressions:0, messages:0, budget:0 };
+  }
+  const unmapped = { page:'Others', fullName:'Others', product:'', spend:0, sales:0, orders:0, impressions:0, messages:0, budget:0 };
+  for (const c of campaigns) {
+    const dd = c.dates[day]; if (!dd) continue;
+    const pageKey = matchPage(c.campaignName) || matchPage(c.adName);
+    const bucket = pageKey ? pageData[pageKey] : unmapped;
+    bucket.spend       += dd.spend             || 0;
+    bucket.sales       += dd.grossSales        || 0;
+    bucket.orders      += dd.orders            || 0;
+    bucket.impressions += dd.impressions       || 0;
+    bucket.messages    += dd.messagesStarted   || 0;
+    bucket.budget      += c.budget             || 0;
+  }
+  const pctColor = pct => pct >= 90 ? 'pct-bad' : pct >= 70 ? 'pct-warn' : 'pct-good';
+  let totalBudget=0, totalSpend=0, totalSales=0;
+  const rows = [...Object.values(pageData)];
+  rows.forEach(p => {
+    const se = savedBudgets[p.page]||null;
+    const mb = se?(se.budget||0):0;
+    const eb = mb>0?mb:p.budget;
+    totalBudget+=eb; totalSpend+=p.spend; totalSales+=p.sales;
+  });
+
+  const dateStr = dayLabel(day);
+  let h = `<div style="font-size:11px;font-weight:500;margin-bottom:10px;color:var(--text)">${dateStr}</div>
+  <div class="checklist-wrap"><div style="overflow-x:auto">
+  <table class="checklist-table"><thead><tr>
+    <th style="text-align:left;min-width:180px">PAGE / PRODUCT</th>
+    <th>BUDGET</th><th>ADS SPENT</th><th>SPENT %</th>
+    <th>COST/MSG</th><th>INQUIRIES</th><th>ROAS</th><th>GROSS SALES</th>
+  </tr></thead><tbody>`;
+
+  for (const p of rows) {
+    if (p.spend===0 && p.sales===0) continue;
+    const avgCostPerMsg = p.spend>0&&p.messages>0?p.spend/p.messages:0;
+    const savedEntry = savedBudgets[p.page]||null;
+    const manualBudget = savedEntry?(savedEntry.budget||0):0;
+    const effectiveBudget = manualBudget>0?manualBudget:p.budget;
+    const roas = p.spend>0?p.sales/p.spend:0;
+    const spentPct = effectiveBudget>0?(p.spend/effectiveBudget*100):0;
+    const roasColor = roas>=3?'var(--scale)':roas>=2.7?'var(--stay)':roas>0?'var(--kill)':'var(--muted2)';
+    const cid = 'budget-cell-' + p.page.replace(/[^a-zA-Z0-9]/g,'_');
+    h += `<tr>
+      <td class="page-name">${p.fullName}<br><span style="font-size:10px;color:var(--muted2);font-weight:400">${p.product}</span></td>
+      <td style="padding:4px 10px;white-space:nowrap;text-align:center" id="${cid}" data-locked="${savedEntry&&savedEntry.locked?'true':'false'}" data-budget="${effectiveBudget}">
+        ${(savedEntry&&savedEntry.locked)
+          ? `<div style="display:flex;align-items:center;justify-content:center;gap:6px">
+               <span style="font-weight:500;color:var(--text);font-size:11px">₱${Number(effectiveBudget).toLocaleString('en-PH',{minimumFractionDigits:2})}</span>
+               <button onclick="toggleBudgetLock('${p.page}','${endDate}','${cid}')" style="background:var(--surface);border:0.5px solid var(--border);border-radius:4px;padding:2px 7px;font-size:10px;cursor:pointer;color:var(--muted);font-family:'DM Sans',system-ui">Edit</button>
+             </div>`
+          : `<div style="display:flex;align-items:center;justify-content:center;gap:4px">
+               <span style="color:var(--muted2);font-size:10px">₱</span>
+               <input type="number" value="${effectiveBudget>0?effectiveBudget.toFixed(0):''}" placeholder="Enter budget"
+                 style="width:80px;padding:3px 6px;border:0.5px solid var(--amber);border-radius:4px;font-size:10px;text-align:right;font-family:'DM Sans',system-ui;outline:none;background:var(--surface)">
+               <button onclick="toggleBudgetLock('${p.page}','${endDate}','${cid}')" style="background:var(--amber);border:none;border-radius:4px;padding:3px 8px;font-size:10px;cursor:pointer;color:#fff;font-family:'DM Sans',system-ui">Lock</button>
+             </div>`
+        }
+      </td>
+      <td>${p.spend>0?PHP(p.spend):'—'}</td>
+      <td class="${pctColor(spentPct)}">${effectiveBudget>0?spentPct.toFixed(1)+'%':'—'}</td>
+      <td>${avgCostPerMsg>0?PHP(avgCostPerMsg):'—'}</td>
+      <td>${p.messages>0?p.messages.toLocaleString():'—'}</td>
+      <td style="color:${roasColor};font-weight:500">${p.spend>0?FMT2(roas):'—'}</td>
+      <td>${p.sales>0?PHP(p.sales):'—'}</td>
+    </tr>`;
+  }
+
+  const totalLockedBudget = rows.reduce((sum,p)=>{const se=savedBudgets[p.page]||null;return sum+(se&&se.locked&&se.budget?se.budget:0);},0);
+  const budgetForPct = totalLockedBudget>0?totalLockedBudget:totalBudget;
+  const totalPct = budgetForPct>0?totalSpend/budgetForPct*100:0;
+  const totalRoas = totalSpend>0?totalSales/totalSpend:0;
+  h += `<tr class="total-row">
+    <td style="text-align:left">TOTAL</td>
+    <td>${PHP(totalLockedBudget>0?totalLockedBudget:totalBudget)}</td>
+    <td>${PHP(totalSpend)}</td>
+    <td>${totalPct.toFixed(1)}%</td>
+    <td>—</td><td>—</td>
+    <td>${FMT2(totalRoas)}</td>
+    <td>${PHP(totalSales)}</td>
+  </tr></tbody></table></div></div>`;
+
+  document.getElementById('checklistContainer').innerHTML = h;
+}
+
+// ── BRAND-FILTERED TABS ──
+const NATURALS_PRODUCTS = ['CANPRO','AUDICURE','SINUXYL','SINUXYL 2','GINSENG'];
+const EYECARE_PRODUCTS  = ['CLEAR SIGHT','PTERYGIUM'];
+
+function renderBrandKPIs(campaigns, prefix) {
+  let spend=0, sales=0, orders=0, inquiries=0;
+  for (const c of campaigns) {
+    spend  += c.totalSpend  || 0;
+    sales  += c.totalSales  || 0;
+    orders += c.totalOrders || 0;
+    for (const d of Object.values(c.dates)) inquiries += d.messagesStarted || 0;
+  }
+  const roas = spend > 0 ? sales / spend : 0;
+  const aov  = orders > 0 ? sales / orders : 0;
+  const cvr  = inquiries > 0 ? orders / inquiries * 100 : 0;
+  const cpm  = inquiries > 0 ? spend / inquiries : 0;
+  const days = parseInt(document.getElementById('daysSelect').value) || 1;
+  const dayLabel = days === 1 ? 'for 1 day' : `for ${days} days`;
+  document.getElementById(`kpi-${prefix}-roas`).textContent  = FMT2(roas);
+  document.getElementById(`kpi-${prefix}-spend`).textContent = PHP(spend);
+  document.getElementById(`kpi-${prefix}-sales`).textContent = PHP(sales);
+  document.getElementById(`kpi-${prefix}-cvr`).textContent   = cvr.toFixed(1) + '%';
+  document.getElementById(`kpi-${prefix}-cpm`).textContent   = PHP(cpm);
+  document.getElementById(`kpi-${prefix}-aov`).textContent   = PHP(aov);
+  document.getElementById(`kpi-${prefix}-spend-sub`).textContent = dayLabel;
+  document.getElementById(`kpi-${prefix}-sales-sub`).textContent = dayLabel;
+  document.getElementById(`kpiGrid-${prefix}`).style.display = 'grid';
+}
+
+async function loadBrandTab(brand) {
+  const prefix    = brand === 'NATURALS' ? 'naturals' : 'eyecare';
+  const products  = brand === 'NATURALS' ? NATURALS_PRODUCTS : EYECARE_PRODUCTS;
+  const endDate   = document.getElementById('endDate').value;
+  const days      = document.getElementById('daysSelect').value;
+  document.getElementById(`loading-${prefix}`).style.display = 'block';
+  document.getElementById(`tableContainer-${prefix}`).innerHTML = '';
+  document.getElementById(`kpiGrid-${prefix}`).style.display = 'none';
+  try {
+    const r    = await fetch(`/api/ndap?endDate=${endDate}&days=${days}`);
+    const data = await r.json();
+    if (data.error) throw new Error(data.error);
+    const filtered = { ...data, campaigns: data.campaigns.filter(c => products.includes((c.product||'').toUpperCase())) };
+    renderBrandKPIs(filtered.campaigns, prefix);
+    renderFiltered(filtered, prefix);
+  } catch(e) {
+    document.getElementById(`tableContainer-${prefix}`).innerHTML = `<div class="error-msg">${e.message}</div>`;
+  } finally {
+    document.getElementById(`loading-${prefix}`).style.display = 'none';
+  }
+}
+
+async function loadProductTab(tabName) {
+  const products = PRODUCT_TABS[tabName];
+  const displayName = PRODUCT_TAB_NAMES[tabName];
+  const endDate = document.getElementById('endDate').value;
+  const days    = document.getElementById('daysSelect').value;
+  document.getElementById(`loading-${tabName}`).style.display = 'block';
+  document.getElementById(`tableContainer-${tabName}`).innerHTML = '';
+  document.getElementById(`kpiGrid-${tabName}`).style.display = 'none';
+  try {
+    const r    = await fetch(`/api/ndap?endDate=${endDate}&days=${days}`);
+    const data = await r.json();
+    if (data.error) throw new Error(data.error);
+    const campaigns = data.campaigns.filter(c => products.includes((c.product||'').toUpperCase()));
+    renderBrandKPIs(campaigns, tabName);
+    renderProductCampaigns(campaigns, data.dates, tabName, displayName);
+  } catch(e) {
+    document.getElementById(`tableContainer-${tabName}`).innerHTML = `<div class="error-msg">${e.message}</div>`;
+  } finally {
+    document.getElementById(`loading-${tabName}`).style.display = 'none';
+  }
+}
+
+function renderProductCampaigns(campaigns, dates, prefix, displayName) {
+  if (!campaigns.length) {
+    document.getElementById(`tableContainer-${prefix}`).innerHTML = '<div class="loading-wrap" style="display:block">No active campaigns in this date range.</div>';
+    return;
+  }
+  const prodSpend = campaigns.reduce((s,c)=>s+c.totalSpend,0);
+  const prodSales = campaigns.reduce((s,c)=>s+c.totalSales,0);
+  const prodRoas  = prodSpend > 0 ? prodSales / prodSpend : 0;
+  const firstProd = (campaigns[0].product||'').toUpperCase();
+  const pill = PRODUCT_PILLS[firstProd] || { bg:'#f5f4ef', color:'#555' };
+  let html = `<div class="product-section"><div class="product-subheader">
+    <span class="product-pill" style="background:${pill.bg};color:${pill.color}">${displayName}</span>
+    <span style="font-size:10px;color:var(--muted)">${campaigns.length} campaigns</span>
+    <div class="product-stats">Spend: <span>${PHP(prodSpend)}</span>&nbsp;&nbsp;Sales: <span>${PHP(prodSales)}</span>&nbsp;&nbsp;ROAS: <span style="color:${prodRoas>=3?'var(--scale)':prodRoas>=2.7?'var(--stay)':'var(--kill)'}">${FMT2(prodRoas)}</span></div>
+  </div>`;
+  for (const c of campaigns) {
+    const overallAP  = actionForDay(c, dates, dates.length - 1);
+    const latestDay  = c.dates[dates[dates.length - 1]];
+    const latestRoas = latestDay ? latestDay.roas : 0;
+    const roasCls    = overallRoasClass(latestRoas);
+    const loggedList = (actionLogs[c.campaignId] || []).slice(0,1);
+    const totalsHtml = `<div class="camp-totals">
+      <div class="totals-item"><div class="totals-label">Total Gross Sales</div><div class="totals-val">${PHP(c.totalSales)}</div></div>
+      <div class="totals-item"><div class="totals-label">Total Ads Spent</div><div class="totals-val">${PHP(c.totalSpend)}</div></div>
+      <div class="totals-item"><div class="totals-label">Budget / day</div><div class="totals-val">${PHP(c.budget)}</div></div>
+      <div class="totals-item"><div class="totals-label">Ad ID</div><div class="totals-val" style="font-size:10px;font-family:monospace">${c.adId}</div></div>
+    </div>`;
+    const dayCardsHtml = `<div class="day-cards-row">${dates.map((d,i)=>{
+      const dd=c.dates[d]; const isLatest=i===dates.length-1;
+      const ap=actionForDay(c,dates,i);
+      const roas=dd?dd.roas:0; const spend=dd?dd.spend:0;
+      const cvr=dd&&dd.messagesStarted>0?(dd.orders/dd.messagesStarted*100):0;
+      const aov=dd&&dd.orders>0?dd.grossSales/dd.orders:0;
+      const rCls=roasColorClass(roas,spend);
+      return `<div class="day-card${isLatest?' latest':''}">
+        <div class="day-card-header">${dayLabel(d)}</div>
+        <div class="day-card-body">
+          <div class="day-row"><span class="day-row-label">ROAS</span><span class="day-row-val ${rCls}">${spend>0?FMT2(roas):'—'}</span></div>
+          <div class="day-row"><span class="day-row-label">CVR</span><span class="day-row-val">${dd&&dd.messagesStarted>0?cvr.toFixed(1)+'%':'—'}</span></div>
+          <div class="day-row"><span class="day-row-label">AOV</span><span class="day-row-val">${dd&&dd.orders>0?PHP(aov):'—'}</span></div>
+          <div class="day-row"><span class="day-row-label">CPM</span><span class="day-row-val">${spend>0?PHP(dd.cpm):'—'}</span></div>
+          <div class="day-row"><span class="day-row-label">Gross Sales</span><span class="day-row-val">${dd?PHP(dd.grossSales):'—'}</span></div>
+          <div class="day-row"><span class="day-row-label">Actual Adspent</span><span class="day-row-val">${spend>0?PHP(spend):'—'}</span></div>
+          <div class="day-row"><span class="day-row-label">Declared Budget</span><span class="day-row-val">${PHP(c.budget)}</span></div>
+          <div class="day-row"><span class="day-row-label">Inquiries</span><span class="day-row-val">${dd&&dd.messagesStarted>0?NUM(dd.messagesStarted):'—'}</span></div>
+          <div class="day-row"><span class="day-row-label">Orders</span><span class="day-row-val">${dd?dd.orders:'—'}</span></div>
+          <div class="day-row"><span class="day-row-label">Delivery Rate</span><span class="day-row-val">${dd&&dd.delRate!=null?dd.delRate.toFixed(1)+'%':'—'}</span></div>
+        </div>
+        <div class="day-card-footer">${ap.text?`<span class="action-badge ${ap.cls}">${ap.text}</span>`:'<span style="color:var(--muted2);font-size:10px">—</span>'}</div>
+      </div>`;
+    }).join('')}</div>`;
+    html += `<div class="camp-card">
+      <div class="camp-header">
+        <div class="camp-name-row">
+          <span class="camp-name ${roasCls}">${c.campaignName}</span>
+          <span class="roas-badge ${roasCls}">${latestDay&&latestDay.spend>0?FMT2(latestRoas):'—'}</span>
+        </div>
+        <div class="camp-meta-row">
+          <span class="account-pill">${c.accountName}</span>
+          ${loggedList.map(l=>`<span class="logged-badge">${l.action_taken}</span>`).join('')}
+        </div>
+      </div>
+      ${totalsHtml}${dayCardsHtml}
+      <div class="camp-action-row">
+        <span class="action-rec ${overallAP.cls}">${overallAP.text||'No recommendation'}</span>
+        <button class="btn-log-action" onclick="openLogModal('${c.campaignId}','${c.campaignName.replace(/'/g,"\\'")}','${c.accountName.replace(/'/g,"\\'")}')">Log Action</button>
+      </div>
+    </div>`;
+  }
+  html += '</div>';
+  document.getElementById(`tableContainer-${prefix}`).innerHTML = html;
+}
+
+function renderFiltered({ dates, campaigns }, prefix) {
+  // Reuse same render logic but output to brand-specific container
+  const saved = render.__lastHTML || '';
+  // Build HTML using same render logic, filtered campaigns
+  const byProduct = {};
+  for (const c of campaigns) {
+    const prod = (c.product || 'Other').toUpperCase();
+    if (!byProduct[prod]) byProduct[prod] = [];
+    byProduct[prod].push(c);
+  }
+  let html = '';
+  const brandKey = prefix === 'naturals' ? 'SH Naturals Brand' : 'SH Eyecare Brand';
+  const brandEntry = BRAND_MAP.find(b => b.brand === brandKey);
+  if (!brandEntry) { document.getElementById(`tableContainer-${prefix}`).innerHTML = '<div class="loading-wrap">No data</div>'; return; }
+  const { brand, bg, products } = brandEntry;
+  const activeProd = products.filter(p => byProduct[p] && byProduct[p].length > 0);
+  if (!activeProd.length) { document.getElementById(`tableContainer-${prefix}`).innerHTML = '<div class="loading-wrap" style="display:block">No active campaigns in this date range.</div>'; return; }
+  const totalCamps = activeProd.reduce((s,p)=>s+byProduct[p].length,0);
+  html += `<div class="brand-block"><div class="brand-header" style="background:${bg}"><span class="brand-name-txt">${brand}</span><span class="brand-count-pill">${totalCamps} campaigns</span></div>`;
+  for (const prod of activeProd) {
+    const camps = byProduct[prod];
+    const prodSpend = camps.reduce((s,c)=>s+c.totalSpend,0);
+    const prodSales = camps.reduce((s,c)=>s+c.totalSales,0);
+    const prodRoas  = prodSpend > 0 ? prodSales / prodSpend : 0;
+    const pill = PRODUCT_PILLS[prod] || { bg:'#f5f4ef', color:'#555' };
+    html += `<div class="product-section"><div class="product-subheader">
+      <span class="product-pill" style="background:${pill.bg};color:${pill.color}">${prod}</span>
+      <span style="font-size:10px;color:var(--muted)">${camps.length} campaigns</span>
+      <div class="product-stats">Spend: <span>${PHP(prodSpend)}</span>&nbsp;&nbsp;Sales: <span>${PHP(prodSales)}</span>&nbsp;&nbsp;ROAS: <span style="color:${prodRoas>=3?'var(--scale)':prodRoas>=2.7?'var(--stay)':'var(--kill)'}">${FMT2(prodRoas)}</span></div>
+    </div>`;
+    for (const c of camps) {
+      const overallAP  = actionForDay(c, dates, dates.length - 1);
+      const latestDay  = c.dates[dates[dates.length - 1]];
+      const latestRoas = latestDay ? latestDay.roas : 0;
+      const roasCls    = overallRoasClass(latestRoas);
+      const loggedList = (actionLogs[c.campaignId] || []).slice(0,1);
+      const totalsHtml = `<div class="camp-totals">
+        <div class="totals-item"><div class="totals-label">Total Gross Sales</div><div class="totals-val">${PHP(c.totalSales)}</div></div>
+        <div class="totals-item"><div class="totals-label">Total Ads Spent</div><div class="totals-val">${PHP(c.totalSpend)}</div></div>
+        <div class="totals-item"><div class="totals-label">Budget / day</div><div class="totals-val">${PHP(c.budget)}</div></div>
+        <div class="totals-item"><div class="totals-label">Ad ID</div><div class="totals-val" style="font-size:10px;font-family:monospace">${c.adId}</div></div>
+      </div>`;
+      const dayCardsHtml = `<div class="day-cards-row">${dates.map((d,i)=>{
+        const dd=c.dates[d]; const isLatest=i===dates.length-1;
+        const ap=actionForDay(c,dates,i);
+        const roas=dd?dd.roas:0; const spend=dd?dd.spend:0;
+        const cvr=dd&&dd.messagesStarted>0?(dd.orders/dd.messagesStarted*100):0;
+        const aov=dd&&dd.orders>0?dd.grossSales/dd.orders:0;
+        const rCls=roasColorClass(roas,spend);
+        return `<div class="day-card${isLatest?' latest':''}">
+          <div class="day-card-header">${dayLabel(d)}</div>
+          <div class="day-card-body">
+            <div class="day-row"><span class="day-row-label">ROAS</span><span class="day-row-val ${rCls}">${spend>0?FMT2(roas):'—'}</span></div>
+            <div class="day-row"><span class="day-row-label">CVR</span><span class="day-row-val">${dd&&dd.messagesStarted>0?cvr.toFixed(1)+'%':'—'}</span></div>
+            <div class="day-row"><span class="day-row-label">AOV</span><span class="day-row-val">${dd&&dd.orders>0?PHP(aov):'—'}</span></div>
+            <div class="day-row"><span class="day-row-label">CPM</span><span class="day-row-val">${spend>0?PHP(dd.cpm):'—'}</span></div>
+            <div class="day-row"><span class="day-row-label">Gross Sales</span><span class="day-row-val">${dd?PHP(dd.grossSales):'—'}</span></div>
+            <div class="day-row"><span class="day-row-label">Actual Adspent</span><span class="day-row-val">${spend>0?PHP(spend):'—'}</span></div>
+            <div class="day-row"><span class="day-row-label">Declared Budget</span><span class="day-row-val">${PHP(c.budget)}</span></div>
+            <div class="day-row"><span class="day-row-label">Inquiries</span><span class="day-row-val">${dd&&dd.messagesStarted>0?NUM(dd.messagesStarted):'—'}</span></div>
+            <div class="day-row"><span class="day-row-label">Orders</span><span class="day-row-val">${dd?dd.orders:'—'}</span></div>
+          </div>
+          <div class="day-card-footer">${ap.text?`<span class="action-badge ${ap.cls}">${ap.text}</span>`:'<span style="color:var(--muted2);font-size:10px">—</span>'}</div>
+        </div>`;
+      }).join('')}</div>`;
+      html += `<div class="camp-card">
+        <div class="camp-header">
+          <div class="camp-title-block">
+            <div class="camp-name">${c.campaignName}</div>
+            <div class="camp-meta-row"><span class="account-pill">${c.accountName}</span>
+              ${loggedList.map(l=>`<span class="logged-entry">&#10003; ${l.action_taken}${l.new_budget?' →₱'+Number(l.new_budget).toLocaleString():''} · ${l.done_by_name}</span>`).join('')}
+            </div>
+          </div>
+          <div class="camp-overall">
+            <span class="overall-label">Latest ROAS</span>
+            <span class="overall-roas ${roasCls}">${latestDay&&latestDay.spend>0?FMT2(latestRoas):'—'}</span>
+            <span class="action-badge ${overallAP.cls}">${overallAP.text||'—'}</span>
+            <button class="btn-log-action" onclick="openActionModal('${c.campaignId}','${c.campaignName.replace(/'/g,"\\'").replace(/"/g,'&quot;')}','${c.accountName}','${overallAP.text}')">Log Action</button>
+          </div>
+        </div>
+        ${totalsHtml}${dayCardsHtml}
+      </div>`;
+    }
+    html += `</div>`;
+  }
+  html += `</div>`;
+  document.getElementById(`tableContainer-${prefix}`).innerHTML = html;
+}
+
+// ── DATA ANALYTICS ──
+let chartInstances = {};
+
+function destroyCharts() {
+  for (const key of Object.keys(chartInstances)) {
+    chartInstances[key].destroy();
+    delete chartInstances[key];
+  }
+}
+
+async function loadAnalytics() {
+  const start  = document.getElementById('analyticsStart').value;
+  const end    = document.getElementById('analyticsEnd').value;
+  const brand  = document.getElementById('analyticsBrand').value;
+  if (!start || !end) { alert('Select a start and end date.'); return; }
+  const startD = new Date(start), endD = new Date(end);
+  const diffDays = Math.round((endD - startD) / 86400000) + 1;
+  if (diffDays < 1 || diffDays > 30) { alert('Choose a range of 1–30 days.'); return; }
+
+  document.getElementById('loading-analytics').style.display = 'block';
+  document.getElementById('analyticsKpis').style.display = 'none';
+  document.getElementById('analyticsCharts').style.display = 'none';
+  document.getElementById('analyticsEmpty').style.display = 'none';
+  destroyCharts();
+
+  try {
+    const r    = await fetch(`/api/ndap?endDate=${end}&days=${diffDays}`);
+    const data = await r.json();
+    if (data.error) throw new Error(data.error);
+
+    const NATURALS_P = new Set(NATURALS_PRODUCTS);
+    const EYECARE_P  = new Set(EYECARE_PRODUCTS);
+
+    let campaigns = data.campaigns;
+    if (brand === 'NATURALS') campaigns = campaigns.filter(c => NATURALS_P.has((c.product||'').toUpperCase()));
+    if (brand === 'EYECARE')  campaigns = campaigns.filter(c => EYECARE_P.has((c.product||'').toUpperCase()));
+
+    // Aggregate by date
+    const byDate = {};
+    for (const date of data.dates) {
+      byDate[date] = { spend:0, sales:0, orders:0, inquiries:0, impressions:0 };
+    }
+    for (const c of campaigns) {
+      for (const [date, dd] of Object.entries(c.dates)) {
+        if (!byDate[date]) continue;
+        byDate[date].spend      += dd.spend           || 0;
+        byDate[date].sales      += dd.grossSales       || 0;
+        byDate[date].orders     += dd.orders           || 0;
+        byDate[date].inquiries  += dd.messagesStarted  || 0;
+        byDate[date].impressions+= dd.impressions      || 0;
+      }
+    }
+
+    // Aggregate by product
+    const byProduct = {};
+    for (const c of campaigns) {
+      const prod = (c.product || 'Other').toUpperCase();
+      if (!byProduct[prod]) byProduct[prod] = { spend:0, sales:0 };
+      byProduct[prod].spend += c.totalSpend || 0;
+      byProduct[prod].sales += c.totalSales || 0;
+    }
+
+    const dates  = data.dates;
+    const labels = dates.map(d => { const dt=new Date(d+'T00:00:00'); return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][dt.getMonth()]+' '+dt.getDate(); });
+
+    const spendArr   = dates.map(d => byDate[d].spend);
+    const salesArr   = dates.map(d => byDate[d].sales);
+    const roasArr    = dates.map(d => byDate[d].spend > 0 ? +(byDate[d].sales / byDate[d].spend).toFixed(2) : 0);
+    const cvrArr     = dates.map(d => byDate[d].inquiries > 0 ? +(byDate[d].orders / byDate[d].inquiries * 100).toFixed(2) : 0);
+    const cpmArr     = dates.map(d => byDate[d].inquiries > 0 ? +(byDate[d].spend / byDate[d].inquiries).toFixed(2) : 0);
+    const ordersArr  = dates.map(d => byDate[d].orders);
+    const inqArr     = dates.map(d => byDate[d].inquiries);
+
+    // KPI summary
+    const totSpend  = spendArr.reduce((a,b)=>a+b,0);
+    const totSales  = salesArr.reduce((a,b)=>a+b,0);
+    const totOrders = ordersArr.reduce((a,b)=>a+b,0);
+    const totInq    = inqArr.reduce((a,b)=>a+b,0);
+    document.getElementById('an-roas').textContent   = totSpend>0 ? FMT2(totSales/totSpend) : '—';
+    document.getElementById('an-spend').textContent  = PHP(totSpend);
+    document.getElementById('an-sales').textContent  = PHP(totSales);
+    document.getElementById('an-orders').textContent = NUM(totOrders);
+    document.getElementById('an-cvr').textContent    = totInq>0 ? (totOrders/totInq*100).toFixed(1)+'%' : '—';
+    document.getElementById('an-cpm').textContent    = totInq>0 ? PHP(totSpend/totInq) : '—';
+    document.getElementById('analyticsKpis').style.display = 'grid';
+
+    const chartDefaults = { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ labels:{ font:{ family:'DM Sans', size:10 }, boxWidth:10 } } }, scales:{ x:{ ticks:{ font:{ family:'DM Sans', size:10 } }, grid:{ color:'rgba(0,0,0,0.04)' } }, y:{ ticks:{ font:{ family:'DM Sans', size:10 } }, grid:{ color:'rgba(0,0,0,0.04)' } } } };
+
+    // ROAS Trend
+    chartInstances.roas = new Chart(document.getElementById('chartRoas'), {
+      type:'line', data:{ labels, datasets:[{ label:'ROAS', data:roasArr, borderColor:'#ffb800', backgroundColor:'rgba(255,184,0,0.08)', tension:0.35, pointRadius:3, pointBackgroundColor:'#ffb800', fill:true }] },
+      options:{ ...chartDefaults, plugins:{ ...chartDefaults.plugins, annotation:{ annotations:{ scale:{ type:'line', yMin:3, yMax:3, borderColor:'#16a34a', borderWidth:1, borderDash:[4,4] }, stay:{ type:'line', yMin:2.7, yMax:2.7, borderColor:'#d97706', borderWidth:1, borderDash:[4,4] } } } } }
+    });
+
+    // Spend vs Sales
+    chartInstances.spendSales = new Chart(document.getElementById('chartSpendSales'), {
+      type:'bar', data:{ labels, datasets:[
+        { label:'Gross Sales', data:salesArr, backgroundColor:'rgba(22,163,74,0.7)', borderRadius:4 },
+        { label:'Ad Spend',    data:spendArr, backgroundColor:'rgba(220,38,38,0.6)', borderRadius:4 }
+      ]},
+      options:{ ...chartDefaults }
+    });
+
+    // CVR Trend
+    chartInstances.cvr = new Chart(document.getElementById('chartCvr'), {
+      type:'line', data:{ labels, datasets:[{ label:'CVR %', data:cvrArr, borderColor:'#7c3aed', backgroundColor:'rgba(124,58,237,0.07)', tension:0.35, pointRadius:3, pointBackgroundColor:'#7c3aed', fill:true }] },
+      options:{ ...chartDefaults }
+    });
+
+    // CPM Trend
+    chartInstances.cpm = new Chart(document.getElementById('chartCpm'), {
+      type:'line', data:{ labels, datasets:[{ label:'CPM (₱)', data:cpmArr, borderColor:'#0891b2', backgroundColor:'rgba(8,145,178,0.07)', tension:0.35, pointRadius:3, pointBackgroundColor:'#0891b2', fill:true }] },
+      options:{ ...chartDefaults }
+    });
+
+    // Orders & Inquiries
+    chartInstances.orders = new Chart(document.getElementById('chartOrders'), {
+      type:'bar', data:{ labels, datasets:[
+        { label:'Inquiries', data:inqArr,    backgroundColor:'rgba(124,58,237,0.55)', borderRadius:4 },
+        { label:'Orders',    data:ordersArr, backgroundColor:'rgba(22,163,74,0.7)',   borderRadius:4 }
+      ]},
+      options:{ ...chartDefaults }
+    });
+
+    // ROAS by Product (horizontal bar)
+    const prodLabels = Object.keys(byProduct);
+    const prodRoas   = prodLabels.map(p => byProduct[p].spend > 0 ? +(byProduct[p].sales / byProduct[p].spend).toFixed(2) : 0);
+    const prodColors = prodLabels.map(p => prodRoas[prodLabels.indexOf(p)] >= 3 ? 'rgba(22,163,74,0.75)' : prodRoas[prodLabels.indexOf(p)] >= 2.7 ? 'rgba(217,119,6,0.75)' : 'rgba(220,38,38,0.65)');
+    chartInstances.productRoas = new Chart(document.getElementById('chartProductRoas'), {
+      type:'bar', data:{ labels:prodLabels, datasets:[{ label:'ROAS', data:prodRoas, backgroundColor:prodColors, borderRadius:4 }] },
+      options:{ ...chartDefaults, indexAxis:'y' }
+    });
+
+    document.getElementById('analyticsCharts').style.display = 'block';
+    document.getElementById('analyticsUpdated').textContent = 'Updated ' + new Date().toLocaleTimeString('en-PH');
+  } catch(e) {
+    document.getElementById('analyticsEmpty').textContent = 'Error: ' + e.message;
+    document.getElementById('analyticsEmpty').style.display = 'block';
+  } finally {
+    document.getElementById('loading-analytics').style.display = 'none';
+  }
+}
+
+// Init analytics date range (last 7 days)
+(function initAnalyticsDates() {
+  const end   = new Date();
+  const start = new Date(); start.setDate(start.getDate() - 6);
+  document.getElementById('analyticsEnd').value   = end.toISOString().split('T')[0];
+  document.getElementById('analyticsStart').value = start.toISOString().split('T')[0];
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seller's Hub Analytics</title>
+<meta property="og:title" content="Seller's Hub FSD — Analytics">
+<meta property="og:site_name" content="Seller's Hub FSD">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: #F4F6FA;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+}
+
+.page-card {
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.08);
+  padding: 44px 40px;
+  width: 100%;
+  max-width: 680px;
+}
+
+.brand-top {
+  text-align: center;
+  margin-bottom: 32px;
+}
+.logo-wrap { margin-bottom: 14px; }
+.logo-wrap img { width: 200px; height: auto; }
+.brand-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #1F2937;
+  margin-bottom: 4px;
+}
+.brand-title span { color: #ffb800; }
+.brand-subtitle {
+  font-size: 0.82rem;
+  color: #6B7280;
+  font-weight: 500;
+}
+
+.section-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #9CA3AF;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 14px;
+}
+
+.report-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 540px) {
+  .report-grid { grid-template-columns: 1fr; }
+  .page-card { padding: 32px 20px; }
+}
+
+.report-card {
+  background: #fff;
+  border: 1.5px solid #E5E7EB;
+  border-radius: 12px;
+  padding: 18px 16px;
+  cursor: pointer;
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: all 0.18s;
+  border-left: 4px solid #E5E7EB;
+  position: relative;
+}
+.report-card:hover {
+  border-color: #ffb800;
+  border-left-color: #ffb800;
+  box-shadow: 0 4px 20px rgba(245,158,11,0.12);
+  transform: translateY(-2px);
+}
+.report-card.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.report-card-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1F2937;
+}
+.report-card-desc {
+  font-size: 0.75rem;
+  color: #6B7280;
+  line-height: 1.5;
+}
+.coming-soon-badge {
+  position: absolute;
+  top: 10px; right: 10px;
+  background: #F3F4F6;
+  color: #9CA3AF;
+  border-radius: 20px;
+  padding: 2px 8px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Left border colors per report */
+.card-ndap    { border-left-color: #ffb800; }
+.card-roas    { border-left-color: #6366F1; }
+.card-income  { border-left-color: #10B981; }
+.card-aovcvr  { border-left-color: #3B82F6; }
+.card-sales   { border-left-color: #EC4899; }
+
+.card-ndap:hover    { border-color: #ffb800; box-shadow: 0 4px 20px rgba(245,158,11,0.12); }
+.card-roas:hover    { border-color: #6366F1; box-shadow: 0 4px 20px rgba(99,102,241,0.10); }
+.card-income:hover  { border-color: #10B981; box-shadow: 0 4px 20px rgba(16,185,129,0.10); }
+.card-aovcvr:hover  { border-color: #3B82F6; box-shadow: 0 4px 20px rgba(59,130,246,0.10); }
+.card-sales:hover   { border-color: #EC4899; box-shadow: 0 4px 20px rgba(236,72,153,0.10); }
+
+.divider { border: none; border-top: 1px solid #F3F4F6; margin: 28px 0; }
+
+.footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.user-info {
+  font-size: 0.72rem;
+  color: #9CA3AF;
+}
+.user-info strong { color: #6B7280; }
+.logout-link {
+  font-size: 0.72rem;
+  color: #9CA3AF;
+  text-decoration: none;
+  padding: 4px 10px;
+  border: 1px solid #E5E7EB;
+  border-radius: 6px;
+  transition: all 0.15s;
+}
+.logout-link:hover { border-color: #ffb800; color: #7a6000; }
+</style>
+</head>
+<body>
+
+<div class="page-card">
+  <div class="brand-top">
+    <div class="logo-wrap">
+      <img src="/logo.svg" alt="Seller's Hub">
+    </div>
+    <div class="brand-subtitle">Seller's Hub Analytics</div>
+  </div>
+
+  <div class="section-label">Select a Report</div>
+
+  <div class="report-grid">
+
+    <a href="/" class="report-card card-ndap">
+      <div class="report-card-name">Next Day Advertising Plan</div>
+      <div class="report-card-desc">Daily ad performance and action decisions</div>
+    </a>
+
+    <a href="/roas-report" class="report-card card-roas disabled">
+      <div class="coming-soon-badge">Coming Soon</div>
+      <div class="report-card-name">ROAS Report</div>
+      <div class="report-card-desc">Return on ad spend breakdown by page and product</div>
+    </a>
+
+    <a href="/income-statement" class="report-card card-income disabled">
+      <div class="coming-soon-badge">Coming Soon</div>
+      <div class="report-card-name">Income Statement</div>
+      <div class="report-card-desc">Revenue, costs, and profit summary</div>
+    </a>
+
+    <a href="/aov-cvr-report" class="report-card card-aovcvr disabled">
+      <div class="coming-soon-badge">Coming Soon</div>
+      <div class="report-card-name">AOV &amp; CVR Report</div>
+      <div class="report-card-desc">Average order value and conversion rate trends</div>
+    </a>
+
+    <a href="/sales-report" class="report-card card-sales disabled">
+      <div class="coming-soon-badge">Coming Soon</div>
+      <div class="report-card-name">Sales Report</div>
+      <div class="report-card-desc">Overall sales performance and order data</div>
+    </a>
+
+  </div>
+
+  <hr class="divider">
+
+  <div class="footer-row">
+    <div class="user-info">Logged in as <strong id="userLabel">—</strong></div>
+    <a href="/logout" class="logout-link">Logout</a>
+  </div>
+</div>
+
+<script>
+fetch('/api/me').then(r => r.json()).then(u => {
+  document.getElementById('userLabel').textContent = u.name || u.email || '—';
+}).catch(() => {});
+</script>
+</body>
+</html>

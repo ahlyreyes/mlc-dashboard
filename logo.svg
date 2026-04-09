@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 155" width="560" height="155">
+  <!-- SELLER'S text — left side -->
+  <text x="10" y="108" font-family="'Arial Black', 'Arial', sans-serif" font-weight="900" font-size="68" fill="#111111" letter-spacing="3">SELLER'S</text>
+
+  <!-- 3D Cube — right side, center at x=460 -->
+  <!-- Top face -->
+  <polygon points="460,22 522,54 460,86 398,54" fill="#ffb800"/>
+  <!-- Left face -->
+  <polygon points="398,54 460,86 460,148 398,116" fill="#cc9400"/>
+  <!-- Right face -->
+  <polygon points="460,86 522,54 522,116 460,148" fill="#e6a600"/>
+
+  <!-- H on top face -->
+  <text x="460" y="68" font-family="Arial" font-weight="700" font-size="26" fill="white" text-anchor="middle">H</text>
+  <!-- U on left face -->
+  <text x="426" y="118" font-family="Arial" font-weight="700" font-size="26" fill="white" text-anchor="middle">U</text>
+  <!-- B on right face -->
+  <text x="494" y="118" font-family="Arial" font-weight="700" font-size="26" fill="white" text-anchor="middle">B</text>
+</svg>

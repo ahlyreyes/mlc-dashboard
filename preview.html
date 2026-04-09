@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NDAP Preview</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e1a;
+  --bg2: #0f1529;
+  --bg3: #141929;
+  --border: #1e2d4a;
+  --accent: #00d4ff;
+  --accent2: #0099cc;
+  --text: #e8edf5;
+  --text2: #8a9bb5;
+  --text3: #5a6b85;
+  --green: #00e676;
+  --yellow: #ffd740;
+  --orange: #ff9100;
+  --red: #ff3d57;
+  --blue: #2979ff;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* HEADER */
+.header {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.header-left { display: flex; align-items: center; gap: 16px; }
+.logo {
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 3px;
+  color: var(--accent); text-transform: uppercase;
+  border: 1px solid var(--accent); padding: 4px 10px; border-radius: 3px;
+}
+.title { font-size: 0.95rem; font-weight: 600; color: var(--text); }
+.subtitle { font-size: 0.7rem; color: var(--text2); margin-top: 1px; }
+
+.header-right { display: flex; align-items: center; gap: 12px; }
+.date-input {
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text); font-family: 'JetBrains Mono'; font-size: 0.78rem;
+  padding: 6px 12px; border-radius: 4px; outline: none;
+}
+.date-input:focus { border-color: var(--accent); }
+.date-input::-webkit-calendar-picker-indicator { filter: invert(0.6); }
+.select {
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text); font-size: 0.78rem;
+  padding: 6px 12px; border-radius: 4px; outline: none;
+}
+.btn-refresh {
+  background: var(--accent); color: #000;
+  border: none; padding: 7px 18px; border-radius: 4px;
+  font-size: 0.78rem; font-weight: 700; cursor: pointer;
+  letter-spacing: 0.5px; transition: all 0.2s;
+}
+.btn-refresh:hover { background: #00bbee; }
+.live-dot {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--green);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.live-label { font-size: 0.68rem; color: var(--green); letter-spacing: 1px; }
+
+/* LEGEND BAR */
+.legend-bar {
+  display: flex; align-items: center; gap: 0;
+  background: var(--bg2); border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+}
+.legend-item {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 16px; font-size: 0.68rem; font-weight: 600;
+  letter-spacing: 0.5px; border-right: 1px solid var(--border);
+  text-transform: uppercase;
+}
+.legend-dot { width: 8px; height: 8px; border-radius: 2px; }
+
+/* SUMMARY STRIP */
+.summary-strip {
+  display: flex; gap: 0;
+  background: var(--bg2); border-bottom: 1px solid var(--border);
+}
+.sum-item {
+  flex: 1; padding: 12px 20px;
+  border-right: 1px solid var(--border);
+}
+.sum-label { font-size: 0.62rem; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; }
+.sum-value { font-family: 'JetBrains Mono'; font-size: 1.1rem; font-weight: 600; color: var(--accent); margin-top: 3px; }
+
+/* MAIN TABLE */
+.container { padding: 16px 24px; overflow-x: auto; }
+
+table { border-collapse: collapse; width: 100%; min-width: 900px; }
+
+/* Column header */
+.th-fixed { background: var(--bg2); }
+thead th {
+  background: var(--bg2);
+  color: var(--text2);
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 10px 12px;
+  border-bottom: 2px solid var(--accent);
+  border-right: 1px solid var(--border);
+  white-space: nowrap;
+}
+thead .date-col { color: var(--accent); font-size: 0.7rem; text-align: center; min-width: 150px; }
+thead .date-day { color: var(--text2); font-size: 0.62rem; font-weight: 400; margin-top: 2px; }
+
+/* Account row */
+.acc-row td {
+  background: var(--bg2) !important;
+  color: var(--accent) !important;
+  font-size: 0.72rem; font-weight: 700;
+  letter-spacing: 2px; text-transform: uppercase;
+  padding: 10px 14px;
+  border-top: 2px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+/* Campaign title */
+.camp-title-row td {
+  background: #0f1e35 !important;
+  color: var(--text) !important;
+  font-size: 0.75rem; font-weight: 600;
+  padding: 7px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Budget cell */
+.budget-cell {
+  background: #0b1526 !important;
+  border-right: 2px solid var(--accent) !important;
+  padding: 10px 12px !important;
+  vertical-align: middle;
+  width: 90px; text-align: center;
+}
+.budget-label { font-size: 0.58rem; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; }
+.budget-val { font-family: 'JetBrains Mono'; font-size: 0.85rem; font-weight: 600; color: var(--yellow); margin-top: 2px; }
+.budget-divider { border: none; border-top: 1px solid var(--border); margin: 6px 0; }
+.budget-sub-label { font-size: 0.55rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+.budget-sub-val { font-family: 'JetBrains Mono'; font-size: 0.78rem; font-weight: 600; }
+
+/* Campaign name cell */
+.camp-name-cell {
+  background: var(--bg3) !important;
+  padding: 10px 12px !important;
+  vertical-align: top;
+  border-right: 1px solid var(--border) !important;
+  width: 180px;
+}
+.camp-name { font-size: 0.72rem; font-weight: 600; color: var(--text); }
+.camp-acct { font-size: 0.62rem; color: var(--text3); margin-top: 3px; }
+
+/* Metric label */
+.metric-label {
+  background: var(--bg3) !important;
+  color: var(--text2) !important;
+  font-size: 0.65rem; font-weight: 500;
+  padding: 5px 12px !important;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  border-right: 1px solid var(--border);
+  white-space: nowrap;
+}
+.metric-label-header {
+  background: #0d1828 !important;
+  color: var(--accent) !important;
+  font-weight: 700;
+}
+
+/* Data cells */
+td {
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 5px 10px;
+  font-size: 0.75rem;
+}
+
+/* ROAS data cell styles */
+.dc-scale { background: #001a3a !important; }
+.dc-stay  { background: #1a1000 !important; }
+.dc-below { background: #1a1400 !important; }
+.dc-kill  { background: #1a0005 !important; }
+.dc-empty { background: var(--bg) !important; }
+
+/* Left border accent per status */
+.dc-scale td:first-child, .dc-scale { border-left: 3px solid var(--blue) !important; }
+.dc-stay  { border-left: 3px solid var(--orange) !important; }
+.dc-below { border-left: 3px solid var(--yellow) !important; }
+.dc-kill  { border-left: 3px solid var(--red) !important; }
+
+/* ROAS value */
+.roas-val {
+  font-family: 'JetBrains Mono';
+  font-size: 1.1rem; font-weight: 700;
+  text-align: center;
+}
+.roas-scale { color: var(--blue); }
+.roas-stay  { color: var(--orange); }
+.roas-below { color: var(--yellow); }
+.roas-kill  { color: var(--red); }
+
+/* Normal values */
+.nval { font-family: 'JetBrains Mono'; font-size: 0.75rem; text-align: center; color: var(--text); }
+.action-val {
+  font-size: 0.68rem; font-weight: 700; text-align: center;
+  letter-spacing: 1px; text-transform: uppercase;
+}
+.action-scale { color: var(--blue); }
+.action-stay  { color: var(--orange); }
+.action-below { color: var(--yellow); }
+.action-kill  { color: var(--red); }
+
+.ad-id { font-size: 0.6rem; color: var(--text3); font-family: 'JetBrains Mono'; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="logo">SNOWBALL</div>
+    <div>
+      <div class="title">Next Day Advertising Plan</div>
+      <div class="subtitle">NDAP Dashboard · Real-time Meta + Pancake POS</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div style="display:flex;align-items:center;gap:6px">
+      <div class="live-dot"></div>
+      <span class="live-label">LIVE</span>
+    </div>
+    <input type="date" class="date-input" value="2026-03-31">
+    <select class="select">
+      <option>3 days</option>
+      <option>5 days</option>
+      <option>7 days</option>
+    </select>
+    <button class="btn-refresh">⟳ REFRESH</button>
+  </div>
+</div>
+
+<div class="legend-bar">
+  <div class="legend-item" style="color:#2979ff"><div class="legend-dot" style="background:#2979ff"></div>SCALE — 3.0+ ROAS</div>
+  <div class="legend-item" style="color:#ff9100"><div class="legend-dot" style="background:#ff9100"></div>STAY — 2.7–2.99 ROAS</div>
+  <div class="legend-item" style="color:#ffd740"><div class="legend-dot" style="background:#ffd740"></div>OBSERVE — 2.0–2.69 ROAS</div>
+  <div class="legend-item" style="color:#ff3d57"><div class="legend-dot" style="background:#ff3d57"></div>KILL — BELOW 2.0 ROAS</div>
+</div>
+
+<div class="summary-strip">
+  <div class="sum-item">
+    <div class="sum-label">Total Spent Today</div>
+    <div class="sum-value">₱31,025.00</div>
+  </div>
+  <div class="sum-item">
+    <div class="sum-label">Total Gross Sales</div>
+    <div class="sum-value" style="color:#00e676">₱89,250.00</div>
+  </div>
+  <div class="sum-item">
+    <div class="sum-label">Overall ROAS</div>
+    <div class="sum-value" style="color:#2979ff">2.88x</div>
+  </div>
+  <div class="sum-item">
+    <div class="sum-label">Active Ads</div>
+    <div class="sum-value" style="color:#ffd740">24</div>
+  </div>
+  <div class="sum-item">
+    <div class="sum-label">Last Updated</div>
+    <div class="sum-value" style="font-size:0.85rem;color:#8a9bb5">12:00 PM</div>
+  </div>
+</div>
+
+<div class="container">
+<table>
+  <thead>
+    <tr>
+      <th style="width:90px">BUDGET</th>
+      <th style="width:180px">CAMPAIGN</th>
+      <th style="width:100px">METRIC</th>
+      <th class="date-col">MARCH 29, 2026<div class="date-day">Saturday</div></th>
+      <th class="date-col">MARCH 30, 2026<div class="date-day">Sunday</div></th>
+      <th class="date-col">MARCH 31, 2026<div class="date-day">Monday</div></th>
+    </tr>
+  </thead>
+  <tbody>
+
+    <!-- ACCOUNT HEADER -->
+    <tr class="acc-row"><td colspan="6">▸ JEAN MIRASOL</td></tr>
+
+    <!-- CAMPAIGN 1: SCALE -->
+    <tr class="camp-title-row"><td colspan="6">◆ CBO.PUR || CSED PH - WIL ANNIV - NO BORDER (1-1-1)</td></tr>
+
+    <tr>
+      <td class="budget-cell" rowspan="8">
+        <div class="budget-label">Budget</div>
+        <div class="budget-val">₱2,000</div>
+        <hr class="budget-divider">
+        <div class="budget-sub-label">Total Sales</div>
+        <div class="budget-sub-val" style="color:#00e676">₱42,350</div>
+        <div class="budget-sub-label">Total Spent</div>
+        <div class="budget-sub-val" style="color:#ff9100">₱12,450</div>
+        <div class="budget-sub-label">ROAS</div>
+        <div class="budget-sub-val" style="color:#2979ff">3.40x</div>
+      </td>
+      <td class="camp-name-cell" rowspan="8">
+        <div class="camp-name">WIL ANNIV - NO BORDER</div>
+        <div class="camp-acct">Jean Mirasol</div>
+      </td>
+      <td class="metric-label metric-label-header">AD ID</td>
+      <td class="ad-id dc-scale">120242683135310458</td>
+      <td class="ad-id dc-scale">120242683135310458</td>
+      <td class="ad-id dc-scale">120242683135310458</td>
+    </tr>
+    <tr>
+      <td class="metric-label">ROAS</td>
+      <td class="dc-scale"><div class="roas-val roas-scale">3.52x</div></td>
+      <td class="dc-scale"><div class="roas-val roas-scale">3.41x</div></td>
+      <td class="dc-scale"><div class="roas-val roas-scale">3.28x</div></td>
+    </tr>
+    <tr>
+      <td class="metric-label">CPP</td>
+      <td class="dc-scale nval">₱245.00</td>
+      <td class="dc-scale nval">₱251.00</td>
+      <td class="dc-scale nval">₱262.00</td>
+    </tr>
+    <tr>
+      <td class="metric-label">CPM</td>
+      <td class="dc-scale nval">₱89.50</td>
+      <td class="dc-scale nval">₱91.20</td>
+      <td class="dc-scale nval">₱94.10</td>
+    </tr>
+    <tr>
+      <td class="metric-label">GROSS SALES</td>
+      <td class="dc-scale nval">₱14,850</td>
+      <td class="dc-scale nval">₱13,900</td>
+      <td class="dc-scale nval">₱13,600</td>
+    </tr>
+    <tr>
+      <td class="metric-label">ACTUAL SPENT</td>
+      <td class="dc-scale nval">₱4,218</td>
+      <td class="dc-scale nval">₱4,076</td>
+      <td class="dc-scale nval">₱4,147</td>
+    </tr>
+    <tr>
+      <td class="metric-label">ORDERS</td>
+      <td class="dc-scale nval">17</td>
+      <td class="dc-scale nval">16</td>
+      <td class="dc-scale nval">15</td>
+    </tr>
+    <tr>
+      <td class="metric-label">ACTION PLAN</td>
+      <td class="dc-scale"><div class="action-val action-scale">▲ SCALE</div></td>
+      <td class="dc-scale"><div class="action-val action-scale">▲ SCALE</div></td>
+      <td class="dc-scale"><div class="action-val action-scale">▲ SCALE</div></td>
+    </tr>
+
+    <!-- CAMPAIGN 2: STAY -->
+    <tr class="camp-title-row"><td colspan="6">◆ ABO.PUR || CSED PH - WIL - GYERA (1-1-1)</td></tr>
+    <tr>
+      <td class="budget-cell" rowspan="8">
+        <div class="budget-label">Budget</div>
+        <div class="budget-val">₱3,000</div>
+        <hr class="budget-divider">
+        <div class="budget-sub-label">Total Sales</div>
+        <div class="budget-sub-val" style="color:#00e676">₱18,200</div>
+        <div class="budget-sub-label">Total Spent</div>
+        <div class="budget-sub-val" style="color:#ff9100">₱6,525</div>
+        <div class="budget-sub-label">ROAS</div>
+        <div class="budget-sub-val" style="color:#ff9100">2.79x</div>
+      </td>
+      <td class="camp-name-cell" rowspan="8">
+        <div class="camp-name">WIL - GYERA</div>
+        <div class="camp-acct">Jean Mirasol</div>
+      </td>
+      <td class="metric-label metric-label-header">AD ID</td>
+      <td class="ad-id dc-stay">120243139635780458</td>
+      <td class="ad-id dc-stay">120243139635780458</td>
+      <td class="ad-id dc-stay">120243139635780458</td>
+    </tr>
+    <tr>
+      <td class="metric-label">ROAS</td>
+      <td class="dc-stay"><div class="roas-val roas-stay">2.91x</div></td>
+      <td class="dc-stay"><div class="roas-val roas-stay">2.78x</div></td>
+      <td class="dc-below"><div class="roas-val roas-below">2.67x</div></td>
+    </tr>
+    <tr>
+      <td class="metric-label">CPP</td>
+      <td class="dc-stay nval">₱312.00</td>
+      <td class="dc-stay nval">₱325.00</td>
+      <td class="dc-below nval">₱341.00</td>
+    </tr>
+    <tr>
+      <td class="metric-label">CPM</td>
+      <td class="dc-stay nval">₱102.00</td>
+      <td class="dc-stay nval">₱108.00</td>
+      <td class="dc-below nval">₱115.00</td>
+    </tr>
+    <tr>
+      <td class="metric-label">GROSS SALES</td>
+      <td class="dc-stay nval">₱6,370</td>
+      <td class="dc-stay nval">₱6,090</td>
+      <td class="dc-below nval">₱5,740</td>
+    </tr>
+    <tr>
+      <td class="metric-label">ACTUAL SPENT</td>
+      <td class="dc-stay nval">₱2,188</td>
+      <td class="dc-stay nval">₱2,190</td>
+      <td class="dc-below nval">₱2,147</td>
+    </tr>
+    <tr>
+      <td class="metric-label">ORDERS</td>
+      <td class="dc-stay nval">7</td>
+      <td class="dc-stay nval">6</td>
+      <td class="dc-below nval">6</td>
+    </tr>
+    <tr>
+      <td class="metric-label">ACTION PLAN</td>
+      <td class="dc-stay"><div class="action-val action-stay">● STAY</div></td>
+      <td class="dc-stay"><div class="action-val action-stay">● STAY</div></td>
+      <td class="dc-below"><div class="action-val action-below">◉ OBSERVE</div></td>
+    </tr>
+
+    <!-- ACCOUNT 2 -->
+    <tr class="acc-row"><td colspan="6">▸ JHOANNE DANTE</td></tr>
+
+    <tr class="camp-title-row"><td colspan="6">◆ CBO.PUR || GOLDEN - ANNIV NO BORDER (A1-1-1)</td></tr>
+    <tr>
+      <td class="budget-cell" rowspan="8">
+        <div class="budget-label">Budget</div>
+        <div class="budget-val">₱5,349</div>
+        <hr class="budget-divider">
+        <div class="budget-sub-label">Total Sales</div>
+        <div class="budget-sub-val" style="color:#ff3d57">₱7,200</div>
+        <div class="budget-sub-label">Total Spent</div>
+        <div class="budget-sub-val" style="color:#ff9100">₱5,349</div>
+        <div class="budget-sub-label">ROAS</div>
+        <div class="budget-sub-val" style="color:#ff3d57">1.35x</div>
+      </td>
+      <td class="camp-name-cell" rowspan="8">
+        <div class="camp-name">ANNIV NO BORDER</div>
+        <div class="camp-acct">Jhoanne Dante</div>
+      </td>
+      <td class="metric-label metric-label-header">AD ID</td>
+      <td class="ad-id dc-kill">120243486256440271</td>
+      <td class="ad-id dc-kill">120243486256440271</td>
+      <td class="ad-id dc-kill">120243486256440271</td>
+    </tr>
+    <tr>
+      <td class="metric-label">ROAS</td>
+      <td class="dc-kill"><div class="roas-val roas-kill">1.42x</div></td>
+      <td class="dc-kill"><div class="roas-val roas-kill">1.35x</div></td>
+      <td class="dc-kill"><div class="roas-val roas-kill">1.28x</div></td>
+    </tr>
+    <tr>
+      <td class="metric-label">CPP</td>
+      <td class="dc-kill nval">₱892.00</td>
+      <td class="dc-kill nval">₱941.00</td>
+      <td class="dc-kill nval">₱1,021.00</td>
+    </tr>
+    <tr>
+      <td class="metric-label">CPM</td>
+      <td class="dc-kill nval">₱198.00</td>
+      <td class="dc-kill nval">₱215.00</td>
+      <td class="dc-kill nval">₱228.00</td>
+    </tr>
+    <tr>
+      <td class="metric-label">GROSS SALES</td>
+      <td class="dc-kill nval">₱2,550</td>
+      <td class="dc-kill nval">₱2,420</td>
+      <td class="dc-kill nval">₱2,230</td>
+    </tr>
+    <tr>
+      <td class="metric-label">ACTUAL SPENT</td>
+      <td class="dc-kill nval">₱1,796</td>
+      <td class="dc-kill nval">₱1,793</td>
+      <td class="dc-kill nval">₱1,760</td>
+    </tr>
+    <tr>
+      <td class="metric-label">ORDERS</td>
+      <td class="dc-kill nval">2</td>
+      <td class="dc-kill nval">2</td>
+      <td class="dc-kill nval">2</td>
+    </tr>
+    <tr>
+      <td class="metric-label">ACTION PLAN</td>
+      <td class="dc-kill"><div class="action-val action-kill">✕ KILL</div></td>
+      <td class="dc-kill"><div class="action-val action-kill">✕ KILL</div></td>
+      <td class="dc-kill"><div class="action-val action-kill">✕ KILL</div></td>
+    </tr>
+
+  </tbody>
+</table>
+</div>
+
+</body>
+</html>
