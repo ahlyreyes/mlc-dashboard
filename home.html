@@ -3,58 +3,78 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Seller's Hub Analytics</title>
-<meta property="og:title" content="Seller's Hub FSD — Analytics">
-<meta property="og:site_name" content="Seller's Hub FSD">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<title>MLC Insights</title>
+<meta property="og:title" content="MLC Insights — Analytics">
+<meta property="og:site_name" content="MLC Insights">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-  font-family: 'DM Sans', sans-serif;
-  background: #F4F6FA;
+  font-family: 'Inter', sans-serif;
+  background: #EEF2FF;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 32px 16px;
+  position: relative;
+  overflow: hidden;
 }
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(70px);
+  opacity: 0.3;
+  pointer-events: none;
+}
+.blob-1 { width: 500px; height: 500px; background: #6366F1; top: -160px; left: -150px; }
+.blob-2 { width: 350px; height: 350px; background: #3B82F6; bottom: -100px; right: -100px; }
 
 .page-card {
   background: #fff;
-  border-radius: 20px;
-  box-shadow: 0 8px 40px rgba(0,0,0,0.08);
+  border-radius: 24px;
+  box-shadow: 0 8px 48px rgba(37,99,235,0.10);
   padding: 44px 40px;
   width: 100%;
   max-width: 680px;
+  position: relative;
+  z-index: 1;
 }
 
 .brand-top {
   text-align: center;
-  margin-bottom: 32px;
+  margin-bottom: 36px;
 }
-.logo-wrap { margin-bottom: 14px; }
-.logo-wrap img { width: 200px; height: auto; }
-.brand-title {
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: #1F2937;
-  margin-bottom: 4px;
+.logo-text {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #1E40AF;
+  letter-spacing: -1px;
 }
-.brand-title span { color: #ffb800; }
+.logo-text span { color: #6366F1; }
+.logo-tag {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #93C5FD;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
 .brand-subtitle {
   font-size: 0.82rem;
   color: #6B7280;
   font-weight: 500;
+  margin-top: 8px;
 }
 
 .section-label {
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: #9CA3AF;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #93C5FD;
   text-transform: uppercase;
-  letter-spacing: 0.8px;
+  letter-spacing: 1.2px;
   margin-bottom: 14px;
 }
 
@@ -71,7 +91,7 @@ body {
 .report-card {
   background: #fff;
   border: 1.5px solid #E5E7EB;
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 18px 16px;
   cursor: pointer;
   text-decoration: none;
@@ -83,9 +103,9 @@ body {
   position: relative;
 }
 .report-card:hover {
-  border-color: #ffb800;
-  border-left-color: #ffb800;
-  box-shadow: 0 4px 20px rgba(245,158,11,0.12);
+  border-color: #2563EB;
+  border-left-color: #2563EB;
+  box-shadow: 0 4px 20px rgba(37,99,235,0.12);
   transform: translateY(-2px);
 }
 .report-card.disabled {
@@ -95,12 +115,12 @@ body {
 }
 
 .report-card-name {
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 600;
-  color: #1F2937;
+  color: #1E3A8A;
 }
 .report-card-desc {
-  font-size: 0.75rem;
+  font-size: 0.74rem;
   color: #6B7280;
   line-height: 1.5;
 }
@@ -111,24 +131,23 @@ body {
   color: #9CA3AF;
   border-radius: 20px;
   padding: 2px 8px;
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
-/* Left border colors per report */
-.card-ndap    { border-left-color: #ffb800; }
+.card-ndap    { border-left-color: #2563EB; }
 .card-roas    { border-left-color: #6366F1; }
 .card-income  { border-left-color: #10B981; }
-.card-aovcvr  { border-left-color: #3B82F6; }
+.card-aovcvr  { border-left-color: #F59E0B; }
 .card-sales   { border-left-color: #EC4899; }
 
-.card-ndap:hover    { border-color: #ffb800; box-shadow: 0 4px 20px rgba(245,158,11,0.12); }
-.card-roas:hover    { border-color: #6366F1; box-shadow: 0 4px 20px rgba(99,102,241,0.10); }
-.card-income:hover  { border-color: #10B981; box-shadow: 0 4px 20px rgba(16,185,129,0.10); }
-.card-aovcvr:hover  { border-color: #3B82F6; box-shadow: 0 4px 20px rgba(59,130,246,0.10); }
-.card-sales:hover   { border-color: #EC4899; box-shadow: 0 4px 20px rgba(236,72,153,0.10); }
+.card-ndap:hover    { border-color: #2563EB; box-shadow: 0 4px 20px rgba(37,99,235,0.14); }
+.card-roas:hover    { border-color: #6366F1; box-shadow: 0 4px 20px rgba(99,102,241,0.12); }
+.card-income:hover  { border-color: #10B981; box-shadow: 0 4px 20px rgba(16,185,129,0.12); }
+.card-aovcvr:hover  { border-color: #F59E0B; box-shadow: 0 4px 20px rgba(245,158,11,0.12); }
+.card-sales:hover   { border-color: #EC4899; box-shadow: 0 4px 20px rgba(236,72,153,0.12); }
 
 .divider { border: none; border-top: 1px solid #F3F4F6; margin: 28px 0; }
 
@@ -139,31 +158,30 @@ body {
   flex-wrap: wrap;
   gap: 8px;
 }
-.user-info {
-  font-size: 0.72rem;
-  color: #9CA3AF;
-}
+.user-info { font-size: 0.72rem; color: #9CA3AF; }
 .user-info strong { color: #6B7280; }
 .logout-link {
   font-size: 0.72rem;
-  color: #9CA3AF;
+  color: #6B7280;
   text-decoration: none;
-  padding: 4px 10px;
-  border: 1px solid #E5E7EB;
-  border-radius: 6px;
+  padding: 5px 12px;
+  border: 1px solid #DBEAFE;
+  border-radius: 8px;
   transition: all 0.15s;
+  font-weight: 500;
 }
-.logout-link:hover { border-color: #ffb800; color: #7a6000; }
+.logout-link:hover { border-color: #2563EB; color: #1E40AF; background: #EFF6FF; }
 </style>
 </head>
 <body>
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
 
 <div class="page-card">
   <div class="brand-top">
-    <div class="logo-wrap">
-      <img src="/logo.svg" alt="Seller's Hub">
-    </div>
-    <div class="brand-subtitle">Seller's Hub Analytics</div>
+    <div class="logo-text">MLC<span>.</span></div>
+    <div class="logo-tag">Insights Platform</div>
+    <div class="brand-subtitle">Clear Sight Analytics Dashboard</div>
   </div>
 
   <div class="section-label">Select a Report</div>

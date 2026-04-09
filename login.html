@@ -3,50 +3,83 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Seller's Hub FSD — Login</title>
-<meta property="og:title" content="Seller's Hub FSD — NDAP">
-<meta property="og:site_name" content="Seller's Hub FSD">
+<title>MLC Insights — Login</title>
+<meta property="og:title" content="MLC Insights — NDAP">
+<meta property="og:site_name" content="MLC Insights">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 body {
   font-family: 'Inter', sans-serif;
-  background: #F4F6FA;
+  background: #EEF2FF;
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  overflow: hidden;
 }
+/* Decorative blobs */
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.35;
+  pointer-events: none;
+}
+.blob-1 { width: 400px; height: 400px; background: #6366F1; top: -120px; left: -100px; }
+.blob-2 { width: 300px; height: 300px; background: #3B82F6; bottom: -80px; right: -80px; }
+
 .card {
   background: #fff;
-  border-radius: 20px;
-  box-shadow: 0 8px 40px rgba(0,0,0,0.08);
+  border-radius: 24px;
+  box-shadow: 0 8px 48px rgba(37,99,235,0.10);
   padding: 52px 44px;
   text-align: center;
   max-width: 400px;
   width: 100%;
+  position: relative;
+  z-index: 1;
 }
 .logo-wrap { margin-bottom: 28px; }
-.logo-wrap img { width: 200px; height: auto; }
-h1 { font-size: 1.4rem; font-weight: 800; color: #1F2937; margin-bottom: 6px; }
-h1 span { color: #ffb800; }
+.logo-text {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #1E40AF;
+  letter-spacing: -1px;
+}
+.logo-text span { color: #6366F1; }
+.logo-tag {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #93C5FD;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+h1 { font-size: 1.25rem; font-weight: 700; color: #1E3A8A; margin-bottom: 6px; }
 .subtitle { font-size: 0.82rem; color: #6B7280; margin-bottom: 36px; font-weight: 500; }
 .google-btn {
   display: flex; align-items: center; justify-content: center; gap: 12px;
   background: #fff;
-  border: 1.5px solid #E5E7EB;
-  border-radius: 10px;
+  border: 1.5px solid #DBEAFE;
+  border-radius: 12px;
   padding: 14px 24px;
   font-size: 0.9rem;
   font-weight: 600;
-  color: #1F2937;
+  color: #1E40AF;
   cursor: pointer;
   text-decoration: none;
   transition: all 0.2s;
   width: 100%;
   font-family: 'Inter', sans-serif;
 }
-.google-btn:hover { border-color: #ffb800; background: #FFFBEB; box-shadow: 0 2px 12px rgba(244,196,48,0.15); }
+.google-btn:hover {
+  border-color: #2563EB;
+  background: #EFF6FF;
+  box-shadow: 0 4px 16px rgba(37,99,235,0.15);
+  transform: translateY(-1px);
+}
 .google-btn svg { width: 20px; height: 20px; flex-shrink: 0; }
 .error {
   background: #FEF2F2; color: #DC2626;
@@ -60,10 +93,16 @@ h1 span { color: #ffb800; }
 </style>
 </head>
 <body>
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+
 <div class="card">
   <div class="logo-wrap">
-    <img src="/logo.svg" alt="Seller's Hub">
+    <div class="logo-text">MLC<span>.</span></div>
+    <div class="logo-tag">Insights Platform</div>
   </div>
+  <h1>Welcome back</h1>
+  <div class="subtitle">Sign in to access your analytics dashboard</div>
   <div class="error" id="errorMsg"></div>
   <a href="/auth/google" class="google-btn">
     <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -82,6 +121,11 @@ h1 span { color: #ffb800; }
   if (params.get('error') === 'unauthorized') {
     const el = document.getElementById('errorMsg');
     el.textContent = 'Your Google account is not authorized. Contact your administrator.';
+    el.classList.add('show');
+  }
+  if (params.get('error') === 'oauth_error') {
+    const el = document.getElementById('errorMsg');
+    el.textContent = 'Authentication error. Please try again or contact your administrator.';
     el.classList.add('show');
   }
 </script>
