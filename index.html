@@ -738,24 +738,7 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); }
           <span class="nav-arrow">▾</span>
         </div>
         <div class="nav-submenu">
-          <!-- SH Naturals sub-group -->
-          <div class="nav-subgroup" id="naturalsGroup">
-            <div class="nav-subitem nav-subitem-parent" onclick="toggleSubGroup('naturalsGroup'); switchTab('naturals', this)" data-tab="naturals">SH Naturals <span class="nav-sub-arrow">▾</span></div>
-            <div class="nav-subsubmenu">
-              <div class="nav-subsubitem" onclick="switchTab('audicure', this)" data-tab="audicure">AudiCure</div>
-              <div class="nav-subsubitem" onclick="switchTab('canpro', this)" data-tab="canpro">CanPro</div>
-              <div class="nav-subsubitem" onclick="switchTab('ginseng', this)" data-tab="ginseng">Ginseng</div>
-              <div class="nav-subsubitem" onclick="switchTab('sinuxyl', this)" data-tab="sinuxyl">Sinuxyl</div>
-            </div>
-          </div>
-          <!-- SH Eyecare sub-group -->
-          <div class="nav-subgroup" id="eyecareGroup">
-            <div class="nav-subitem nav-subitem-parent" onclick="toggleSubGroup('eyecareGroup'); switchTab('eyecare', this)" data-tab="eyecare">SH Eyecare <span class="nav-sub-arrow">▾</span></div>
-            <div class="nav-subsubmenu">
-              <div class="nav-subsubitem" onclick="switchTab('clearsight', this)" data-tab="clearsight">Clear Sight</div>
-              <div class="nav-subsubitem" onclick="switchTab('pterygium', this)" data-tab="pterygium">Pterygium</div>
-            </div>
-          </div>
+          <div class="nav-subitem" onclick="switchTab('clearsight', this)" data-tab="clearsight">Clear Sight</div>
           <div class="nav-subitem" onclick="switchTab('analytics', this)" data-tab="analytics">Data Analytics</div>
           <div class="nav-subitem" onclick="switchTab('history', this)" data-tab="history">Action History</div>
         </div>
@@ -861,92 +844,7 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); }
       </div>
     </div>
 
-    <!-- SH NATURALS TAB -->
-    <div id="tab-naturals" class="tab-content">
-      <div class="page-wrap">
-        <div class="kpi-grid" id="kpiGrid-naturals" style="display:none">
-          <div class="kpi-card"><div class="kpi-label">Avg ROAS</div><div class="kpi-value" id="kpi-naturals-roas">—</div><div class="kpi-sub">Revenue / peso spent</div></div>
-          <div class="kpi-card"><div class="kpi-label">Total Spend</div><div class="kpi-value" id="kpi-naturals-spend">—</div><div class="kpi-sub" id="kpi-naturals-spend-sub">All accounts</div></div>
-          <div class="kpi-card"><div class="kpi-label">Total Sales</div><div class="kpi-value" id="kpi-naturals-sales">—</div><div class="kpi-sub" id="kpi-naturals-sales-sub">Gross (Pancake)</div></div>
-          <div class="kpi-card"><div class="kpi-label">CVR</div><div class="kpi-value" id="kpi-naturals-cvr">—</div><div class="kpi-sub">Inquiries to orders</div></div>
-          <div class="kpi-card"><div class="kpi-label">Avg CPM</div><div class="kpi-value" id="kpi-naturals-cpm">—</div><div class="kpi-sub">Spend / inquiry</div></div>
-          <div class="kpi-card"><div class="kpi-label">Avg AOV</div><div class="kpi-value" id="kpi-naturals-aov">—</div><div class="kpi-sub">Average order value</div></div>
-        </div>
-        <div class="loading-wrap" id="loading-naturals" style="display:none">Loading...</div>
-        <div id="tableContainer-naturals"></div>
-      </div>
-    </div>
-
-    <!-- SH EYECARE TAB -->
-    <div id="tab-eyecare" class="tab-content">
-      <div class="page-wrap">
-        <div class="kpi-grid" id="kpiGrid-eyecare" style="display:none">
-          <div class="kpi-card"><div class="kpi-label">Avg ROAS</div><div class="kpi-value" id="kpi-eyecare-roas">—</div><div class="kpi-sub">Revenue / peso spent</div></div>
-          <div class="kpi-card"><div class="kpi-label">Total Spend</div><div class="kpi-value" id="kpi-eyecare-spend">—</div><div class="kpi-sub" id="kpi-eyecare-spend-sub">All accounts</div></div>
-          <div class="kpi-card"><div class="kpi-label">Total Sales</div><div class="kpi-value" id="kpi-eyecare-sales">—</div><div class="kpi-sub" id="kpi-eyecare-sales-sub">Gross (Pancake)</div></div>
-          <div class="kpi-card"><div class="kpi-label">CVR</div><div class="kpi-value" id="kpi-eyecare-cvr">—</div><div class="kpi-sub">Inquiries to orders</div></div>
-          <div class="kpi-card"><div class="kpi-label">Avg CPM</div><div class="kpi-value" id="kpi-eyecare-cpm">—</div><div class="kpi-sub">Spend / inquiry</div></div>
-          <div class="kpi-card"><div class="kpi-label">Avg AOV</div><div class="kpi-value" id="kpi-eyecare-aov">—</div><div class="kpi-sub">Average order value</div></div>
-        </div>
-        <div class="loading-wrap" id="loading-eyecare" style="display:none">Loading...</div>
-        <div id="tableContainer-eyecare"></div>
-      </div>
-    </div>
-
-    <!-- PRODUCT TABS: SH NATURALS -->
-    <div id="tab-audicure" class="tab-content"><div class="page-wrap">
-      <div class="kpi-grid" id="kpiGrid-audicure" style="display:none">
-        <div class="kpi-card"><div class="kpi-label">Avg ROAS</div><div class="kpi-value" id="kpi-audicure-roas">—</div><div class="kpi-sub">Revenue / peso spent</div></div>
-        <div class="kpi-card"><div class="kpi-label">Total Spend</div><div class="kpi-value" id="kpi-audicure-spend">—</div><div class="kpi-sub" id="kpi-audicure-spend-sub">All accounts</div></div>
-        <div class="kpi-card"><div class="kpi-label">Total Sales</div><div class="kpi-value" id="kpi-audicure-sales">—</div><div class="kpi-sub" id="kpi-audicure-sales-sub">Gross (Pancake)</div></div>
-        <div class="kpi-card"><div class="kpi-label">CVR</div><div class="kpi-value" id="kpi-audicure-cvr">—</div><div class="kpi-sub">Inquiries to orders</div></div>
-        <div class="kpi-card"><div class="kpi-label">Avg CPM</div><div class="kpi-value" id="kpi-audicure-cpm">—</div><div class="kpi-sub">Spend / inquiry</div></div>
-        <div class="kpi-card"><div class="kpi-label">Avg AOV</div><div class="kpi-value" id="kpi-audicure-aov">—</div><div class="kpi-sub">Average order value</div></div>
-      </div>
-      <div class="loading-wrap" id="loading-audicure" style="display:none">Loading...</div>
-      <div id="tableContainer-audicure"></div>
-    </div></div>
-
-    <div id="tab-canpro" class="tab-content"><div class="page-wrap">
-      <div class="kpi-grid" id="kpiGrid-canpro" style="display:none">
-        <div class="kpi-card"><div class="kpi-label">Avg ROAS</div><div class="kpi-value" id="kpi-canpro-roas">—</div><div class="kpi-sub">Revenue / peso spent</div></div>
-        <div class="kpi-card"><div class="kpi-label">Total Spend</div><div class="kpi-value" id="kpi-canpro-spend">—</div><div class="kpi-sub" id="kpi-canpro-spend-sub">All accounts</div></div>
-        <div class="kpi-card"><div class="kpi-label">Total Sales</div><div class="kpi-value" id="kpi-canpro-sales">—</div><div class="kpi-sub" id="kpi-canpro-sales-sub">Gross (Pancake)</div></div>
-        <div class="kpi-card"><div class="kpi-label">CVR</div><div class="kpi-value" id="kpi-canpro-cvr">—</div><div class="kpi-sub">Inquiries to orders</div></div>
-        <div class="kpi-card"><div class="kpi-label">Avg CPM</div><div class="kpi-value" id="kpi-canpro-cpm">—</div><div class="kpi-sub">Spend / inquiry</div></div>
-        <div class="kpi-card"><div class="kpi-label">Avg AOV</div><div class="kpi-value" id="kpi-canpro-aov">—</div><div class="kpi-sub">Average order value</div></div>
-      </div>
-      <div class="loading-wrap" id="loading-canpro" style="display:none">Loading...</div>
-      <div id="tableContainer-canpro"></div>
-    </div></div>
-
-    <div id="tab-ginseng" class="tab-content"><div class="page-wrap">
-      <div class="kpi-grid" id="kpiGrid-ginseng" style="display:none">
-        <div class="kpi-card"><div class="kpi-label">Avg ROAS</div><div class="kpi-value" id="kpi-ginseng-roas">—</div><div class="kpi-sub">Revenue / peso spent</div></div>
-        <div class="kpi-card"><div class="kpi-label">Total Spend</div><div class="kpi-value" id="kpi-ginseng-spend">—</div><div class="kpi-sub" id="kpi-ginseng-spend-sub">All accounts</div></div>
-        <div class="kpi-card"><div class="kpi-label">Total Sales</div><div class="kpi-value" id="kpi-ginseng-sales">—</div><div class="kpi-sub" id="kpi-ginseng-sales-sub">Gross (Pancake)</div></div>
-        <div class="kpi-card"><div class="kpi-label">CVR</div><div class="kpi-value" id="kpi-ginseng-cvr">—</div><div class="kpi-sub">Inquiries to orders</div></div>
-        <div class="kpi-card"><div class="kpi-label">Avg CPM</div><div class="kpi-value" id="kpi-ginseng-cpm">—</div><div class="kpi-sub">Spend / inquiry</div></div>
-        <div class="kpi-card"><div class="kpi-label">Avg AOV</div><div class="kpi-value" id="kpi-ginseng-aov">—</div><div class="kpi-sub">Average order value</div></div>
-      </div>
-      <div class="loading-wrap" id="loading-ginseng" style="display:none">Loading...</div>
-      <div id="tableContainer-ginseng"></div>
-    </div></div>
-
-    <div id="tab-sinuxyl" class="tab-content"><div class="page-wrap">
-      <div class="kpi-grid" id="kpiGrid-sinuxyl" style="display:none">
-        <div class="kpi-card"><div class="kpi-label">Avg ROAS</div><div class="kpi-value" id="kpi-sinuxyl-roas">—</div><div class="kpi-sub">Revenue / peso spent</div></div>
-        <div class="kpi-card"><div class="kpi-label">Total Spend</div><div class="kpi-value" id="kpi-sinuxyl-spend">—</div><div class="kpi-sub" id="kpi-sinuxyl-spend-sub">All accounts</div></div>
-        <div class="kpi-card"><div class="kpi-label">Total Sales</div><div class="kpi-value" id="kpi-sinuxyl-sales">—</div><div class="kpi-sub" id="kpi-sinuxyl-sales-sub">Gross (Pancake)</div></div>
-        <div class="kpi-card"><div class="kpi-label">CVR</div><div class="kpi-value" id="kpi-sinuxyl-cvr">—</div><div class="kpi-sub">Inquiries to orders</div></div>
-        <div class="kpi-card"><div class="kpi-label">Avg CPM</div><div class="kpi-value" id="kpi-sinuxyl-cpm">—</div><div class="kpi-sub">Spend / inquiry</div></div>
-        <div class="kpi-card"><div class="kpi-label">Avg AOV</div><div class="kpi-value" id="kpi-sinuxyl-aov">—</div><div class="kpi-sub">Average order value</div></div>
-      </div>
-      <div class="loading-wrap" id="loading-sinuxyl" style="display:none">Loading...</div>
-      <div id="tableContainer-sinuxyl"></div>
-    </div></div>
-
-    <!-- PRODUCT TABS: SH EYECARE -->
+    <!-- CLEAR SIGHT TAB -->
     <div id="tab-clearsight" class="tab-content"><div class="page-wrap">
       <div class="kpi-grid" id="kpiGrid-clearsight" style="display:none">
         <div class="kpi-card"><div class="kpi-label">Avg ROAS</div><div class="kpi-value" id="kpi-clearsight-roas">—</div><div class="kpi-sub">Revenue / peso spent</div></div>
@@ -960,19 +858,6 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); }
       <div id="tableContainer-clearsight"></div>
     </div></div>
 
-    <div id="tab-pterygium" class="tab-content"><div class="page-wrap">
-      <div class="kpi-grid" id="kpiGrid-pterygium" style="display:none">
-        <div class="kpi-card"><div class="kpi-label">Avg ROAS</div><div class="kpi-value" id="kpi-pterygium-roas">—</div><div class="kpi-sub">Revenue / peso spent</div></div>
-        <div class="kpi-card"><div class="kpi-label">Total Spend</div><div class="kpi-value" id="kpi-pterygium-spend">—</div><div class="kpi-sub" id="kpi-pterygium-spend-sub">All accounts</div></div>
-        <div class="kpi-card"><div class="kpi-label">Total Sales</div><div class="kpi-value" id="kpi-pterygium-sales">—</div><div class="kpi-sub" id="kpi-pterygium-sales-sub">Gross (Pancake)</div></div>
-        <div class="kpi-card"><div class="kpi-label">CVR</div><div class="kpi-value" id="kpi-pterygium-cvr">—</div><div class="kpi-sub">Inquiries to orders</div></div>
-        <div class="kpi-card"><div class="kpi-label">Avg CPM</div><div class="kpi-value" id="kpi-pterygium-cpm">—</div><div class="kpi-sub">Spend / inquiry</div></div>
-        <div class="kpi-card"><div class="kpi-label">Avg AOV</div><div class="kpi-value" id="kpi-pterygium-aov">—</div><div class="kpi-sub">Average order value</div></div>
-      </div>
-      <div class="loading-wrap" id="loading-pterygium" style="display:none">Loading...</div>
-      <div id="tableContainer-pterygium"></div>
-    </div></div>
-
     <!-- DATA ANALYTICS TAB -->
     <div id="tab-analytics" class="tab-content">
       <div class="page-wrap">
@@ -984,8 +869,7 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); }
           <input type="date" id="analyticsEnd" style="font-size:13px">
           <select id="analyticsBrand" style="font-size:13px">
             <option value="ALL">All Brands</option>
-            <option value="NATURALS">SH Naturals</option>
-            <option value="EYECARE">SH Eyecare</option>
+            <option value="CLEARSIGHT">Clear Sight</option>
           </select>
           <button class="btn-refresh" onclick="loadAnalytics()">Load</button>
           <span class="last-updated-txt" id="analyticsUpdated"></span>
@@ -1257,8 +1141,7 @@ const PRODUCT_PILLS = {
 };
 
 const BRAND_MAP = [
-  { brand:'SH Naturals Brand', bg:'#1a1a2e', products:['CANPRO','AUDICURE','SINUXYL','SINUXYL 2','GINSENG'] },
-  { brand:'SH Eyecare Brand',  bg:'#0c2d48', products:['CLEAR SIGHT','PTERYGIUM'] },
+  { brand:'Clear Sight', bg:'#1e3a8a', products:['CLEAR SIGHT'] },
 ];
 
 function roasColorClass(roas, spend) {
