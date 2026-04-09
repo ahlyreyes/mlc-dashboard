@@ -355,12 +355,13 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); }
 /* Campaign header row */
 .camp-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 16px;
   margin-bottom: 10px;
+  flex-wrap: nowrap;
 }
-.camp-title-block { flex: 1; min-width: 0; }
+.camp-title-block { flex: 1; min-width: 0; overflow: hidden; }
 .camp-name {
   font-size: 14px;
   font-weight: 500;
@@ -1284,15 +1285,12 @@ function render({ dates, campaigns }) {
                 ${loggedList.map(l=>`<span class="logged-entry">&#10003; ${l.action_taken}${l.new_budget?' →₱'+Number(l.new_budget).toLocaleString():''} · ${l.done_by_name}</span>`).join('')}
               </div>
             </div>
-          </div>
-          <div class="camp-action-row">
-            <span class="overall-label">Latest ROAS</span>
-            <span class="overall-roas ${roasCls}">${latestDay && latestDay.spend > 0 ? FMT2(latestRoas) : '—'}</span>
-            <span class="action-badge ${overallAP.cls}">${overallAP.text||'—'}</span>
-            <button class="btn-log-action"
-              onclick="openActionModal('${c.campaignId}','${c.campaignName.replace(/'/g,"\\'").replace(/"/g,'&quot;')}','${c.accountName}','${overallAP.text}')">
-              Log Action
-            </button>
+            <div class="camp-overall">
+              <span class="overall-label">Latest ROAS</span>
+              <span class="overall-roas ${roasCls}">${latestDay && latestDay.spend > 0 ? FMT2(latestRoas) : '—'}</span>
+              <span class="action-badge ${overallAP.cls}">${overallAP.text||'—'}</span>
+              <button class="btn-log-action" onclick="openActionModal('${c.campaignId}','${c.campaignName.replace(/'/g,"\\'").replace(/"/g,'&quot;')}','${c.accountName}','${overallAP.text}')">Log Action</button>
+            </div>
           </div>
           ${totalsHtml}
           ${dayCardsHtml}
@@ -1324,12 +1322,12 @@ function render({ dates, campaigns }) {
             <div class="camp-name">${c.campaignName}</div>
             <div class="camp-meta-row"><span class="account-pill">${c.accountName}</span></div>
           </div>
-        </div>
-        <div class="camp-action-row">
-          <span class="overall-label">Latest ROAS</span>
-          <span class="overall-roas ${roasCls}">${latestDayFb && latestDayFb.spend > 0 ? FMT2(latestRoasFb) : '—'}</span>
-          <span class="action-badge ${overallAP.cls}">${overallAP.text||'—'}</span>
-          <button class="btn-log-action" onclick="openActionModal('${c.campaignId}','${c.campaignName.replace(/'/g,"\\'").replace(/"/g,'&quot;')}','${c.accountName}','${overallAP.text}')">Log Action</button>
+          <div class="camp-overall">
+            <span class="overall-label">Latest ROAS</span>
+            <span class="overall-roas ${roasCls}">${latestDayFb && latestDayFb.spend > 0 ? FMT2(latestRoasFb) : '—'}</span>
+            <span class="action-badge ${overallAP.cls}">${overallAP.text||'—'}</span>
+            <button class="btn-log-action" onclick="openActionModal('${c.campaignId}','${c.campaignName.replace(/'/g,"\\'").replace(/"/g,'&quot;')}','${c.accountName}','${overallAP.text}')">Log Action</button>
+          </div>
         </div>
         <div class="camp-totals">
           <div class="totals-item"><div class="totals-label">Total Gross Sales</div><div class="totals-val">${PHP(c.totalSales)}</div></div>
