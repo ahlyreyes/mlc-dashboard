@@ -1878,7 +1878,7 @@ function destroyCharts() {
 async function loadAnalytics() {
   const start  = document.getElementById('analyticsStart').value;
   const end    = document.getElementById('analyticsEnd').value;
-  const brand  = document.getElementById('analyticsBrand').value;
+  const brand  = 'ALL';
   if (!start || !end) { alert('Select a start and end date.'); return; }
   const startD = new Date(start), endD = new Date(end);
   const diffDays = Math.round((endD - startD) / 86400000) + 1;
