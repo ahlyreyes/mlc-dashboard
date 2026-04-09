@@ -315,31 +315,51 @@ async function fetchAccountInsights(account, date) {
   }
 }
 
-async function fetchAllBudgets() {
-  const budgetMap = {};
-  for (const account of AD_ACCOUNTS) {
-    const fxRate = FX_TO_PHP[account.currency || 'PHP'] || 1;
-    try {
-      let nextUrl = `https://graph.facebook.com/v19.0/${account.id}/ads` +
-        `?fields=id,adset{daily_budget,campaign{daily_budget}}&limit=500&access_token=${account.token || ''}`;
-      while (nextUrl) {
-        const res = await fetchJson(nextUrl);
-        if (res.error) { console.warn(`⚠️  Budget fetch error for ${account.name}: ${res.error.message}`); break; }
-        for (const ad of (res.data || [])) {
-          let budget = 0;
-          if (ad.adset) {
-            if (ad.adset.daily_budget && parseInt(ad.adset.daily_budget) > 0)
-              budget = parseInt(ad.adset.daily_budget) / 100 * fxRate;
-            else if (ad.adset.campaign && ad.adset.campaign.daily_budget)
-              budget = parseInt(ad.adset.campaign.daily_budget) / 100 * fxRate;
-          }
-          budgetMap[ad.id] = budget;
+async function fetchBudgetsForAccount(account) {
+  const fxRate = FX_TO_PHP[account.currency || 'PHP'] || 1;
+  const result = {};
+  try {
+    let nextUrl = `https://graph.facebook.com/v19.0/${account.id}/ads` +
+      `?fields=id,adset{daily_budget,campaign{daily_budget}}&limit=500&access_token=${account.token || ''}`;
+    while (nextUrl) {
+      const res = await fetchJson(nextUrl);
+      if (res.error) { console.warn(`⚠️  Budget fetch error for ${account.name}: ${res.error.message}`); break; }
+      for (const ad of (res.data || [])) {
+        let budget = 0;
+        if (ad.adset) {
+          if (ad.adset.daily_budget && parseInt(ad.adset.daily_budget) > 0)
+            budget = parseInt(ad.adset.daily_budget) / 100 * fxRate;
+          else if (ad.adset.campaign && ad.adset.campaign.daily_budget)
+            budget = parseInt(ad.adset.campaign.daily_budget) / 100 * fxRate;
         }
-        nextUrl = res.paging && res.paging.next ? res.paging.next : null;
+        result[ad.id] = budget;
       }
-    } catch(e) { console.error(`❌ fetchAllBudgets failed for ${account.name}: ${e.message}`); }
-  }
-  return budgetMap;
+      nextUrl = res.paging && res.paging.next ? res.paging.next : null;
+    }
+  } catch(e) { console.error(`❌ fetchBudgetsForAccount failed for ${account.name}: ${e.message}`); }
+  return result;
+}
+
+async function fetchAllBudgets() {
+  const maps = await Promise.all(AD_ACCOUNTS.map(acc => fetchBudgetsForAccount(acc)));
+  return Object.assign({}, ...maps);
+}
+
+// ── IN-MEMORY CACHE ──
+const ndapCache = new Map();
+const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
+
+function getCacheKey(endDate, days) { return `${endDate}__${days}`; }
+
+function getCached(key) {
+  const entry = ndapCache.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.ts > CACHE_TTL_MS) { ndapCache.delete(key); return null; }
+  return entry.data;
+}
+
+function setCache(key, data) {
+  ndapCache.set(key, { data, ts: Date.now() });
 }
 
 // Public assets
@@ -436,6 +456,14 @@ app.get('/api/ndap', requireAuth, async (req, res) => {
   try {
     const endDate = req.query.endDate || new Date().toISOString().split('T')[0];
     const days = parseInt(req.query.days || 3);
+
+    const cacheKey = getCacheKey(endDate, days);
+    const cached = getCached(cacheKey);
+    if (cached) {
+      console.log(`✅ Cache hit: ${cacheKey}`);
+      return res.json(cached);
+    }
+
     const dates = [];
     for (let i = days - 1; i >= 0; i--) {
       const parts = endDate.split('-').map(Number);
@@ -529,7 +557,9 @@ app.get('/api/ndap', requireAuth, async (req, res) => {
       return a.campaignName.localeCompare(b.campaignName);
     });
 
-    res.json({ dates, campaigns: activeCampaigns });
+    const result = { dates, campaigns: activeCampaigns };
+    setCache(cacheKey, result);
+    res.json(result);
   } catch(e) {
     res.status(500).json({ error: e.message });
   }
