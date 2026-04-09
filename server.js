@@ -17,8 +17,12 @@ const BASE_URL = process.env.BASE_URL || 'https://sellershub-fsd.com';
 
 // Authorized users
 const AUTHORIZED_USERS = [
-  { email: 'ronatocharlonejrs@gmail.com', name: 'Charlone', role: 'admin' },
-  { email: 'ahlyssar.work@gmail.com',     name: 'Aly',      role: 'admin' },
+  { email: 'ronatocharlonejrs@gmail.com',          name: 'Charlone',         role: 'admin' },
+  { email: 'ahlyssar.work@gmail.com',              name: 'Aly',              role: 'admin' },
+  { email: 'advertisingspecialist5ejay@gmail.com', name: 'Advertiser Ejay',  role: 'advertiser' },
+  { email: 'advertisingspecialist6husse@gmail.com',name: 'Advertiser Husse', role: 'advertiser' },
+  { email: 'adstafflaila@gmail.com',               name: 'Advertiser Angelika', role: 'advertiser' },
+  { email: 'jackcruz1117@gmail.com',               name: 'Advertiser Jack',  role: 'advertiser' },
 ];
 
 // PostgreSQL setup
