@@ -361,6 +361,49 @@ async function fetchAllBudgets() {
   return Object.assign({}, ...maps);
 }
 
+// Fetch all ACTIVE ads per account (so we never miss ads with 0 spend on a date)
+const activeAdsCache = new Map();
+const TTL_ACTIVE_ADS = 30 * 60 * 1000;
+
+async function fetchActiveAdsForAccount(account) {
+  const cached = cacheGet(activeAdsCache, account.id, TTL_ACTIVE_ADS);
+  if (cached) { console.log(`✅ Active ads cache hit: ${account.id}`); return cached; }
+  const token = account.token || '';
+  const result = [];
+  try {
+    let nextUrl = `https://graph.facebook.com/v19.0/${account.id}/ads` +
+      `?fields=id,name,campaign_id,campaign{name}` +
+      `&filtering=[{"field":"ad.effective_status","operator":"IN","value":["ACTIVE"]}]` +
+      `&limit=100&access_token=${token}`;
+    while (nextUrl) {
+      const res = await fetchJson(nextUrl);
+      if (res.error) { console.warn(`⚠️  Active ads fetch error for ${account.name}: ${res.error.message}`); break; }
+      for (const ad of (res.data || [])) {
+        result.push({
+          adId: ad.id,
+          adName: ad.name,
+          campaignId: ad.campaign_id,
+          campaignName: ad.campaign ? ad.campaign.name : '',
+          accountName: account.name,
+          product: account.product || '',
+        });
+      }
+      nextUrl = res.paging && res.paging.next ? res.paging.next : null;
+    }
+  } catch(e) { console.error(`❌ fetchActiveAds failed for ${account.name}: ${e.message}`); }
+  cacheSet(activeAdsCache, account.id, result);
+  return result;
+}
+
+async function fetchAllActiveAds() {
+  const results = [];
+  for (const acc of AD_ACCOUNTS) {
+    const ads = await fetchActiveAdsForAccount(acc);
+    results.push(...ads);
+  }
+  return results;
+}
+
 // ── GRANULAR IN-MEMORY CACHE ──
 const metaInsightsCache = new Map(); // key: accountId_date       TTL: 30 min
 const pancakeCache       = new Map(); // key: 'pancake'            TTL: 30 min
@@ -483,9 +526,22 @@ app.get('/api/ndap', requireAuth, async (req, res) => {
       dates.push(d.toISOString().split('T')[0]);
     }
 
-    const [salesByDate, budgetMap] = await Promise.all([
-      fetchPancakeSalesByDate(), fetchAllBudgets()
+    const [salesByDate, budgetMap, activeAdsList] = await Promise.all([
+      fetchPancakeSalesByDate(), fetchAllBudgets(), fetchAllActiveAds()
     ]);
+
+    // Build adMap keyed by adId — all 14 active ads pre-seeded so none get dropped
+    const adMap = {};
+    for (const ad of activeAdsList) {
+      adMap[ad.adId] = {
+        campaignId: ad.campaignId, campaignName: ad.campaignName,
+        adId: ad.adId, adName: ad.adName,
+        accountName: ad.accountName,
+        product: ad.product || '',
+        budget: budgetMap[ad.adId] || 0,
+        dates: {}
+      };
+    }
 
     // Sequential per-date fetching with staggered account calls to avoid Meta automation flags
     const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -495,18 +551,18 @@ app.get('/api/ndap', requireAuth, async (req, res) => {
       for (const acc of AD_ACCOUNTS) {
         const rows = await fetchAccountInsights(acc, date);
         allRows.push(...rows);
-        await sleep(300); // 300ms pause between account requests
+        await sleep(300);
       }
       insightsByDate[date] = allRows;
-      await sleep(500); // 500ms pause between date requests
+      await sleep(500);
     }
 
-    const campaignMap = {};
+    // Merge insights into adMap — one row per ad, grouped by adId
     for (const date of dates) {
       for (const row of (insightsByDate[date] || [])) {
-        const key = `${row.accountName}|||${row.campaignId}`;
-        if (!campaignMap[key]) {
-          campaignMap[key] = {
+        // Ensure the ad exists in map (handles fallback/historical entries)
+        if (!adMap[row.adId]) {
+          adMap[row.adId] = {
             campaignId: row.campaignId, campaignName: row.campaignName,
             adId: row.adId, adName: row.adName,
             accountName: row.accountName,
@@ -517,9 +573,8 @@ app.get('/api/ndap', requireAuth, async (req, res) => {
         }
         const sales = salesByDate[date]?.[row.adId] || { sales: 0, orders: 0, delivered: 0, deliveredValue: 0, rts: 0, rtsValue: 0, shipped: 0, shippedValue: 0 };
 
-        // Accumulate per-ad data into campaign totals (fixes multi-ad campaigns)
-        if (!campaignMap[key].dates[date]) {
-          campaignMap[key].dates[date] = {
+        if (!adMap[row.adId].dates[date]) {
+          adMap[row.adId].dates[date] = {
             spend: 0, grossSales: 0, orders: 0,
             impressions: 0, clicks: 0,
             costPerMessage: 0, messagesStarted: 0,
@@ -527,26 +582,26 @@ app.get('/api/ndap', requireAuth, async (req, res) => {
             rts: 0, rtsValue: 0, shipped: 0, shippedValue: 0
           };
         }
-        const d = campaignMap[key].dates[date];
-        d.spend        += row.spend;
-        d.grossSales   += sales.sales || 0;
-        d.orders       += sales.orders || 0;
-        d.impressions  += row.impressions;
-        d.clicks       += row.clicks;
+        const d = adMap[row.adId].dates[date];
+        d.spend          += row.spend;
+        d.grossSales     += sales.sales || 0;
+        d.orders         += sales.orders || 0;
+        d.impressions    += row.impressions;
+        d.clicks         += row.clicks;
         d.messagesStarted += row.messagesStarted || 0;
         d.costPerMessage  += row.costPerMessage || 0;
-        d.delivered    += sales.delivered || 0;
+        d.delivered      += sales.delivered || 0;
         d.deliveredValue += sales.deliveredValue || 0;
-        d.rts          += sales.rts || 0;
-        d.rtsValue     += sales.rtsValue || 0;
-        d.shipped      += sales.shipped || 0;
-        d.shippedValue += sales.shippedValue || 0;
+        d.rts            += sales.rts || 0;
+        d.rtsValue       += sales.rtsValue || 0;
+        d.shipped        += sales.shipped || 0;
+        d.shippedValue   += sales.shippedValue || 0;
       }
     }
 
-    // Calculate derived metrics after accumulation
-    for (const campaign of Object.values(campaignMap)) {
-      for (const d of Object.values(campaign.dates)) {
+    // Calculate derived metrics
+    for (const ad of Object.values(adMap)) {
+      for (const d of Object.values(ad.dates)) {
         d.roas    = d.spend > 0 ? d.grossSales / d.spend : 0;
         d.cpp     = d.orders > 0 ? d.spend / d.orders : 0;
         d.cpm     = d.messagesStarted > 0 ? d.spend / d.messagesStarted : 0;
@@ -554,7 +609,7 @@ app.get('/api/ndap', requireAuth, async (req, res) => {
       }
     }
 
-    const campaigns = Object.values(campaignMap).map(c => {
+    const campaigns = Object.values(adMap).map(c => {
       let ts = 0, tsp = 0, to = 0, tDel = 0, tRts = 0, tShip = 0, tDelVal = 0, tRtsVal = 0;
       for (const d of Object.values(c.dates)) {
         ts += d.grossSales; tsp += d.spend; to += d.orders;
@@ -568,12 +623,14 @@ app.get('/api/ndap', requireAuth, async (req, res) => {
         totalDeliveredValue: tDelVal, totalRtsValue: tRtsVal, overallDelRate };
     });
 
-    // Filter: only show campaigns that had spend in at least one day of the selected date range
-    const activeCampaigns = campaigns.filter(c => c.totalSpend > 0);
+    // Show all active ads (even 0 spend) — filter only truly inactive ones not in activeAdsList
+    const activeCampaigns = campaigns.filter(c =>
+      c.totalSpend > 0 || activeAdsList.some(a => a.adId === c.adId)
+    );
 
     activeCampaigns.sort((a, b) => {
       if (a.accountName !== b.accountName) return a.accountName.localeCompare(b.accountName);
-      return a.campaignName.localeCompare(b.campaignName);
+      return a.adName.localeCompare(b.adName);
     });
 
     const result = { dates, campaigns: activeCampaigns };
