@@ -322,7 +322,7 @@ async function fetchBudgetsForAccount(account) {
   const result = {};
   try {
     let nextUrl = `https://graph.facebook.com/v19.0/${account.id}/ads` +
-      `?fields=id,adset{daily_budget,campaign{daily_budget}}&limit=500&access_token=${account.token || ''}`;
+      `?fields=id,adset{daily_budget,campaign{daily_budget}}&limit=100&access_token=${account.token || ''}`;
     while (nextUrl) {
       const res = await fetchJson(nextUrl);
       if (res.error) { console.warn(`⚠️  Budget fetch error for ${account.name}: ${res.error.message}`); break; }
@@ -349,7 +349,7 @@ async function fetchAllBudgets() {
 
 // ── IN-MEMORY CACHE ──
 const ndapCache = new Map();
-const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
+const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour // 15 minutes
 
 function getCacheKey(endDate, days) { return `${endDate}__${days}`; }
 
@@ -478,11 +478,19 @@ app.get('/api/ndap', requireAuth, async (req, res) => {
       fetchPancakeSalesByDate(), fetchAllBudgets()
     ]);
 
+    // Sequential per-date fetching with staggered account calls to avoid Meta automation flags
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
     const insightsByDate = {};
-    await Promise.all(dates.map(async (date) => {
-      const all = await Promise.all(AD_ACCOUNTS.map(acc => fetchAccountInsights(acc, date)));
-      insightsByDate[date] = all.flat();
-    }));
+    for (const date of dates) {
+      const allRows = [];
+      for (const acc of AD_ACCOUNTS) {
+        const rows = await fetchAccountInsights(acc, date);
+        allRows.push(...rows);
+        await sleep(300); // 300ms pause between account requests
+      }
+      insightsByDate[date] = allRows;
+      await sleep(500); // 500ms pause between date requests
+    }
 
     const campaignMap = {};
     for (const date of dates) {
