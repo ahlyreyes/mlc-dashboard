@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ad Spend — MLC Insights</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: #EEF2FF;
+  min-height: 100vh;
+  padding: 28px 20px;
+}
+
+.app-header {
+  background: #2563EB;
+  color: #fff;
+  padding: 0 24px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 14px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 12px rgba(37,99,235,0.18);
+}
+.header-logo { font-size: 1.1rem; font-weight: 800; letter-spacing: -0.5px; }
+.header-logo span { opacity: 0.6; font-weight: 400; font-size: 0.82rem; margin-left: 8px; letter-spacing: 0; }
+.header-right { display: flex; align-items: center; gap: 12px; }
+.header-user { font-size: 0.75rem; opacity: 0.75; }
+.back-link {
+  font-size: 0.75rem;
+  color: #fff;
+  text-decoration: none;
+  opacity: 0.8;
+  padding: 4px 10px;
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 6px;
+  transition: opacity 0.15s;
+}
+.back-link:hover { opacity: 1; }
+
+.page-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #1E3A8A;
+  margin-bottom: 4px;
+}
+.page-sub {
+  font-size: 0.78rem;
+  color: #6B7280;
+  margin-bottom: 20px;
+}
+
+/* Time range selector */
+.range-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.range-btn {
+  padding: 7px 18px;
+  border-radius: 8px;
+  border: 1.5px solid #DBEAFE;
+  background: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #3B82F6;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.range-btn:hover { border-color: #2563EB; color: #1E40AF; }
+.range-btn.active {
+  background: #2563EB;
+  border-color: #2563EB;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(37,99,235,0.25);
+}
+
+/* KPI grid */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+@media (max-width: 680px) { .kpi-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 420px) { .kpi-grid { grid-template-columns: 1fr; } }
+
+.kpi-card {
+  background: #fff;
+  border: 1px solid #E2E8F0;
+  border-radius: 14px;
+  padding: 18px 20px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.kpi-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #94A3B8;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 6px;
+}
+.kpi-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1E293B;
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+.kpi-sub {
+  font-size: 0.72rem;
+  color: #94A3B8;
+}
+.kpi-card.highlight { border-left: 4px solid #2563EB; }
+
+/* Loading / error */
+.state-msg {
+  text-align: center;
+  padding: 48px;
+  color: #94A3B8;
+  font-size: 0.85rem;
+}
+.error-msg { color: #EF4444; }
+
+/* Date range label */
+.range-label {
+  font-size: 0.72rem;
+  color: #94A3B8;
+  margin-bottom: 10px;
+}
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="header-logo">MLC<span>Ad Spend</span></div>
+  <div class="header-right">
+    <span class="header-user" id="headerUser"></span>
+    <a href="/home" class="back-link">← Home</a>
+  </div>
+</div>
+
+<div class="page-title">Ad Spend Summary</div>
+<div class="page-sub">Overall performance across all active ad accounts</div>
+
+<div class="range-bar">
+  <button class="range-btn active" data-days="1">Today</button>
+  <button class="range-btn" data-days="3">Last 3 Days</button>
+  <button class="range-btn" data-days="7">Last 7 Days</button>
+  <button class="range-btn" data-days="30">Last Month</button>
+</div>
+
+<div class="range-label" id="rangeLabel"></div>
+
+<div id="kpiSection">
+  <div class="state-msg">Loading...</div>
+</div>
+
+<script>
+let currentDays = 1;
+
+function fmt(n) {
+  return '₱' + Number(n).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function fmtRoas(n) {
+  return Number(n).toFixed(2);
+}
+
+function fmtPct(n) {
+  return Number(n).toFixed(1) + '%';
+}
+
+function setRangeLabel(days) {
+  const today = new Date();
+  const end = today.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
+  if (days === 1) {
+    document.getElementById('rangeLabel').textContent = 'Showing data for: ' + end;
+  } else {
+    const start = new Date(today);
+    start.setDate(start.getDate() - (days - 1));
+    const startStr = start.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
+    document.getElementById('rangeLabel').textContent = `Showing data for: ${startStr} — ${end}`;
+  }
+}
+
+async function load(days) {
+  document.getElementById('kpiSection').innerHTML = '<div class="state-msg">Loading...</div>';
+  setRangeLabel(days);
+
+  const today = new Date().toISOString().split('T')[0];
+  try {
+    const res = await fetch(`/api/ndap?endDate=${today}&days=${days}`);
+    if (!res.ok) throw new Error('Server error');
+    const data = await res.json();
+    const campaigns = data.campaigns || [];
+
+    let totalSpend = 0, totalSales = 0, totalOrders = 0, totalMessages = 0;
+
+    for (const c of campaigns) {
+      totalSpend    += c.totalSpend    || 0;
+      totalSales    += c.totalSales    || 0;
+      totalOrders   += c.totalOrders   || 0;
+      for (const d of Object.values(c.dates || {})) {
+        totalMessages += d.messagesStarted || 0;
+      }
+    }
+
+    const avgRoas = totalSpend > 0 ? totalSales / totalSpend : 0;
+    const avgAov  = totalOrders > 0 ? totalSales / totalOrders : 0;
+    const cvr     = totalMessages > 0 ? (totalOrders / totalMessages) * 100 : 0;
+    const avgCpm  = totalMessages > 0 ? totalSpend / totalMessages : 0;
+
+    document.getElementById('kpiSection').innerHTML = `
+      <div class="kpi-grid">
+        <div class="kpi-card highlight">
+          <div class="kpi-label">Avg ROAS</div>
+          <div class="kpi-value">${fmtRoas(avgRoas)}</div>
+          <div class="kpi-sub">Revenue / peso spent</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Avg AOV</div>
+          <div class="kpi-value">${fmt(avgAov)}</div>
+          <div class="kpi-sub">Average order value</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">CVR</div>
+          <div class="kpi-value">${fmtPct(cvr)}</div>
+          <div class="kpi-sub">Inquiries to orders</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Avg CPM</div>
+          <div class="kpi-value">${fmt(avgCpm)}</div>
+          <div class="kpi-sub">Spend / inquiry</div>
+        </div>
+        <div class="kpi-card highlight">
+          <div class="kpi-label">Total Spend</div>
+          <div class="kpi-value">${fmt(totalSpend)}</div>
+          <div class="kpi-sub">for ${days === 1 ? '1 day' : days + ' days'}</div>
+        </div>
+        <div class="kpi-card highlight">
+          <div class="kpi-label">Total Sales</div>
+          <div class="kpi-value">${fmt(totalSales)}</div>
+          <div class="kpi-sub">for ${days === 1 ? '1 day' : days + ' days'}</div>
+        </div>
+      </div>
+    `;
+  } catch(e) {
+    document.getElementById('kpiSection').innerHTML = `<div class="state-msg error-msg">Failed to load data: ${e.message}</div>`;
+  }
+}
+
+// Range buttons
+document.querySelectorAll('.range-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentDays = parseInt(btn.dataset.days);
+    load(currentDays);
+  });
+});
+
+// User display
+fetch('/api/me').then(r => r.json()).then(u => {
+  document.getElementById('headerUser').textContent = u.name || u.email || '';
+}).catch(() => {});
+
+// Initial load
+load(1);
+</script>
+</body>
+</html>
