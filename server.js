@@ -193,6 +193,8 @@ function formatDate(d) {
 }
 
 async function fetchPancakeSalesByDate() {
+  const cached = cacheGet(pancakeCache, 'pancake', TTL_PANCAKE);
+  if (cached) { console.log('✅ Pancake cache hit'); return cached; }
   try {
     const allCsvs = await Promise.all(PANCAKE_CSV_URLS.map(url => fetchRaw(url)));
     const rows = allCsvs.flatMap(csv => parseCSV(csv));
@@ -237,6 +239,7 @@ async function fetchPancakeSalesByDate() {
         salesByDate[dateStr][adId].shippedValue += price;
       }
     }
+    cacheSet(pancakeCache, 'pancake', salesByDate);
     return salesByDate;
   } catch(e) {
     console.error('Pancake CSV error:', e.message);
@@ -245,6 +248,9 @@ async function fetchPancakeSalesByDate() {
 }
 
 async function fetchAccountInsights(account, date) {
+  const metaKey = `${account.id}_${date}`;
+  const cached = cacheGet(metaInsightsCache, metaKey, TTL_META);
+  if (cached) { console.log(`✅ Meta cache hit: ${metaKey}`); return cached; }
   const token = account.token || '';
   const fxRate = FX_TO_PHP[account.currency || 'PHP'] || 1;
 
@@ -276,7 +282,7 @@ async function fetchAccountInsights(account, date) {
       const fallback = await fetchJson(fallbackUrl);
       if (fallback.data && fallback.data.length > 0 && parseFloat(fallback.data[0].spend || 0) > 0) {
         const f = fallback.data[0];
-        return [{
+        const fallbackResult = [{
           accountName: account.name,
           adId: `${account.id}_fallback`,
           adName: '(Historical — campaign detail unavailable)',
@@ -287,11 +293,14 @@ async function fetchAccountInsights(account, date) {
           clicks: parseInt(f.clicks || 0),
           isFallback: true
         }];
+        cacheSet(metaInsightsCache, metaKey, fallbackResult);
+        return fallbackResult;
       }
+      cacheSet(metaInsightsCache, metaKey, []);
       return [];
     }
 
-    return allRows.map(r => {
+    const mapped = allRows.map(r => {
       const msgAction = (r.actions || []).find(a =>
         a.action_type === 'onsite_conversion.total_messaging_connection' ||
         a.action_type === 'onsite_conversion.messaging_conversation_started_7d'
@@ -311,6 +320,8 @@ async function fetchAccountInsights(account, date) {
         messagesStarted
       };
     });
+    cacheSet(metaInsightsCache, metaKey, mapped);
+    return mapped;
   } catch(e) {
     console.error(`❌ fetchAccountInsights failed for ${account.name} (${account.id}): ${e.message}`);
     return [];
@@ -318,6 +329,8 @@ async function fetchAccountInsights(account, date) {
 }
 
 async function fetchBudgetsForAccount(account) {
+  const cached = cacheGet(budgetCache, account.id, TTL_BUDGET);
+  if (cached) { console.log(`✅ Budget cache hit: ${account.id}`); return cached; }
   const fxRate = FX_TO_PHP[account.currency || 'PHP'] || 1;
   const result = {};
   try {
@@ -339,6 +352,7 @@ async function fetchBudgetsForAccount(account) {
       nextUrl = res.paging && res.paging.next ? res.paging.next : null;
     }
   } catch(e) { console.error(`❌ fetchBudgetsForAccount failed for ${account.name}: ${e.message}`); }
+  cacheSet(budgetCache, account.id, result);
   return result;
 }
 
@@ -347,21 +361,23 @@ async function fetchAllBudgets() {
   return Object.assign({}, ...maps);
 }
 
-// ── IN-MEMORY CACHE ──
-const ndapCache = new Map();
-const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour // 15 minutes
+// ── GRANULAR IN-MEMORY CACHE ──
+const metaInsightsCache = new Map(); // key: accountId_date       TTL: 30 min
+const pancakeCache       = new Map(); // key: 'pancake'            TTL: 30 min
+const budgetCache        = new Map(); // key: accountId            TTL: 1 hour
 
-function getCacheKey(endDate, days) { return `${endDate}__${days}`; }
+const TTL_META    = 30 * 60 * 1000;
+const TTL_PANCAKE = 30 * 60 * 1000;
+const TTL_BUDGET  =  1 * 60 * 60 * 1000;
 
-function getCached(key) {
-  const entry = ndapCache.get(key);
+function cacheGet(map, key, ttl) {
+  const entry = map.get(key);
   if (!entry) return null;
-  if (Date.now() - entry.ts > CACHE_TTL_MS) { ndapCache.delete(key); return null; }
+  if (Date.now() - entry.ts > ttl) { map.delete(key); return null; }
   return entry.data;
 }
-
-function setCache(key, data) {
-  ndapCache.set(key, { data, ts: Date.now() });
+function cacheSet(map, key, data) {
+  map.set(key, { data, ts: Date.now() });
 }
 
 // Public assets
@@ -458,13 +474,6 @@ app.get('/api/ndap', requireAuth, async (req, res) => {
   try {
     const endDate = req.query.endDate || new Date().toISOString().split('T')[0];
     const days = parseInt(req.query.days || 3);
-
-    const cacheKey = getCacheKey(endDate, days);
-    const cached = getCached(cacheKey);
-    if (cached) {
-      console.log(`✅ Cache hit: ${cacheKey}`);
-      return res.json(cached);
-    }
 
     const dates = [];
     for (let i = days - 1; i >= 0; i--) {
@@ -568,7 +577,6 @@ app.get('/api/ndap', requireAuth, async (req, res) => {
     });
 
     const result = { dates, campaigns: activeCampaigns };
-    setCache(cacheKey, result);
     res.json(result);
   } catch(e) {
     res.status(500).json({ error: e.message });
