@@ -25,6 +25,7 @@ const AUTHORIZED_USERS = [
   { email: 'advertisingspecialist6husse@gmail.com',name: 'Advertiser Husse', role: 'advertiser' },
   { email: 'adstafflaila@gmail.com',               name: 'Advertiser Angelika', role: 'advertiser' },
   { email: 'jackcruz1117@gmail.com',               name: 'Advertiser Jack',  role: 'advertiser' },
+  { email: 'sczezsa@gmail.com',                    name: 'FSA Che',          role: 'advertiser' },
 ];
 
 // PostgreSQL setup
