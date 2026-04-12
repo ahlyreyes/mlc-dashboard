@@ -210,9 +210,11 @@ async function load(days) {
       }
     }
 
-    // Use ALL Clear Sight sales from Pancake (includes orders with no ad ID)
+    // Use Clear Sight sales from Pancake filtered to the selected date range
     let totalSales = 0, totalOrders = 0;
-    for (const dateData of Object.values(clearSightByDate)) {
+    for (const date of (data.dates || [])) {
+      const dateData = clearSightByDate[date];
+      if (!dateData) continue;
       totalSales  += dateData.sales  || 0;
       totalOrders += dateData.orders || 0;
     }
