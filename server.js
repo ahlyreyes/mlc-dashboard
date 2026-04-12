@@ -196,6 +196,9 @@ function formatDate(d) {
 function isClearSightProduct(productName) {
   return (productName || '').toLowerCase().includes('clear sight');
 }
+function isHaplunasProduct(productName) {
+  return (productName || '').toLowerCase().includes('haplunas');
+}
 
 async function fetchPancakeSalesByDate() {
   const cached = cacheGet(pancakeCache, 'pancake', TTL_PANCAKE);
@@ -229,8 +232,8 @@ async function fetchPancakeSalesByDate() {
       const product = (row['PRODUCT NAME'] || '').trim();
       const adId = (row['Ads'] || '').trim();
 
-      // ── Per-ad sales (NDAP matching) — requires adId ──
-      if (adId) {
+      // ── Per-ad sales (NDAP matching) — requires adId, exclude Haplunas ──
+      if (adId && !isHaplunasProduct(product)) {
         if (!salesByDate[dateStr]) salesByDate[dateStr] = {};
         if (!salesByDate[dateStr][adId]) salesByDate[dateStr][adId] = {
           sales: 0, orders: 0,
