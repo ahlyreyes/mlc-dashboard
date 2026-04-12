@@ -200,16 +200,21 @@ async function load(days) {
     if (!res.ok) throw new Error('Server error');
     const data = await res.json();
     const campaigns = data.campaigns || [];
+    const clearSightByDate = data.clearSightByDate || {};
 
-    let totalSpend = 0, totalSales = 0, totalOrders = 0, totalMessages = 0;
-
+    let totalSpend = 0, totalMessages = 0;
     for (const c of campaigns) {
-      totalSpend    += c.totalSpend    || 0;
-      totalSales    += c.totalSales    || 0;
-      totalOrders   += c.totalOrders   || 0;
+      totalSpend += c.totalSpend || 0;
       for (const d of Object.values(c.dates || {})) {
         totalMessages += d.messagesStarted || 0;
       }
+    }
+
+    // Use ALL Clear Sight sales from Pancake (includes orders with no ad ID)
+    let totalSales = 0, totalOrders = 0;
+    for (const dateData of Object.values(clearSightByDate)) {
+      totalSales  += dateData.sales  || 0;
+      totalOrders += dateData.orders || 0;
     }
 
     const avgRoas = totalSpend > 0 ? totalSales / totalSpend : 0;

@@ -193,22 +193,26 @@ function formatDate(d) {
     String(d.getDate()).padStart(2, '0');
 }
 
+function isClearSightProduct(productName) {
+  return (productName || '').toLowerCase().includes('clear sight');
+}
+
 async function fetchPancakeSalesByDate() {
   const cached = cacheGet(pancakeCache, 'pancake', TTL_PANCAKE);
   if (cached) { console.log('✅ Pancake cache hit'); return cached; }
   try {
     const allCsvs = await Promise.all(PANCAKE_CSV_URLS.map(url => fetchRaw(url)));
     const rows = allCsvs.flatMap(csv => parseCSV(csv));
-    // Exclude CRD department sellers — their sales should not count in FSD ROAS
     const EXCLUDED_SELLERS = ['Marj Adana', 'Shan Chai Bertes'];
 
-    const salesByDate = {};
+    const salesByDate = {};       // keyed by adId — for per-ad NDAP matching
+    const clearSightByDate = {};  // ALL Clear Sight sales incl. no-ad rows
+
     for (const row of rows) {
-      const seller = row['Assigning seller'] || '';
+      const seller = (row['Assigning seller'] || '').trim();
       if (!seller) continue;
-      if (EXCLUDED_SELLERS.some(s => seller.trim().toLowerCase() === s.toLowerCase())) continue;
-      const adId = row['Ads'] || '';
-      if (!adId) continue;
+      if (EXCLUDED_SELLERS.some(s => seller.toLowerCase() === s.toLowerCase())) continue;
+
       const price = parseFloat((row['Unit price'] || '0').replace(/,/g, '')) || 0;
       const dateRaw = row['Sales Date'] || '';
       if (!dateRaw) continue;
@@ -218,33 +222,50 @@ async function fetchPancakeSalesByDate() {
         if (isNaN(d.getTime())) continue;
         dateStr = formatDate(d);
       } catch(e) { continue; }
+
       const status = (row['Status'] || '').trim().toUpperCase();
       if (status.includes('CANCEL')) continue;
-      if (!salesByDate[dateStr]) salesByDate[dateStr] = {};
-      if (!salesByDate[dateStr][adId]) salesByDate[dateStr][adId] = {
-        sales: 0, orders: 0,
-        delivered: 0, deliveredValue: 0,
-        rts: 0, rtsValue: 0,
-        shipped: 0, shippedValue: 0
-      };
-      salesByDate[dateStr][adId].sales += price;
-      salesByDate[dateStr][adId].orders += 1;
-      if (status.includes('DELIVERED')) {
-        salesByDate[dateStr][adId].delivered += 1;
-        salesByDate[dateStr][adId].deliveredValue += price;
-      } else if (status.includes('RTS') || status.includes('RETURN')) {
-        salesByDate[dateStr][adId].rts += 1;
-        salesByDate[dateStr][adId].rtsValue += price;
-      } else if (status.includes('SHIP') || status.includes('TRANSIT')) {
-        salesByDate[dateStr][adId].shipped += 1;
-        salesByDate[dateStr][adId].shippedValue += price;
+
+      const product = (row['PRODUCT NAME'] || '').trim();
+      const adId = (row['Ads'] || '').trim();
+
+      // ── Per-ad sales (NDAP matching) — requires adId ──
+      if (adId) {
+        if (!salesByDate[dateStr]) salesByDate[dateStr] = {};
+        if (!salesByDate[dateStr][adId]) salesByDate[dateStr][adId] = {
+          sales: 0, orders: 0,
+          delivered: 0, deliveredValue: 0,
+          rts: 0, rtsValue: 0,
+          shipped: 0, shippedValue: 0
+        };
+        salesByDate[dateStr][adId].sales  += price;
+        salesByDate[dateStr][adId].orders += 1;
+        if (status.includes('DELIVERED')) {
+          salesByDate[dateStr][adId].delivered += 1;
+          salesByDate[dateStr][adId].deliveredValue += price;
+        } else if (status.includes('RTS') || status.includes('RETURN')) {
+          salesByDate[dateStr][adId].rts += 1;
+          salesByDate[dateStr][adId].rtsValue += price;
+        } else if (status.includes('SHIP') || status.includes('TRANSIT')) {
+          salesByDate[dateStr][adId].shipped += 1;
+          salesByDate[dateStr][adId].shippedValue += price;
+        }
+      }
+
+      // ── Clear Sight total (Ad Spend page) — includes rows with no adId ──
+      if (isClearSightProduct(product)) {
+        if (!clearSightByDate[dateStr]) clearSightByDate[dateStr] = { sales: 0, orders: 0 };
+        clearSightByDate[dateStr].sales  += price;
+        clearSightByDate[dateStr].orders += 1;
       }
     }
-    cacheSet(pancakeCache, 'pancake', salesByDate);
-    return salesByDate;
+
+    const result = { salesByDate, clearSightByDate };
+    cacheSet(pancakeCache, 'pancake', result);
+    return result;
   } catch(e) {
     console.error('Pancake CSV error:', e.message);
-    return {};
+    return { salesByDate: {}, clearSightByDate: {} };
   }
 }
 
@@ -528,9 +549,10 @@ app.get('/api/ndap', requireAuth, async (req, res) => {
       dates.push(d.toISOString().split('T')[0]);
     }
 
-    const [salesByDate, budgetMap, activeAdsList] = await Promise.all([
+    const [pancakeData, budgetMap, activeAdsList] = await Promise.all([
       fetchPancakeSalesByDate(), fetchAllBudgets(), fetchAllActiveAds()
     ]);
+    const { salesByDate, clearSightByDate } = pancakeData;
 
     // Build adMap keyed by adId — all 14 active ads pre-seeded so none get dropped
     const adMap = {};
@@ -635,7 +657,7 @@ app.get('/api/ndap', requireAuth, async (req, res) => {
       return a.adName.localeCompare(b.adName);
     });
 
-    const result = { dates, campaigns: activeCampaigns };
+    const result = { dates, campaigns: activeCampaigns, clearSightByDate };
     res.json(result);
   } catch(e) {
     res.status(500).json({ error: e.message });
