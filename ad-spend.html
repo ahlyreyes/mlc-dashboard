@@ -12,73 +12,78 @@ body {
   font-family: 'Inter', sans-serif;
   background: #EEF2FF;
   min-height: 100vh;
-  padding: 28px 20px;
+  padding: 24px 20px;
 }
 
 .app-header {
-  background: #2563EB;
+  background: linear-gradient(90deg, #1D4ED8 0%, #2563EB 60%, #3B82F6 100%);
   color: #fff;
-  padding: 0 24px;
-  height: 52px;
+  padding: 0 22px;
+  height: 54px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-radius: 14px;
-  margin-bottom: 24px;
-  box-shadow: 0 2px 12px rgba(37,99,235,0.18);
+  border-radius: 16px;
+  margin-bottom: 22px;
+  box-shadow: 0 4px 20px rgba(37,99,235,0.25);
 }
-.header-logo { font-size: 1.1rem; font-weight: 800; letter-spacing: -0.5px; }
-.header-logo span { opacity: 0.6; font-weight: 400; font-size: 0.82rem; margin-left: 8px; letter-spacing: 0; }
+.header-logo { font-size: 1.05rem; font-weight: 800; letter-spacing: -0.5px; }
+.header-logo span { opacity: 0.65; font-weight: 500; font-size: 0.8rem; margin-left: 8px; letter-spacing: 0; }
 .header-right { display: flex; align-items: center; gap: 12px; }
-.header-user { font-size: 0.75rem; opacity: 0.75; }
+.header-user { font-size: 0.75rem; opacity: 0.8; font-weight: 500; }
 .back-link {
   font-size: 0.75rem;
+  font-weight: 600;
   color: #fff;
   text-decoration: none;
-  opacity: 0.8;
-  padding: 4px 10px;
-  border: 1px solid rgba(255,255,255,0.3);
-  border-radius: 6px;
-  transition: opacity 0.15s;
+  opacity: 0.85;
+  padding: 5px 12px;
+  border: 1px solid rgba(255,255,255,0.35);
+  border-radius: 8px;
+  transition: all 0.15s;
 }
-.back-link:hover { opacity: 1; }
+.back-link:hover { opacity: 1; background: rgba(255,255,255,0.15); }
 
 .page-title {
-  font-size: 1.35rem;
-  font-weight: 700;
-  color: #1E3A8A;
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #0F172A;
   margin-bottom: 4px;
+  letter-spacing: -0.5px;
 }
 .page-sub {
   font-size: 0.78rem;
-  color: #6B7280;
+  color: #64748B;
   margin-bottom: 20px;
+  font-weight: 400;
 }
 
 /* Time range selector */
 .range-bar {
   display: flex;
   gap: 8px;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
   flex-wrap: wrap;
 }
 .range-btn {
   padding: 7px 18px;
-  border-radius: 8px;
+  border-radius: 20px;
   border: 1.5px solid #DBEAFE;
   background: #fff;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 600;
   color: #3B82F6;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all 0.2s;
+  font-family: 'Inter', sans-serif;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
 }
-.range-btn:hover { border-color: #2563EB; color: #1E40AF; }
+.range-btn:hover { border-color: #2563EB; color: #1E40AF; background: #EFF6FF; }
 .range-btn.active {
-  background: #2563EB;
+  background: linear-gradient(135deg, #2563EB, #3B82F6);
   border-color: #2563EB;
   color: #fff;
-  box-shadow: 0 2px 8px rgba(37,99,235,0.25);
+  box-shadow: 0 3px 12px rgba(37,99,235,0.30);
 }
 
 /* KPI grid */
@@ -94,30 +99,37 @@ body {
 .kpi-card {
   background: #fff;
   border: 1px solid #E2E8F0;
-  border-radius: 14px;
-  padding: 18px 20px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  border-radius: 16px;
+  padding: 20px 20px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+  transition: box-shadow 0.2s, transform 0.2s;
 }
+.kpi-card:hover { box-shadow: 0 6px 24px rgba(37,99,235,0.10); transform: translateY(-2px); }
 .kpi-label {
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   font-weight: 700;
   color: #94A3B8;
   text-transform: uppercase;
-  letter-spacing: 0.8px;
-  margin-bottom: 6px;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
 }
 .kpi-value {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #1E293B;
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: #0F172A;
   line-height: 1.1;
-  margin-bottom: 4px;
+  margin-bottom: 5px;
+  letter-spacing: -0.5px;
 }
 .kpi-sub {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   color: #94A3B8;
+  font-weight: 400;
 }
-.kpi-card.highlight { border-left: 4px solid #2563EB; }
+.kpi-card.highlight {
+  border-left: 4px solid #2563EB;
+  background: linear-gradient(135deg, #ffffff 0%, #F0F7FF 100%);
+}
 
 /* Loading / error */
 .state-msg {
@@ -131,8 +143,9 @@ body {
 /* Date range label */
 .range-label {
   font-size: 0.72rem;
+  font-weight: 500;
   color: #94A3B8;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 </style>
 </head>
