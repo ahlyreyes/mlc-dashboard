@@ -214,8 +214,8 @@ async function fetchPancakeSalesByDate() {
 
     for (const row of rows) {
       const seller = (row['Assigning seller'] || '').trim();
-      if (!seller) continue;
-      if (EXCLUDED_SELLERS.some(s => seller.toLowerCase() === s.toLowerCase())) continue;
+      // Only skip rows that belong to an explicitly excluded seller — rows with no seller are valid
+      if (seller && EXCLUDED_SELLERS.some(s => seller.toLowerCase() === s.toLowerCase())) continue;
 
       const price = parseFloat((row['Unit price'] || '0').replace(/,/g, '')) || 0;
       const dateRaw = row['Sales Date'] || '';
@@ -230,7 +230,8 @@ async function fetchPancakeSalesByDate() {
       const status = (row['Status'] || '').trim().toUpperCase();
       if (status.includes('CANCEL')) continue;
 
-      const product = (row['PRODUCT NAME'] || '').trim();
+      // Support both "PRODUCT NAME" (old sheet) and "Product Variation" (April sheet)
+      const product = (row['PRODUCT NAME'] || row['Product Variation'] || '').trim();
       const adId = (row['Ads'] || '').trim();
 
       // ── Per-ad sales (NDAP matching) — requires adId, exclude Haplunas ──
