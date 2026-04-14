@@ -206,11 +206,16 @@ async function fetchPancakeSalesByDate() {
   if (cached) { console.log('✅ Pancake cache hit'); return cached; }
   try {
     const allCsvs = await Promise.all(PANCAKE_CSV_URLS.map(url => fetchRaw(url)));
+    const csvRowCounts = allCsvs.map(csv => parseCSV(csv).length);
     const rows = allCsvs.flatMap(csv => parseCSV(csv));
+    console.log(`📋 Pancake rows fetched: ${rows.length} (per sheet: ${csvRowCounts.join(', ')})`);
+
     const EXCLUDED_SELLERS = ['Marj Adana', 'Shan Chai Bertes'];
 
     const salesByDate = {};       // keyed by adId — for per-ad NDAP matching
     const clearSightByDate = {};  // ALL Clear Sight sales incl. no-ad rows
+
+    let skipNoDate=0, skipCancel=0, skipNonClearSight=0, countedCS=0;
 
     for (const row of rows) {
       const seller = (row['Assigning seller'] || '').trim();
@@ -218,16 +223,16 @@ async function fetchPancakeSalesByDate() {
 
       const price = parseFloat((row['Unit price'] || '0').replace(/,/g, '')) || 0;
       const dateRaw = row['Sales Date'] || '';
-      if (!dateRaw) continue;
+      if (!dateRaw) { skipNoDate++; continue; }
       let dateStr;
       try {
         const d = new Date(dateRaw);
-        if (isNaN(d.getTime())) continue;
+        if (isNaN(d.getTime())) { skipNoDate++; continue; }
         dateStr = formatDate(d);
-      } catch(e) { continue; }
+      } catch(e) { skipNoDate++; continue; }
 
       const status = (row['Status'] || '').trim().toUpperCase();
-      if (status.includes('CANCEL')) continue;
+      if (status.includes('CANCEL')) { skipCancel++; continue; }
 
       // Support both "PRODUCT NAME" (old sheet) and "Product Variation" (April sheet)
       const product = (row['PRODUCT NAME'] || row['Product Variation'] || '').trim();
@@ -261,8 +266,14 @@ async function fetchPancakeSalesByDate() {
         if (!clearSightByDate[dateStr]) clearSightByDate[dateStr] = { sales: 0, orders: 0 };
         clearSightByDate[dateStr].sales  += price;
         clearSightByDate[dateStr].orders += 1;
+        countedCS++;
+      } else {
+        skipNonClearSight++;
       }
     }
+
+    console.log(`📊 Pancake parse: ${countedCS} Clear Sight rows counted, ${skipCancel} cancelled, ${skipNoDate} no-date, ${skipNonClearSight} non-CS`);
+    console.log('📅 clearSightByDate totals:', Object.entries(clearSightByDate).map(([d,v])=>`${d}:₱${v.sales.toFixed(0)}(${v.orders})`).join(', '));
 
     const result = { salesByDate, clearSightByDate };
     cacheSet(pancakeCache, 'pancake', result);
@@ -478,6 +489,18 @@ app.get('/auth/google/callback',
 );
 app.get('/logout', (req, res) => { req.logout(() => res.redirect('/login')); });
 app.get('/api/me', requireAuth, (req, res) => res.json(req.user));
+
+app.get('/api/flush-cache', requireAuth, (req, res) => {
+  pancakeCache.clear(); metaInsightsCache.clear(); budgetCache.clear(); activeAdsCache.clear();
+  console.log('🗑️ All caches flushed by', req.user.email);
+  res.json({ ok: true, message: 'All caches cleared — next load will fetch fresh data' });
+});
+
+app.get('/api/debug-pancake', requireAuth, async (req, res) => {
+  pancakeCache.clear();
+  const data = await fetchPancakeSalesByDate();
+  res.json({ clearSightByDate: data.clearSightByDate });
+});
 
 // Action log routes
 app.post('/api/action-log', requireAuth, async (req, res) => {
