@@ -4,129 +4,460 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MLC Insights — Login</title>
-<meta property="og:title" content="MLC Insights — NDAP">
+<meta property="og:title" content="MLC Facebook Sales Department Reports">
 <meta property="og:site_name" content="MLC Insights">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
 body {
   font-family: 'Inter', sans-serif;
-  background: #EEF2FF;
   min-height: 100vh;
+  display: flex;
+  position: relative;
+  overflow: hidden;
+  background: #060B18;
+}
+
+/* ── LEFT PANEL — Branding ── */
+.left-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 60px 64px;
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(145deg, #0B1220 0%, #0F1B35 40%, #112045 100%);
+}
+
+/* Animated gradient orbs */
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(80px);
+}
+.orb-1 {
+  width: 520px; height: 520px;
+  background: radial-gradient(circle, rgba(37,99,235,0.30) 0%, transparent 70%);
+  top: -120px; left: -100px;
+}
+.orb-2 {
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, rgba(99,102,241,0.22) 0%, transparent 70%);
+  bottom: -80px; right: -60px;
+}
+.orb-3 {
+  width: 280px; height: 280px;
+  background: radial-gradient(circle, rgba(16,185,129,0.12) 0%, transparent 70%);
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Grid pattern overlay */
+.grid-overlay {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+  z-index: 0;
+}
+
+.left-content { position: relative; z-index: 2; }
+
+.brand-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(37,99,235,0.15);
+  border: 1px solid rgba(37,99,235,0.35);
+  border-radius: 20px;
+  padding: 6px 14px;
+  margin-bottom: 40px;
+}
+.brand-badge-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #3B82F6;
+  box-shadow: 0 0 8px rgba(59,130,246,0.8);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.85); }
+}
+.brand-badge-txt {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #93C5FD;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.left-logo {
+  font-size: 4.5rem;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: -3px;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.left-logo span { color: #3B82F6; }
+
+.left-headline {
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.88);
+  line-height: 1.35;
+  margin-bottom: 16px;
+  letter-spacing: -0.3px;
+  max-width: 380px;
+}
+
+.left-sub {
+  font-size: 0.88rem;
+  color: rgba(255,255,255,0.42);
+  line-height: 1.7;
+  max-width: 340px;
+  font-weight: 400;
+}
+
+/* Stats row */
+.stats-row {
+  display: flex;
+  gap: 32px;
+  margin-top: 52px;
+}
+.stat-item {}
+.stat-value {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -1px;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.stat-value span { color: #3B82F6; }
+.stat-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.35);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Divider line */
+.left-divider {
+  width: 48px;
+  height: 2px;
+  background: linear-gradient(90deg, #2563EB, transparent);
+  margin: 44px 0 36px;
+  border-radius: 2px;
+}
+
+.feature-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.feature-icon {
+  width: 28px; height: 28px;
+  border-radius: 7px;
+  background: rgba(37,99,235,0.18);
+  border: 1px solid rgba(37,99,235,0.30);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-size: 13px;
+}
+.feature-txt {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.55);
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+/* ── RIGHT PANEL — Login form ── */
+.right-panel {
+  width: 480px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 48px 40px;
+  background: #ffffff;
+  position: relative;
+}
+
+.right-panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 1px;
+  height: 100%;
+  background: linear-gradient(180deg, transparent, rgba(37,99,235,0.15) 30%, rgba(99,102,241,0.20) 70%, transparent);
+}
+
+.login-box {
+  width: 100%;
+  max-width: 360px;
+}
+
+.login-welcome {
+  margin-bottom: 36px;
+}
+.login-tag {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #3B82F6;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 10px;
+}
+.login-title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #0F172A;
+  letter-spacing: -0.8px;
+  line-height: 1.2;
+  margin-bottom: 8px;
+}
+.login-sub {
+  font-size: 0.82rem;
+  color: #64748B;
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+/* Divider */
+.form-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 28px 0;
+}
+.form-divider-line { flex: 1; height: 1px; background: #F1F5F9; }
+.form-divider-txt { font-size: 0.7rem; color: #CBD5E1; font-weight: 500; letter-spacing: 0.5px; }
+
+/* Google button */
+.google-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 20px;
+  background: #fff;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #0F172A;
+  text-decoration: none;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(.4,0,.2,1);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 0 0 0 rgba(37,99,235,0);
   position: relative;
   overflow: hidden;
 }
-/* Decorative blobs */
-.blob {
+.google-btn::before {
+  content: '';
   position: absolute;
-  border-radius: 50%;
-  filter: blur(60px);
-  opacity: 0.35;
-  pointer-events: none;
-}
-.blob-1 { width: 400px; height: 400px; background: #6366F1; top: -120px; left: -100px; }
-.blob-2 { width: 300px; height: 300px; background: #3B82F6; bottom: -80px; right: -80px; }
-
-.card {
-  background: #fff;
-  border-radius: 24px;
-  box-shadow: 0 8px 48px rgba(37,99,235,0.10);
-  padding: 52px 44px;
-  text-align: center;
-  max-width: 400px;
-  width: 100%;
-  position: relative;
-  z-index: 1;
-}
-.logo-wrap { margin-bottom: 28px; }
-.logo-text {
-  font-size: 2rem;
-  font-weight: 800;
-  color: #1E40AF;
-  letter-spacing: -1px;
-}
-.logo-text span { color: #6366F1; }
-.logo-tag {
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: #93C5FD;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  margin-top: 2px;
-}
-h1 { font-size: 1.25rem; font-weight: 700; color: #1E3A8A; margin-bottom: 6px; }
-.subtitle { font-size: 0.82rem; color: #6B7280; margin-bottom: 36px; font-weight: 500; }
-.google-btn {
-  display: flex; align-items: center; justify-content: center; gap: 12px;
-  background: #fff;
-  border: 1.5px solid #DBEAFE;
-  border-radius: 12px;
-  padding: 14px 24px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #1E40AF;
-  cursor: pointer;
-  text-decoration: none;
-  transition: all 0.2s;
-  width: 100%;
-  font-family: 'Inter', sans-serif;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(37,99,235,0.04), rgba(99,102,241,0.04));
+  opacity: 0;
+  transition: opacity 0.2s;
 }
 .google-btn:hover {
-  border-color: #2563EB;
-  background: #EFF6FF;
-  box-shadow: 0 4px 16px rgba(37,99,235,0.15);
+  border-color: #BFDBFE;
+  box-shadow: 0 4px 20px rgba(37,99,235,0.14), 0 0 0 4px rgba(37,99,235,0.06);
   transform: translateY(-1px);
 }
-.google-btn svg { width: 20px; height: 20px; flex-shrink: 0; }
-.error {
-  background: #FEF2F2; color: #DC2626;
-  border-radius: 8px; padding: 10px 16px;
-  font-size: 0.82rem; margin-bottom: 20px; display: none;
+.google-btn:hover::before { opacity: 1; }
+.google-btn:active { transform: translateY(0); }
+.google-btn svg { width: 20px; height: 20px; flex-shrink: 0; position: relative; z-index: 1; }
+.google-btn-txt { position: relative; z-index: 1; }
+
+/* Error */
+.error-box {
+  display: none;
+  align-items: flex-start;
+  gap: 10px;
+  background: #FFF1F2;
+  border: 1px solid #FECDD3;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 20px;
+}
+.error-box.show { display: flex; }
+.error-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+.error-txt { font-size: 0.78rem; color: #BE123C; font-weight: 500; line-height: 1.5; }
+
+/* Footer note */
+.login-footer {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #F1F5F9;
+}
+.login-footer-txt {
+  font-size: 0.68rem;
+  color: #94A3B8;
+  text-align: center;
+  line-height: 1.7;
+}
+.login-footer-txt strong { color: #64748B; font-weight: 600; }
+
+/* Security badges */
+.security-badges {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 16px;
+}
+.badge-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.65rem;
+  color: #CBD5E1;
   font-weight: 500;
 }
-.error.show { display: block; }
-.footer { margin-top: 28px; font-size: 0.7rem; color: #9CA3AF; }
-.divider { border: none; border-top: 1px solid #F3F4F6; margin: 28px 0; }
+.badge-icon { font-size: 12px; }
+
+/* Responsive */
+@media (max-width: 900px) {
+  .left-panel { display: none; }
+  .right-panel {
+    width: 100%;
+    background: #060B18;
+    padding: 48px 24px;
+  }
+  .right-panel::before { display: none; }
+  .login-box { max-width: 400px; margin: 0 auto; }
+  .login-title { color: #fff; }
+  .login-tag { color: #60A5FA; }
+  .login-sub { color: rgba(255,255,255,0.55); }
+  .google-btn { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12); color: #fff; }
+  .google-btn:hover { background: rgba(255,255,255,0.10); border-color: rgba(255,255,255,0.25); }
+  .form-divider-line { background: rgba(255,255,255,0.08); }
+  .form-divider-txt { color: rgba(255,255,255,0.25); }
+  .login-footer { border-top-color: rgba(255,255,255,0.08); }
+  .login-footer-txt { color: rgba(255,255,255,0.3); }
+  .login-footer-txt strong { color: rgba(255,255,255,0.5); }
+  .badge-item { color: rgba(255,255,255,0.25); }
+  .error-box { background: rgba(190,18,60,0.12); border-color: rgba(190,18,60,0.3); }
+}
 </style>
 </head>
 <body>
-<div class="blob blob-1"></div>
-<div class="blob blob-2"></div>
 
-<div class="card">
-  <div class="logo-wrap">
-    <div class="logo-text">MLC<span>.</span></div>
-    <div class="logo-tag">Insights Platform</div>
+<!-- LEFT: Branding panel -->
+<div class="left-panel">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+  <div class="grid-overlay"></div>
+
+  <div class="left-content">
+    <div class="brand-badge">
+      <div class="brand-badge-dot"></div>
+      <span class="brand-badge-txt">Live Dashboard</span>
+    </div>
+
+    <div class="left-logo">MLC<span>.</span></div>
+    <div class="left-headline">Facebook Sales Department Reports</div>
+    <div class="left-sub">Real-time ad performance, sales tracking, and actionable insights — all in one place.</div>
+
+    <div class="left-divider"></div>
+
+    <div class="feature-list">
+      <div class="feature-item">
+        <div class="feature-icon">📊</div>
+        <div class="feature-txt">Next Day Advertising Plan — per-ad ROAS and budget decisions</div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">💸</div>
+        <div class="feature-txt">Ad Spend Summary — ROAS, AOV, CVR and CPM at a glance</div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">📦</div>
+        <div class="feature-txt">Sales tracking synced from Pancake POS in real time</div>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-item">
+        <div class="stat-value">14<span>+</span></div>
+        <div class="stat-label">Active Ads</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">4<span></span></div>
+        <div class="stat-label">Ad Accounts</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">Live</div>
+        <div class="stat-label">Data Sync</div>
+      </div>
+    </div>
   </div>
-  <h1>Welcome back</h1>
-  <div class="subtitle">Sign in to access your analytics dashboard</div>
-  <div class="error" id="errorMsg"></div>
-  <a href="/auth/google" class="google-btn">
-    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-    </svg>
-    Sign in with Google
-  </a>
-  <hr class="divider">
-  <div class="footer">Authorized access only. Contact your administrator for access.</div>
 </div>
+
+<!-- RIGHT: Login form -->
+<div class="right-panel">
+  <div class="login-box">
+    <div class="login-welcome">
+      <div class="login-tag">Secure Access</div>
+      <div class="login-title">Welcome back</div>
+      <div class="login-sub">Sign in with your authorized Google account to access your dashboard.</div>
+    </div>
+
+    <div class="error-box" id="errorBox">
+      <span class="error-icon">⚠️</span>
+      <span class="error-txt" id="errorMsg"></span>
+    </div>
+
+    <a href="/auth/google" class="google-btn">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+      </svg>
+      <span class="google-btn-txt">Continue with Google</span>
+    </a>
+
+    <div class="login-footer">
+      <div class="login-footer-txt">
+        <strong>Authorized access only.</strong> Only registered MLC team members can sign in. Contact your administrator if you need access.
+      </div>
+      <div class="security-badges">
+        <div class="badge-item"><span class="badge-icon">🔒</span> SSL Secured</div>
+        <div class="badge-item"><span class="badge-icon">✓</span> Google OAuth</div>
+        <div class="badge-item"><span class="badge-icon">🛡</span> Role-based Access</div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
   const params = new URLSearchParams(window.location.search);
   if (params.get('error') === 'unauthorized') {
-    const el = document.getElementById('errorMsg');
-    el.textContent = 'Your Google account is not authorized. Contact your administrator.';
-    el.classList.add('show');
+    const box = document.getElementById('errorBox');
+    document.getElementById('errorMsg').textContent = 'Your Google account is not authorized. Contact your administrator for access.';
+    box.classList.add('show');
   }
   if (params.get('error') === 'oauth_error') {
-    const el = document.getElementById('errorMsg');
-    el.textContent = 'Authentication error. Please try again or contact your administrator.';
-    el.classList.add('show');
+    const box = document.getElementById('errorBox');
+    document.getElementById('errorMsg').textContent = 'Authentication error. Please try again or contact your administrator.';
+    box.classList.add('show');
   }
 </script>
 </body>
