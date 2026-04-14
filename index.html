@@ -1179,15 +1179,19 @@ async function loadData() {
   }
 }
 
-function renderKPIs({ dates, campaigns }) {
+function renderKPIs({ dates, campaigns, clearSightByDate }) {
   let totalSpend=0, totalSales=0, totalOrders=0, totalInquiries=0;
   for (const c of campaigns) {
     totalSpend    += c.totalSpend  || 0;
-    totalSales    += c.totalSales  || 0;
-    totalOrders   += c.totalOrders || 0;
     for (const d of Object.values(c.dates)) {
       totalInquiries += d.messagesStarted || 0;
     }
+  }
+  // Use clearSightByDate for accurate sales/orders — includes all Clear Sight orders, not just per-ad
+  const csbd = clearSightByDate || {};
+  for (const date of dates) {
+    totalSales  += (csbd[date] ? csbd[date].sales  : 0);
+    totalOrders += (csbd[date] ? csbd[date].orders : 0);
   }
   const avgRoas = totalSpend > 0 ? totalSales / totalSpend : 0;
   const aov     = totalOrders > 0 ? totalSales / totalOrders : 0;
@@ -1966,11 +1970,15 @@ async function loadAnalytics() {
       for (const [date, dd] of Object.entries(c.dates)) {
         if (!byDate[date]) continue;
         byDate[date].spend      += dd.spend           || 0;
-        byDate[date].sales      += dd.grossSales       || 0;
-        byDate[date].orders     += dd.orders           || 0;
         byDate[date].inquiries  += dd.messagesStarted  || 0;
         byDate[date].impressions+= dd.impressions      || 0;
       }
+    }
+    // Use clearSightByDate for sales/orders — accurate totals matching mainfile
+    const csbd = data.clearSightByDate || {};
+    for (const date of data.dates) {
+      byDate[date].sales  = csbd[date] ? csbd[date].sales  : 0;
+      byDate[date].orders = csbd[date] ? csbd[date].orders : 0;
     }
 
     // Aggregate by product
