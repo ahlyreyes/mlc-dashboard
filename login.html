@@ -16,7 +16,7 @@ body {
   display: flex;
   position: relative;
   overflow: hidden;
-  background: #060B18;
+  background: #0D0820;
 }
 
 /* ── LEFT PANEL — Branding ── */
@@ -28,7 +28,7 @@ body {
   padding: 60px 64px;
   position: relative;
   z-index: 1;
-  background: linear-gradient(145deg, #0B1220 0%, #0F1B35 40%, #112045 100%);
+  background: linear-gradient(145deg, #0D0820 0%, #130B2E 35%, #1A0B3B 60%, #1E1050 100%);
 }
 
 /* Animated gradient orbs */
@@ -36,21 +36,21 @@ body {
   position: absolute;
   border-radius: 50%;
   pointer-events: none;
-  filter: blur(80px);
+  filter: blur(90px);
 }
 .orb-1 {
-  width: 520px; height: 520px;
-  background: radial-gradient(circle, rgba(37,99,235,0.30) 0%, transparent 70%);
-  top: -120px; left: -100px;
+  width: 560px; height: 560px;
+  background: radial-gradient(circle, rgba(109,40,217,0.45) 0%, transparent 65%);
+  top: -160px; left: -120px;
 }
 .orb-2 {
-  width: 400px; height: 400px;
-  background: radial-gradient(circle, rgba(99,102,241,0.22) 0%, transparent 70%);
-  bottom: -80px; right: -60px;
+  width: 480px; height: 480px;
+  background: radial-gradient(circle, rgba(37,99,235,0.40) 0%, transparent 65%);
+  bottom: -120px; right: -80px;
 }
 .orb-3 {
-  width: 280px; height: 280px;
-  background: radial-gradient(circle, rgba(16,185,129,0.12) 0%, transparent 70%);
+  width: 320px; height: 320px;
+  background: radial-gradient(circle, rgba(139,92,246,0.25) 0%, transparent 65%);
   top: 50%; left: 50%;
   transform: translate(-50%, -50%);
 }
@@ -72,8 +72,8 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: rgba(37,99,235,0.15);
-  border: 1px solid rgba(37,99,235,0.35);
+  background: rgba(139,92,246,0.18);
+  border: 1px solid rgba(139,92,246,0.40);
   border-radius: 20px;
   padding: 6px 14px;
   margin-bottom: 40px;
@@ -81,8 +81,8 @@ body {
 .brand-badge-dot {
   width: 7px; height: 7px;
   border-radius: 50%;
-  background: #3B82F6;
-  box-shadow: 0 0 8px rgba(59,130,246,0.8);
+  background: #A78BFA;
+  box-shadow: 0 0 10px rgba(167,139,250,0.9);
   animation: pulse 2s infinite;
 }
 @keyframes pulse {
@@ -92,7 +92,7 @@ body {
 .brand-badge-txt {
   font-size: 0.72rem;
   font-weight: 600;
-  color: #93C5FD;
+  color: #C4B5FD;
   letter-spacing: 1.5px;
   text-transform: uppercase;
 }
@@ -105,7 +105,7 @@ body {
   line-height: 1;
   margin-bottom: 6px;
 }
-.left-logo span { color: #3B82F6; }
+.left-logo span { color: #A78BFA; }
 
 .left-headline {
   font-size: 1.45rem;
@@ -141,7 +141,7 @@ body {
   line-height: 1;
   margin-bottom: 4px;
 }
-.stat-value span { color: #3B82F6; }
+.stat-value span { color: #A78BFA; }
 .stat-label {
   font-size: 0.7rem;
   font-weight: 600;
@@ -154,7 +154,7 @@ body {
 .left-divider {
   width: 48px;
   height: 2px;
-  background: linear-gradient(90deg, #2563EB, transparent);
+  background: linear-gradient(90deg, #7C3AED, #3B82F6, transparent);
   margin: 44px 0 36px;
   border-radius: 2px;
 }
@@ -338,7 +338,7 @@ body {
   .left-panel { display: none; }
   .right-panel {
     width: 100%;
-    background: #060B18;
+    background: #0D0820;
     padding: 48px 24px;
   }
   .right-panel::before { display: none; }
