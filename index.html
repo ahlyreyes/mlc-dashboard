@@ -275,22 +275,22 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); }
   background: var(--card);
   border: 0.5px solid var(--border);
   border-radius: 8px;
-  padding: 12px 14px;
+  padding: 8px 10px;
 }
 .kpi-label {
-  font-size: 14px;
+  font-size: 10px;
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.4px;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 .kpi-value {
-  font-size: 24px;
+  font-size: 18px;
   font-weight: 500;
   color: var(--text);
   line-height: 1.1;
 }
-.kpi-sub { font-size: 14px; color: var(--muted2); margin-top: 2px; }
+.kpi-sub { font-size: 10px; color: var(--muted2); margin-top: 1px; }
 
 /* ── LOADING / ERROR ── */
 .loading-wrap {
@@ -426,27 +426,27 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); }
 .an-charts-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-  margin-bottom: 16px;
+  gap: 10px;
+  margin-bottom: 12px;
 }
 @media (max-width: 900px) { .an-charts-grid { grid-template-columns: 1fr; } }
 .an-chart-card {
   background: var(--card);
   border: 0.5px solid var(--border);
   border-radius: 10px;
-  padding: 12px 14px;
+  padding: 8px 10px;
 }
 .an-chart-title {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   color: var(--text);
-  margin-bottom: 12px;
+  margin-bottom: 6px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 .an-chart-wrap {
   position: relative;
-  height: 110px;
+  height: 70px;
 }
 .overall-label { font-size: 14px; color: var(--muted); }
 .overall-roas {
@@ -827,16 +827,11 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); }
     <header class="topbar">
       <div class="topbar-left">
         <button class="btn-sidebar-toggle" onclick="toggleSidebar()" title="Toggle menu">☰</button>
-        <span class="topbar-label">End Date</span>
-        <input type="date" id="endDate">
-        <span class="topbar-label">Days</span>
-        <select id="daysSelect">
-          <option value="1">1 day</option>
-          <option value="3" selected>3 days</option>
-          <option value="5">5 days</option>
-          <option value="7">7 days</option>
-        </select>
-        <button class="btn-refresh" id="refreshBtn" onclick="loadData()">Refresh</button>
+        <span class="topbar-label" id="ndap-ctrl-label-from">From</span>
+        <input type="date" id="fromDate" class="ndap-ctrl">
+        <span class="topbar-label ndap-ctrl">To</span>
+        <input type="date" id="toDate" class="ndap-ctrl">
+        <button class="btn-refresh ndap-ctrl" id="refreshBtn" onclick="loadData()">Apply</button>
       </div>
       <div class="topbar-right">
         <div class="user-pill"><span class="online-dot"></span><span id="userBadge">Loading...</span></div>
@@ -1063,7 +1058,9 @@ async function submitAction() {
   }
 }
 
-document.getElementById('endDate').value = new Date().toISOString().split('T')[0];
+const _today = new Date().toISOString().split('T')[0];
+document.getElementById('toDate').value   = _today;
+document.getElementById('fromDate').value = _today;
 
 const PHP  = n => '₱' + Number(n||0).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
 const FMT2 = n => Number(n||0).toFixed(2);
@@ -1107,9 +1104,13 @@ function dayLabel(ds) {
 }
 
 async function loadData() {
-  const endDate = document.getElementById('endDate').value;
-  const days    = document.getElementById('daysSelect').value;
-  const btn     = document.getElementById('refreshBtn');
+  const fromDate = document.getElementById('fromDate').value;
+  const toDate   = document.getElementById('toDate').value;
+  if (!fromDate || !toDate) { alert('Select a From and To date.'); return; }
+  const from = new Date(fromDate), to = new Date(toDate);
+  const days = Math.max(1, Math.round((to - from) / 86400000) + 1);
+  const endDate = toDate;
+  const btn = document.getElementById('refreshBtn');
   btn.disabled = true; btn.textContent = 'Loading...';
   document.getElementById('loading').style.display = 'block';
   document.getElementById('tableContainer').innerHTML = '';
@@ -1125,7 +1126,7 @@ async function loadData() {
     document.getElementById('tableContainer').innerHTML = `<div class="error-msg">${e.message}</div>`;
   } finally {
     document.getElementById('loading').style.display = 'none';
-    btn.disabled = false; btn.textContent = 'Refresh';
+    btn.disabled = false; btn.textContent = 'Apply';
   }
 }
 
@@ -1143,7 +1144,8 @@ function renderKPIs({ dates, campaigns }) {
   const aov     = totalOrders > 0 ? totalSales / totalOrders : 0;
   const cvr     = totalInquiries > 0 ? totalOrders / totalInquiries * 100 : 0;
   const cpm     = totalInquiries > 0 ? totalSpend / totalInquiries : 0;
-  const days    = parseInt(document.getElementById('daysSelect').value) || 1;
+  const _f = document.getElementById('fromDate').value, _t = document.getElementById('toDate').value;
+  const days    = (_f && _t) ? Math.max(1, Math.round((new Date(_t)-new Date(_f))/86400000)+1) : 1;
   const dayLabel = days === 1 ? 'for 1 day' : `for ${days} days`;
   document.getElementById('kpi-roas').textContent  = FMT2(avgRoas);
   document.getElementById('kpi-aov').textContent   = PHP(aov);
@@ -1444,6 +1446,10 @@ function switchTab(tab, el) {
   if (tab === 'eyecare')   loadBrandTab('EYECARE');
   if (PRODUCT_TABS[tab])   loadProductTab(tab);
   if (tab === 'analytics') document.getElementById('analyticsEmpty').style.display = 'block';
+  // Hide NDAP top controls on Analytics tab, show on all others
+  document.querySelectorAll('.ndap-ctrl, #ndap-ctrl-label-from').forEach(el => {
+    el.style.display = (tab === 'analytics' || tab === 'history') ? 'none' : '';
+  });
   if (tab === 'checklist') loadChecklist();
   if (tab === 'history')   loadHistory();
 }
@@ -1490,7 +1496,7 @@ async function loadChecklist() {
   document.getElementById('checklistLoading').style.display = 'block';
   document.getElementById('checklistContainer').innerHTML = '';
   try {
-    const endDate = document.getElementById('endDate').value || new Date().toISOString().split('T')[0];
+    const endDate = document.getElementById('toDate').value || new Date().toISOString().split('T')[0];
     const [ndapRes, budgetRes] = await Promise.all([
       fetch(`/api/ndap?endDate=${endDate}&days=1`),
       fetch(`/api/budgets/${endDate}`)
@@ -1646,7 +1652,8 @@ function renderBrandKPIs(campaigns, prefix) {
   const aov  = orders > 0 ? sales / orders : 0;
   const cvr  = inquiries > 0 ? orders / inquiries * 100 : 0;
   const cpm  = inquiries > 0 ? spend / inquiries : 0;
-  const days = parseInt(document.getElementById('daysSelect').value) || 1;
+  const _f2 = document.getElementById('fromDate').value, _t2 = document.getElementById('toDate').value;
+  const days = (_f2 && _t2) ? Math.max(1, Math.round((new Date(_t2)-new Date(_f2))/86400000)+1) : 1;
   const dayLabel = days === 1 ? 'for 1 day' : `for ${days} days`;
   document.getElementById(`kpi-${prefix}-roas`).textContent  = FMT2(roas);
   document.getElementById(`kpi-${prefix}-spend`).textContent = PHP(spend);
@@ -1662,8 +1669,9 @@ function renderBrandKPIs(campaigns, prefix) {
 async function loadBrandTab(brand) {
   const prefix    = brand === 'NATURALS' ? 'naturals' : 'eyecare';
   const products  = brand === 'NATURALS' ? NATURALS_PRODUCTS : EYECARE_PRODUCTS;
-  const endDate   = document.getElementById('endDate').value;
-  const days      = document.getElementById('daysSelect').value;
+  const endDate = document.getElementById('toDate').value;
+  const _fv = document.getElementById('fromDate').value;
+  const days = (_fv && endDate) ? Math.max(1, Math.round((new Date(endDate)-new Date(_fv))/86400000)+1) : 1;
   document.getElementById(`loading-${prefix}`).style.display = 'block';
   document.getElementById(`tableContainer-${prefix}`).innerHTML = '';
   document.getElementById(`kpiGrid-${prefix}`).style.display = 'none';
@@ -1684,8 +1692,9 @@ async function loadBrandTab(brand) {
 async function loadProductTab(tabName) {
   const products = PRODUCT_TABS[tabName];
   const displayName = PRODUCT_TAB_NAMES[tabName];
-  const endDate = document.getElementById('endDate').value;
-  const days    = document.getElementById('daysSelect').value;
+  const endDate = document.getElementById('toDate').value;
+  const _fv2 = document.getElementById('fromDate').value;
+  const days = (_fv2 && endDate) ? Math.max(1, Math.round((new Date(endDate)-new Date(_fv2))/86400000)+1) : 1;
   document.getElementById(`loading-${tabName}`).style.display = 'block';
   document.getElementById(`tableContainer-${tabName}`).innerHTML = '';
   document.getElementById(`kpiGrid-${tabName}`).style.display = 'none';
