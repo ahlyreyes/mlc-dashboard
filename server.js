@@ -238,10 +238,14 @@ async function fetchPancakeSalesByDate() {
 
       // Lowercase keys cover any capitalization variant from either sheet
       const product = (row['product name'] || row['product variation'] || '').trim();
+      const fbPage  = (row['facebook page'] || '').trim();
       const adId = (row['ads'] || '').trim();
 
+      // Identify Clear Sight via product column OR Facebook Page column
+      const isClearSight = isClearSightProduct(product) || isClearSightProduct(fbPage);
+
       // ── Per-ad sales (NDAP matching) — excluded sellers skipped, requires adId, no Haplunas ──
-      if (!isExcludedSeller && adId && !isHaplunasProduct(product)) {
+      if (!isExcludedSeller && adId && !isHaplunasProduct(product) && !isHaplunasProduct(fbPage)) {
         if (!salesByDate[dateStr]) salesByDate[dateStr] = {};
         if (!salesByDate[dateStr][adId]) salesByDate[dateStr][adId] = {
           sales: 0, orders: 0,
@@ -264,7 +268,7 @@ async function fetchPancakeSalesByDate() {
       }
 
       // ── Clear Sight total (Ad Spend page) — includes rows with no adId ──
-      if (isClearSightProduct(product)) {
+      if (isClearSight) {
         if (!clearSightByDate[dateStr]) clearSightByDate[dateStr] = { sales: 0, orders: 0 };
         clearSightByDate[dateStr].sales  += price;
         clearSightByDate[dateStr].orders += 1;
