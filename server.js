@@ -170,7 +170,8 @@ function fetchRaw(url) {
 function parseCSV(csv) {
   const lines = csv.split('\n').filter(l => l.trim());
   if (lines.length < 2) return [];
-  const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim());
+  // Normalize headers to lowercase so lookups are case-insensitive
+  const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim().toLowerCase());
   const rows = [];
   for (let i = 1; i < lines.length; i++) {
     const cols = [];
@@ -218,11 +219,12 @@ async function fetchPancakeSalesByDate() {
     let skipNoDate=0, skipCancel=0, skipNonClearSight=0, countedCS=0;
 
     for (const row of rows) {
-      const seller = (row['Assigning seller'] || '').trim();
+      // All keys are lowercased by parseCSV — use lowercase lookups throughout
+      const seller = (row['assigning seller'] || '').trim();
       const isExcludedSeller = seller && EXCLUDED_SELLERS.some(s => seller.toLowerCase() === s.toLowerCase());
 
-      const price = parseFloat((row['Unit price'] || '0').replace(/,/g, '')) || 0;
-      const dateRaw = row['Sales Date'] || '';
+      const price = parseFloat((row['unit price'] || '0').replace(/,/g, '')) || 0;
+      const dateRaw = row['sales date'] || '';
       if (!dateRaw) { skipNoDate++; continue; }
       let dateStr;
       try {
@@ -231,12 +233,12 @@ async function fetchPancakeSalesByDate() {
         dateStr = formatDate(d);
       } catch(e) { skipNoDate++; continue; }
 
-      const status = (row['Status'] || '').trim().toUpperCase();
+      const status = (row['status'] || '').trim().toUpperCase();
       if (status.includes('CANCEL')) { skipCancel++; continue; }
 
-      // Support both "PRODUCT NAME" (old sheet) and "Product Variation" (April sheet)
-      const product = (row['PRODUCT NAME'] || row['Product Variation'] || '').trim();
-      const adId = (row['Ads'] || '').trim();
+      // Lowercase keys cover any capitalization variant from either sheet
+      const product = (row['product name'] || row['product variation'] || '').trim();
+      const adId = (row['ads'] || '').trim();
 
       // ── Per-ad sales (NDAP matching) — excluded sellers skipped, requires adId, no Haplunas ──
       if (!isExcludedSeller && adId && !isHaplunasProduct(product)) {
