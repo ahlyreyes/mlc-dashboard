@@ -69,6 +69,17 @@ async function initDB() {
         UNIQUE(page_key, date)
       )
     `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS creatives (
+        id SERIAL PRIMARY KEY,
+        campaign_key TEXT NOT NULL,
+        link TEXT NOT NULL,
+        title TEXT,
+        submitted_by_email TEXT NOT NULL,
+        submitted_by_name TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
     // Add locked column if it doesn't exist (migration)
     await pool.query(`ALTER TABLE page_budgets ADD COLUMN IF NOT EXISTS locked BOOLEAN DEFAULT FALSE`);
     console.log('✅ DB tables ready');
@@ -295,6 +306,7 @@ async function fetchAccountInsights(account, date) {
   let nextUrl = `https://graph.facebook.com/v19.0/${account.id}/insights` +
     `?fields=ad_id,ad_name,campaign_id,campaign_name,spend,impressions,clicks,cost_per_action_type,actions` +
     `&level=ad&time_range={"since":"${date}","until":"${date}"}` +
+    `&filtering=[{"field":"ad.effective_status","operator":"IN","value":["ACTIVE"]}]` +
     `&limit=500&access_token=${token}`;
 
   try {
@@ -529,6 +541,32 @@ app.get('/api/action-logs/:campaign_key', requireAuth, async (req, res) => {
   } catch(e) { res.json([]); }
 });
 
+app.get('/api/creatives', requireAuth, async (_req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM creatives ORDER BY created_at DESC');
+    res.json(result.rows);
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/creatives', requireAuth, async (req, res) => {
+  const { campaign_key, link, title } = req.body || {};
+  if (!campaign_key || !link) return res.status(400).json({ error: 'Missing fields' });
+  if (!String(link).includes('.com')) return res.status(400).json({ error: 'Link must contain .com' });
+  try {
+    const result = await pool.query(
+      `INSERT INTO creatives (campaign_key, link, title, submitted_by_email, submitted_by_name)
+       VALUES ($1,$2,$3,$4,$5)
+       RETURNING *`,
+      [campaign_key, String(link).trim(), title ? String(title).trim() : null, req.user.email, req.user.name]
+    );
+    res.json({ success: true, creative: result.rows[0] });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // Manual budget routes
 app.post('/api/budget', requireAuth, async (req, res) => {
   const { page_key, date, budget, locked } = req.body;
@@ -610,17 +648,7 @@ app.get('/api/ndap', requireAuth, async (req, res) => {
     // Merge insights into adMap — one row per ad, grouped by adId
     for (const date of dates) {
       for (const row of (insightsByDate[date] || [])) {
-        // Ensure the ad exists in map (handles fallback/historical entries)
-        if (!adMap[row.adId]) {
-          adMap[row.adId] = {
-            campaignId: row.campaignId, campaignName: row.campaignName,
-            adId: row.adId, adName: row.adName,
-            accountName: row.accountName,
-            product: row.product || '',
-            budget: budgetMap[row.adId] || 0,
-            dates: {}
-          };
-        }
+        if (!adMap[row.adId]) continue;
         const sales = salesByDate[date]?.[row.adId] || { sales: 0, orders: 0, delivered: 0, deliveredValue: 0, rts: 0, rtsValue: 0, shipped: 0, shippedValue: 0 };
 
         if (!adMap[row.adId].dates[date]) {

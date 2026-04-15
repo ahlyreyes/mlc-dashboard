@@ -229,6 +229,38 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
   align-items: center;
   gap: 10px;
 }
+.icon-toggle-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.15s;
+}
+.icon-toggle-btn:hover,
+.icon-toggle-btn.active {
+  border-color: var(--amber);
+  background: #EFF6FF;
+  color: var(--amber-dark);
+}
+.top-panel {
+  display: none;
+  background: #F8FAFF;
+  border-bottom: 1px solid var(--border);
+}
+.top-panel.show { display: block; }
+.top-panel-inner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 12px 20px;
+}
 .user-pill {
   display: flex;
   align-items: center;
@@ -251,8 +283,7 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
 
 /* ── LEGEND STRIP ── */
 .legend-strip {
-  background: #F8FAFF;
-  border-bottom: 1px solid var(--border);
+  background: transparent;
   padding: 7px 20px;
   display: flex;
   flex-wrap: wrap;
@@ -366,6 +397,56 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
   margin-left: auto;
 }
 .product-stats span { color: var(--text); font-weight: 500; }
+.group-block {
+  border-top: 1px solid var(--border);
+}
+.group-block:first-of-type {
+  border-top: none;
+}
+.group-header {
+  padding: 14px 16px 12px;
+  background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFF 100%);
+  border-bottom: 1px solid var(--border);
+}
+.group-header-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.group-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+.group-subtitle {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.group-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.overall-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  background: #F8FAFF;
+  border: 1px solid var(--border);
+}
+.overall-badge.roas-scale { background: var(--scale-bg); color: var(--scale-text); border-color: #86efac; }
+.overall-badge.roas-stay { background: var(--stay-bg); color: var(--stay-text); border-color: #fcd34d; }
+.overall-badge.roas-kill { background: var(--kill-bg); color: var(--kill-text); border-color: #fca5a5; }
+.overall-badge.roas-empty { color: var(--muted2); }
 
 /* ── CAMPAIGN CARD ── */
 .camp-card {
@@ -380,13 +461,106 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
 /* Campaign header row */
 .camp-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 10px;
   flex-wrap: nowrap;
 }
 .camp-title-block { flex: 1; min-width: 0; overflow: hidden; }
+.camp-body-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: start;
+}
+.camp-left .camp-name {
+  white-space: normal;
+}
+.ad-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 3px;
+}
+.creative-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #F8FAFF;
+  color: var(--muted2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.creative-btn.has-items {
+  color: #7c3aed;
+  border-color: #c4b5fd;
+  box-shadow: 0 0 0 3px rgba(124,58,237,0.12);
+  background: #f5f3ff;
+}
+.ad-id-line {
+  font-size: 11px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: var(--muted2);
+  margin-bottom: 6px;
+}
+.ad-summary-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.total-roas-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 8px;
+}
+.total-roas-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.total-roas-value {
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1;
+}
+.budget-inline {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 600;
+}
+.camp-right {
+  min-width: 140px;
+  text-align: right;
+}
+.stacked-metric {
+  margin-bottom: 10px;
+}
+.stacked-metric:last-child {
+  margin-bottom: 0;
+}
+.stacked-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+.stacked-value {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text);
+}
 .camp-name {
   font-size: 13px;
   font-weight: 600;
@@ -541,7 +715,7 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
 .btn-log-action:hover { border-color: var(--amber); color: var(--amber-dark); background: #EFF6FF; }
 
 .logged-entry {
-  font-size: 14px;
+  font-size: 12px;
   color: var(--scale);
   margin-top: 2px;
 }
@@ -582,6 +756,19 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
   font-weight: 600;
   color: var(--muted);
   background: #F8FAFF;
+}
+.day-card-head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.day-card-action-btn {
+  border: none;
+  cursor: pointer;
+}
+.day-card-action-btn.action-badge {
+  padding: 2px 8px;
 }
 .day-card.latest .day-card-header {
   background: var(--amber-light);
@@ -704,6 +891,72 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
 }
 .modal input:focus, .modal select:focus, .modal textarea:focus { border-color: var(--amber); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
 .modal-btns { display: flex; gap: 8px; justify-content: flex-end; }
+.creatives-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+  max-height: 320px;
+  overflow: auto;
+}
+.creative-item {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #F8FAFF;
+}
+.creative-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.creative-meta {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.creative-open {
+  font-size: 12px;
+  color: var(--amber-dark);
+  font-weight: 700;
+  text-decoration: none;
+}
+.spend-alert-metric {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+.spend-alert-progress {
+  position: relative;
+  height: 14px;
+  border-radius: 999px;
+  background: #E2E8F0;
+  overflow: hidden;
+  margin: 12px 0 10px;
+}
+.spend-alert-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #f59e0b, #ef4444);
+}
+.spend-alert-threshold {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  left: 60%;
+  background: #0f172a;
+  opacity: 0.45;
+}
+.spend-alert-status {
+  font-size: 13px;
+  font-weight: 800;
+}
+.status-under { color: #c2410c; }
+.status-over { color: var(--kill); }
 .btn-cancel {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -823,6 +1076,21 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
 
 /* ── ROW HOVER ── */
 .day-row:hover { background: rgba(0,0,0,0.03); border-radius: 4px; }
+@media (max-width: 860px) {
+  .camp-body-grid {
+    grid-template-columns: 1fr;
+  }
+  .camp-right {
+    min-width: 0;
+    text-align: left;
+    display: flex;
+    gap: 18px;
+  }
+  .group-header-top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
 </style>
 </head>
 <body>
@@ -876,11 +1144,8 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
     <header class="topbar">
       <div class="topbar-left">
         <button class="btn-sidebar-toggle" onclick="toggleSidebar()" title="Toggle menu">☰</button>
-        <span class="topbar-label" id="ndap-ctrl-label-from">From</span>
-        <input type="date" id="fromDate" class="ndap-ctrl">
-        <span class="topbar-label ndap-ctrl">To</span>
-        <input type="date" id="toDate" class="ndap-ctrl">
-        <button class="btn-refresh ndap-ctrl" id="refreshBtn" onclick="loadData()">Apply</button>
+        <button class="icon-toggle-btn" id="calendarToggle" onclick="toggleTopPanel('calendar')" title="Date filters">📅</button>
+        <button class="icon-toggle-btn" id="legendToggle" onclick="toggleTopPanel('legend')" title="Legend">ⓘ</button>
       </div>
       <div class="topbar-right">
         <div class="user-pill"><span class="online-dot"></span><span id="userBadge">Loading...</span></div>
@@ -889,7 +1154,18 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
       </div>
     </header>
 
+    <div class="top-panel" id="calendarPanel">
+      <div class="top-panel-inner">
+        <span class="topbar-label">From</span>
+        <input type="date" id="fromDate" class="ndap-ctrl">
+        <span class="topbar-label">To</span>
+        <input type="date" id="toDate" class="ndap-ctrl">
+        <button class="btn-refresh" id="refreshBtn" onclick="refreshActiveTab()">Apply</button>
+      </div>
+    </div>
+
     <!-- LEGEND -->
+    <div class="top-panel" id="legendPanel">
     <div class="legend-strip" id="ndap-legend">
       <div class="legend-item"><div class="legend-dot" style="background:var(--scale)"></div>Scale (>=3.0)</div>
       <div class="legend-item"><div class="legend-dot" style="background:var(--stay)"></div>Stay (2.7–2.99)</div>
@@ -897,6 +1173,7 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
       <div class="legend-item"><div class="legend-dot" style="background:var(--observe)"></div>Observe (<2.7)</div>
       <div class="legend-item"><div class="legend-dot" style="background:var(--kill)"></div>Kill (all bad)</div>
       <div class="legend-item"><div class="legend-dot" style="background:#ea580c"></div>Scale Down (3 consec. bad)</div>
+    </div>
     </div>
 
     <!-- NDAP TAB (all brands combined) -->
@@ -926,6 +1203,11 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
             <div class="kpi-sub">Spend / inquiry</div>
           </div>
           <div class="kpi-card">
+            <div class="kpi-label">Total Orders</div>
+            <div class="kpi-value" id="kpi-orders">—</div>
+            <div class="kpi-sub">From POS</div>
+          </div>
+          <div class="kpi-card">
             <div class="kpi-label">Total Spend</div>
             <div class="kpi-value" id="kpi-spend">—</div>
             <div class="kpi-sub" id="kpi-spend-sub">All accounts</div>
@@ -951,6 +1233,7 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
         <div class="kpi-card"><div class="kpi-label">Total Sales</div><div class="kpi-value" id="kpi-clearsight-sales">—</div><div class="kpi-sub" id="kpi-clearsight-sales-sub">Gross (Pancake)</div></div>
         <div class="kpi-card"><div class="kpi-label">CVR</div><div class="kpi-value" id="kpi-clearsight-cvr">—</div><div class="kpi-sub">Inquiries to orders</div></div>
         <div class="kpi-card"><div class="kpi-label">Avg CPM</div><div class="kpi-value" id="kpi-clearsight-cpm">—</div><div class="kpi-sub">Spend / inquiry</div></div>
+        <div class="kpi-card"><div class="kpi-label">Total Orders</div><div class="kpi-value" id="kpi-clearsight-orders">—</div><div class="kpi-sub">From POS</div></div>
         <div class="kpi-card"><div class="kpi-label">Avg AOV</div><div class="kpi-value" id="kpi-clearsight-aov">—</div><div class="kpi-sub">Average order value</div></div>
       </div>
       <div class="loading-wrap" id="loading-clearsight" style="display:none">Loading...</div>
@@ -1041,6 +1324,41 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
     <div class="modal-btns">
       <button class="btn-cancel" onclick="closeModal()">Cancel</button>
       <button class="btn-confirm" onclick="submitAction()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="creativesModal">
+  <div class="modal">
+    <h3 id="creativesModalTitle">Creatives</h3>
+    <div class="modal-sub" id="creativesModalSub"></div>
+    <div id="creativesViewWrap" style="display:none">
+      <div class="creatives-list" id="creativesList"></div>
+      <div class="modal-btns">
+        <button class="btn-cancel" onclick="closeCreativesModal()">Close</button>
+        <button class="btn-confirm" onclick="showCreativeSubmitForm()">+ Submit New</button>
+      </div>
+    </div>
+    <div id="creativesFormWrap" style="display:none">
+      <label>Google Drive Link</label>
+      <input type="text" id="creativeLink" placeholder="https://drive.google.com/..." />
+      <label>Title (optional)</label>
+      <input type="text" id="creativeTitle" placeholder="Concept name or note" />
+      <div class="modal-btns">
+        <button class="btn-cancel" onclick="closeCreativesModal()">Cancel</button>
+        <button class="btn-confirm" onclick="submitCreative()">Submit</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="spendAlertModal">
+  <div class="modal">
+    <h3>3PM Spend Check</h3>
+    <div class="modal-sub">Today’s active-campaign pacing against declared budget.</div>
+    <div id="spendAlertContent"></div>
+    <div class="modal-btns">
+      <button class="btn-confirm" onclick="closeSpendAlert()">Got it</button>
     </div>
   </div>
 </div>
@@ -2050,6 +2368,599 @@ async function loadAnalytics() {
   const start = new Date(); start.setDate(start.getDate() - 6);
   document.getElementById('analyticsEnd').value   = end.toISOString().split('T')[0];
   document.getElementById('analyticsStart').value = start.toISOString().split('T')[0];
+})();
+
+let creativesMap = {};
+let currentCreativesCampaign = null;
+let currentTab = 'ndap';
+let latestNdapData = null;
+
+function escapeHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function getSelectedDates() {
+  const fromDate = document.getElementById('fromDate').value;
+  const toDate = document.getElementById('toDate').value;
+  if (!fromDate || !toDate) return [];
+  const dates = [];
+  const cur = new Date(fromDate + 'T00:00:00');
+  const end = new Date(toDate + 'T00:00:00');
+  while (cur <= end) {
+    dates.push(cur.toISOString().split('T')[0]);
+    cur.setDate(cur.getDate() + 1);
+  }
+  return dates;
+}
+
+function getRangeDayCount() {
+  return getSelectedDates().length || 1;
+}
+
+function getDayRangeLabel() {
+  const days = getRangeDayCount();
+  return days === 1 ? 'for 1 day' : `for ${days} days`;
+}
+
+function getFilteredLoggedList(campaignKey, dates) {
+  return (actionLogs[campaignKey] || []).filter(l => !l.date || dates.includes(l.date)).slice(0, 1);
+}
+
+function toggleTopPanel(panel) {
+  const calendarPanel = document.getElementById('calendarPanel');
+  const legendPanel = document.getElementById('legendPanel');
+  const calendarToggle = document.getElementById('calendarToggle');
+  const legendToggle = document.getElementById('legendToggle');
+  const isCalendar = panel === 'calendar';
+  const target = isCalendar ? calendarPanel : legendPanel;
+  const other = isCalendar ? legendPanel : calendarPanel;
+  const targetBtn = isCalendar ? calendarToggle : legendToggle;
+  const otherBtn = isCalendar ? legendToggle : calendarToggle;
+  const willShow = !target.classList.contains('show');
+  target.classList.toggle('show', willShow);
+  other.classList.remove('show');
+  targetBtn.classList.toggle('active', willShow);
+  otherBtn.classList.remove('active');
+}
+
+function closeTopPanels() {
+  document.getElementById('calendarPanel').classList.remove('show');
+  document.getElementById('legendPanel').classList.remove('show');
+  document.getElementById('calendarToggle').classList.remove('active');
+  document.getElementById('legendToggle').classList.remove('active');
+}
+
+function getCreativesForCampaign(campaignKey) {
+  return creativesMap[campaignKey] || [];
+}
+
+async function loadCreatives() {
+  try {
+    const r = await fetch('/api/creatives');
+    const rows = await r.json();
+    creativesMap = {};
+    rows.forEach(row => {
+      if (!creativesMap[row.campaign_key]) creativesMap[row.campaign_key] = [];
+      creativesMap[row.campaign_key].push(row);
+    });
+  } catch (e) {
+    creativesMap = {};
+  }
+}
+
+function openCreativesModal(campaignKey, campaignName) {
+  currentCreativesCampaign = { campaignKey, campaignName };
+  const list = getCreativesForCampaign(campaignKey);
+  document.getElementById('creativesModalTitle').textContent = list.length ? 'View Creatives' : 'Submit Creatives';
+  document.getElementById('creativesModalSub').textContent = campaignName;
+  if (list.length) {
+    const html = list.map(item => `
+      <div class="creative-item">
+        <div class="creative-title">${escapeHtml(item.title || 'Untitled submission')}</div>
+        <div class="creative-meta">${escapeHtml(item.submitted_by_name)} · ${new Date(item.created_at).toLocaleDateString('en-PH')}</div>
+        <a class="creative-open" href="${escapeHtml(item.link)}" target="_blank" rel="noopener noreferrer">Open ↗</a>
+      </div>
+    `).join('');
+    document.getElementById('creativesList').innerHTML = html;
+    document.getElementById('creativesViewWrap').style.display = 'block';
+    document.getElementById('creativesFormWrap').style.display = 'none';
+  } else {
+    showCreativeSubmitForm();
+  }
+  document.getElementById('creativesModal').classList.add('show');
+}
+
+function showCreativeSubmitForm() {
+  document.getElementById('creativesModalTitle').textContent = 'Submit Creatives';
+  document.getElementById('creativesViewWrap').style.display = 'none';
+  document.getElementById('creativesFormWrap').style.display = 'block';
+  document.getElementById('creativeLink').value = '';
+  document.getElementById('creativeTitle').value = '';
+}
+
+function closeCreativesModal() {
+  document.getElementById('creativesModal').classList.remove('show');
+  currentCreativesCampaign = null;
+}
+
+async function submitCreative() {
+  if (!currentCreativesCampaign) return;
+  const link = document.getElementById('creativeLink').value.trim();
+  const title = document.getElementById('creativeTitle').value.trim();
+  if (!link || !link.includes('.com')) {
+    alert('Google Drive link must contain .com');
+    return;
+  }
+  const res = await fetch('/api/creatives', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      campaign_key: currentCreativesCampaign.campaignKey,
+      link,
+      title
+    })
+  });
+  const data = await res.json();
+  if (!data.success) {
+    alert(data.error || 'Unable to save creative');
+    return;
+  }
+  await loadCreatives();
+  openCreativesModal(currentCreativesCampaign.campaignKey, currentCreativesCampaign.campaignName);
+  refreshActiveTab();
+}
+
+function openActionModal(campaignKey, campaignName, adAccount, recommendation, date = '') {
+  currentActionData = { campaignKey, campaignName, adAccount, recommendation, date };
+  document.getElementById('modalCampaignInfo').innerHTML =
+    '<b>' + escapeHtml(campaignName) + '</b><br>' +
+    (date ? 'Date: <b>' + escapeHtml(date) + '</b><br>' : '') +
+    'Recommended: <b>' + escapeHtml(recommendation || 'N/A') + '</b>';
+  document.getElementById('modalAction').value = recommendation === 'SCALE' ? 'SCALED' :
+    recommendation === 'KILL' ? 'KILLED' :
+    recommendation === 'SCALE DOWN' ? 'SCALE DOWN' : 'MONITORING';
+  document.getElementById('modalBudget').value = '';
+  document.getElementById('modalNotes').value = '';
+  document.getElementById('actionModal').classList.add('show');
+}
+
+async function submitAction() {
+  if (!currentActionData) return;
+  const action = document.getElementById('modalAction').value;
+  const budget = document.getElementById('modalBudget').value;
+  const notes = document.getElementById('modalNotes').value;
+  const res = await fetch('/api/action-log', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      campaign_key: currentActionData.campaignKey,
+      campaign_name: currentActionData.campaignName,
+      ad_account: currentActionData.adAccount,
+      date: currentActionData.date || '',
+      recommendation: currentActionData.recommendation,
+      action_taken: action,
+      new_budget: budget ? parseFloat(budget) : null,
+      notes
+    })
+  });
+  const data = await res.json();
+  if (data.success) {
+    if (!actionLogs[currentActionData.campaignKey]) actionLogs[currentActionData.campaignKey] = [];
+    actionLogs[currentActionData.campaignKey].unshift({
+      action_taken: action,
+      new_budget: budget || null,
+      done_by_name: currentUser ? currentUser.name : 'User',
+      created_at: new Date().toISOString(),
+      date: currentActionData.date || ''
+    });
+    closeModal();
+    refreshActiveTab();
+  }
+}
+
+function aggregateCampaignGroup(campaigns, dates) {
+  const agg = {
+    campaignId: campaigns[0]?.campaignId || '',
+    campaignName: campaigns[0]?.campaignName || '',
+    accountName: campaigns[0]?.accountName || '',
+    budget: campaigns.reduce((sum, c) => sum + (c.budget || 0), 0),
+    totalSpend: 0,
+    totalSales: 0,
+    totalOrders: 0,
+    dates: {}
+  };
+  dates.forEach(date => {
+    agg.dates[date] = {
+      spend: 0, grossSales: 0, orders: 0, messagesStarted: 0, delivered: 0, rts: 0, cpm: 0
+    };
+  });
+  campaigns.forEach(c => {
+    agg.totalSpend += c.totalSpend || 0;
+    agg.totalSales += c.totalSales || 0;
+    agg.totalOrders += c.totalOrders || 0;
+    dates.forEach(date => {
+      const dd = c.dates[date];
+      if (!dd) return;
+      const a = agg.dates[date];
+      a.spend += dd.spend || 0;
+      a.grossSales += dd.grossSales || 0;
+      a.orders += dd.orders || 0;
+      a.messagesStarted += dd.messagesStarted || 0;
+      a.delivered += dd.delivered || 0;
+      a.rts += dd.rts || 0;
+    });
+  });
+  dates.forEach(date => {
+    const d = agg.dates[date];
+    d.roas = d.spend > 0 ? d.grossSales / d.spend : 0;
+    d.cvr = d.messagesStarted > 0 ? d.orders / d.messagesStarted * 100 : 0;
+    d.aov = d.orders > 0 ? d.grossSales / d.orders : 0;
+    d.cpm = d.messagesStarted > 0 ? d.spend / d.messagesStarted : 0;
+    d.delRate = (d.delivered + d.rts) > 0 ? (d.delivered / (d.delivered + d.rts) * 100) : null;
+  });
+  agg.totalRoas = agg.totalSpend > 0 ? agg.totalSales / agg.totalSpend : 0;
+  return agg;
+}
+
+function renderKpiSet(prefix, dates, campaigns, clearSightByDate) {
+  const id = suffix => prefix ? `kpi-${prefix}-${suffix}` : `kpi-${suffix}`;
+  const gridId = prefix ? `kpiGrid-${prefix}` : 'kpiGrid';
+  let totalSpend = 0;
+  let totalInquiries = 0;
+  campaigns.forEach(c => {
+    totalSpend += c.totalSpend || 0;
+    Object.values(c.dates || {}).forEach(d => { totalInquiries += d.messagesStarted || 0; });
+  });
+  let totalSales = 0;
+  let totalOrders = 0;
+  const csbd = clearSightByDate || {};
+  dates.forEach(date => {
+    totalSales += csbd[date] ? csbd[date].sales : 0;
+    totalOrders += csbd[date] ? csbd[date].orders : 0;
+  });
+  const avgRoas = totalSpend > 0 ? totalSales / totalSpend : 0;
+  const aov = totalOrders > 0 ? totalSales / totalOrders : 0;
+  const cvr = totalInquiries > 0 ? totalOrders / totalInquiries * 100 : 0;
+  const cpm = totalInquiries > 0 ? totalSpend / totalInquiries : 0;
+  document.getElementById(id('roas')).textContent = FMT2(avgRoas);
+  document.getElementById(id('aov')).textContent = PHP(aov);
+  document.getElementById(id('cvr')).textContent = cvr.toFixed(1) + '%';
+  document.getElementById(id('cpm')).textContent = PHP(cpm);
+  document.getElementById(id('orders')).textContent = NUM(totalOrders);
+  document.getElementById(id('spend')).textContent = PHP(totalSpend);
+  document.getElementById(id('sales')).textContent = PHP(totalSales);
+  document.getElementById(id('spend-sub')).textContent = getDayRangeLabel();
+  document.getElementById(id('sales-sub')).textContent = getDayRangeLabel();
+  document.getElementById(gridId).style.display = 'grid';
+}
+
+function renderKPIs(data) {
+  renderKpiSet('', data.dates, data.campaigns, data.clearSightByDate);
+}
+
+function renderBrandKPIs(campaigns, prefix, data = latestNdapData) {
+  renderKpiSet(prefix, data.dates, campaigns, data.clearSightByDate);
+}
+
+function normalizePrefix(prefix) {
+  return prefix ? `-${prefix}` : '';
+}
+
+function buildDayCard(date, dd, options = {}) {
+  const {
+    showDeclaredBudget = false,
+    budget = 0,
+    showActionInHeader = false,
+    recommendation = null,
+    actionClickable = false,
+    actionArgs = null,
+    highlightLatest = false
+  } = options;
+  const spend = dd ? dd.spend || 0 : 0;
+  const roas = dd ? dd.roas || 0 : 0;
+  const cvr = dd && dd.messagesStarted > 0 ? dd.orders / dd.messagesStarted * 100 : 0;
+  const aov = dd && dd.orders > 0 ? dd.grossSales / dd.orders : 0;
+  const cpm = dd ? dd.cpm || 0 : 0;
+  const rCls = roasColorClass(roas, spend);
+  const actionHtml = showActionInHeader && recommendation && recommendation.text
+    ? (actionClickable
+      ? `<button class="action-badge ${recommendation.cls} day-card-action-btn" onclick="openActionModal('${escapeHtml(actionArgs.campaignKey)}','${escapeHtml(actionArgs.campaignName)}','${escapeHtml(actionArgs.adAccount)}','${escapeHtml(recommendation.text)}','${escapeHtml(actionArgs.date)}')">${recommendation.text}</button>`
+      : `<span class="action-badge ${recommendation.cls}">${recommendation.text}</span>`)
+    : '';
+
+  return `<div class="day-card${highlightLatest ? ' latest' : ''}">
+    <div class="day-card-header">
+      <div class="day-card-head-row">
+        <span>${dayLabel(date)}</span>
+        ${actionHtml}
+      </div>
+    </div>
+    <div class="day-card-body">
+      <div class="day-row"><span class="day-row-label">ROAS</span><span class="day-row-val ${rCls}">${spend > 0 ? FMT2(roas) : '—'}</span></div>
+      <div class="day-row"><span class="day-row-label">CVR</span><span class="day-row-val">${dd && dd.messagesStarted > 0 ? cvr.toFixed(1) + '%' : '—'}</span></div>
+      <div class="day-row"><span class="day-row-label">AOV</span><span class="day-row-val">${dd && dd.orders > 0 ? PHP(aov) : '—'}</span></div>
+      <div class="day-row"><span class="day-row-label">CPM</span><span class="day-row-val">${spend > 0 ? PHP(cpm) : '—'}</span></div>
+      <div class="day-row"><span class="day-row-label">Gross Sales</span><span class="day-row-val">${dd ? PHP(dd.grossSales) : '—'}</span></div>
+      <div class="day-row"><span class="day-row-label">Actual Adspent</span><span class="day-row-val">${spend > 0 ? PHP(spend) : '—'}</span></div>
+      ${showDeclaredBudget ? `<div class="day-row"><span class="day-row-label">Declared Budget</span><span class="day-row-val">${PHP(budget)}</span></div>` : ''}
+      <div class="day-row"><span class="day-row-label">Inquiries</span><span class="day-row-val">${dd && dd.messagesStarted > 0 ? NUM(dd.messagesStarted) : '—'}</span></div>
+      <div class="day-row"><span class="day-row-label">Orders</span><span class="day-row-val">${dd ? NUM(dd.orders) : '—'}</span></div>
+      <div class="day-row"><span class="day-row-label">Delivery Rate</span><span class="day-row-val">${dd && dd.delRate != null ? dd.delRate.toFixed(1) + '%' : '—'}</span></div>
+    </div>
+  </div>`;
+}
+
+function buildAdCard(campaign, dates, options = {}) {
+  const { productView = false } = options;
+  const latestDay = campaign.dates[dates[dates.length - 1]];
+  const latestRoas = latestDay ? latestDay.roas : 0;
+  const roasCls = overallRoasClass(latestRoas);
+  const loggedList = getFilteredLoggedList(campaign.campaignId, dates);
+  const creatives = getCreativesForCampaign(campaign.adId);
+  const totalRoas = campaign.totalSpend > 0 ? campaign.totalSales / campaign.totalSpend : 0;
+  return `<div class="camp-card">
+    <div class="camp-body-grid">
+      <div class="camp-left">
+        <div class="ad-name-row">
+          ${productView ? `<button class="creative-btn ${creatives.length ? 'has-items' : ''}" title="${creatives.length ? 'View creatives' : 'Submit creatives'}" onclick="openCreativesModal('${escapeHtml(campaign.adId)}','${escapeHtml(campaign.adName)}')">📸</button>` : ''}
+          <div class="camp-name">${escapeHtml(campaign.adName || campaign.campaignName)}</div>
+        </div>
+        <div class="ad-id-line">${escapeHtml(campaign.adId)}</div>
+        <div class="camp-meta-row">
+          <span class="account-pill">${escapeHtml(campaign.accountName)}</span>
+          ${loggedList.map(l => `<span class="logged-entry">&#10003; ${escapeHtml(l.action_taken)}${l.new_budget ? ' →₱' + Number(l.new_budget).toLocaleString('en-PH') : ''} · ${escapeHtml(l.done_by_name)}</span>`).join('')}
+        </div>
+        <div class="total-roas-wrap">
+          <span class="total-roas-label">Total ROAS</span>
+          <span class="total-roas-value ${roasCls}">${campaign.totalSpend > 0 ? FMT2(totalRoas) : '—'}</span>
+          <span class="budget-inline">Budget ${PHP(campaign.budget)}/day</span>
+        </div>
+      </div>
+      <div class="camp-right">
+        <div class="stacked-metric">
+          <div class="stacked-label">Total Sales</div>
+          <div class="stacked-value">${PHP(campaign.totalSales)}</div>
+        </div>
+        <div class="stacked-metric">
+          <div class="stacked-label">Total Spent</div>
+          <div class="stacked-value">${PHP(campaign.totalSpend)}</div>
+        </div>
+      </div>
+    </div>
+    <div class="day-cards-row">
+      ${dates.map((date, idx) => {
+        const recommendation = actionForDay(campaign, dates, idx);
+        return buildDayCard(date, campaign.dates[date], {
+          showDeclaredBudget: productView,
+          budget: campaign.budget,
+          showActionInHeader: productView,
+          recommendation,
+          actionClickable: productView && dates.length === 1,
+          actionArgs: {
+            campaignKey: campaign.campaignId,
+            campaignName: campaign.campaignName,
+            adAccount: campaign.accountName,
+            date
+          },
+          highlightLatest: idx === dates.length - 1
+        });
+      }).join('')}
+    </div>
+  </div>`;
+}
+
+function renderGroupHeader(group, dates) {
+  const overallAP = actionForDay(group, dates, dates.length - 1);
+  const roasCls = overallRoasClass(group.totalRoas);
+  return `<div class="group-header">
+    <div class="group-header-top">
+      <div>
+        <div class="group-title">${escapeHtml(group.campaignName)}</div>
+        <div class="group-subtitle">${NUM(group.ads.length)} ads in this group</div>
+      </div>
+      <div class="group-right">
+        <span class="overall-badge ${roasCls}">Overall ROAS ${group.totalSpend > 0 ? FMT2(group.totalRoas) : '—'}</span>
+        <span class="action-badge ${overallAP.cls}">${overallAP.text || '—'}</span>
+        <button class="btn-log-action" onclick="openActionModal('${escapeHtml(group.campaignId)}','${escapeHtml(group.campaignName)}','${escapeHtml(group.accountName)}','${escapeHtml(overallAP.text || '')}','${escapeHtml(dates[dates.length - 1] || '')}')">Log Action</button>
+      </div>
+    </div>
+    <div class="day-cards-row">
+      ${dates.map((date, idx) => buildDayCard(date, group.dates[date], {
+        showDeclaredBudget: true,
+        budget: group.budget,
+        recommendation: actionForDay(group, dates, idx),
+        highlightLatest: idx === dates.length - 1
+      })).join('')}
+    </div>
+  </div>`;
+}
+
+function buildProductSectionHtml(title, campaigns, dates, productView = false) {
+  const prod = (campaigns[0]?.product || title || 'Other').toUpperCase();
+  const pill = PRODUCT_PILLS[prod] || { bg:'#f5f4ef', color:'#555' };
+  const prodSpend = campaigns.reduce((sum, c) => sum + (c.totalSpend || 0), 0);
+  const prodSales = campaigns.reduce((sum, c) => sum + (c.totalSales || 0), 0);
+  const prodRoas = prodSpend > 0 ? prodSales / prodSpend : 0;
+  const grouped = Object.values(campaigns.reduce((acc, c) => {
+    const key = c.campaignName || c.campaignId;
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(c);
+    return acc;
+  }, {}));
+
+  return `<div class="product-section">
+    <div class="product-subheader">
+      <span class="product-pill" style="background:${pill.bg};color:${pill.color}">${escapeHtml(title)}</span>
+      <span style="font-size:10px;color:var(--muted)">${campaigns.length} ads</span>
+      <div class="product-stats">Spend: <span>${PHP(prodSpend)}</span> Sales: <span>${PHP(prodSales)}</span> ROAS: <span style="color:${prodRoas >= 3 ? 'var(--scale)' : prodRoas >= 2.7 ? 'var(--stay)' : 'var(--kill)'}">${FMT2(prodRoas)}</span></div>
+    </div>
+    ${grouped.map(groupAds => {
+      const agg = aggregateCampaignGroup(groupAds, dates);
+      agg.ads = groupAds;
+      return `<div class="group-block">
+        ${renderGroupHeader(agg, dates)}
+        ${groupAds.map(ad => buildAdCard(ad, dates, { productView })).join('')}
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function render(data) {
+  latestNdapData = data;
+  const byProduct = {};
+  data.campaigns.forEach(c => {
+    const prod = (c.product || 'Other').toUpperCase();
+    if (!byProduct[prod]) byProduct[prod] = [];
+    byProduct[prod].push(c);
+  });
+  let html = '';
+  Object.entries(byProduct).forEach(([prod, campaigns]) => {
+    html += `<div class="brand-block">${buildProductSectionHtml(prod, campaigns, data.dates, false)}</div>`;
+  });
+  document.getElementById('tableContainer').innerHTML = html || '<div class="loading-wrap" style="display:block">No active campaigns in this date range.</div>';
+}
+
+function renderProductCampaigns(campaigns, dates, prefix, displayName) {
+  const html = campaigns.length
+    ? `<div class="brand-block">${buildProductSectionHtml(displayName, campaigns, dates, true)}</div>`
+    : '<div class="loading-wrap" style="display:block">No active campaigns in this date range.</div>';
+  document.getElementById(`tableContainer-${prefix}`).innerHTML = html;
+}
+
+function renderFiltered(data, prefix) {
+  latestNdapData = data;
+  renderProductCampaigns(data.campaigns, data.dates, prefix, prefix === 'clearsight' ? 'Clear Sight' : prefix);
+}
+
+async function loadData() {
+  const fromDate = document.getElementById('fromDate').value;
+  const toDate = document.getElementById('toDate').value;
+  if (!fromDate || !toDate) return;
+  const days = Math.max(1, Math.round((new Date(toDate) - new Date(fromDate)) / 86400000) + 1);
+  const btn = document.getElementById('refreshBtn');
+  btn.disabled = true;
+  btn.textContent = 'Loading...';
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('tableContainer').innerHTML = '';
+  document.getElementById('kpiGrid').style.display = 'none';
+  try {
+    const r = await fetch(`/api/ndap?endDate=${toDate}&days=${days}`);
+    const data = await r.json();
+    if (data.error) throw new Error(data.error);
+    latestNdapData = data;
+    renderKPIs(data);
+    render(data);
+    document.getElementById('lastUpdated').textContent = 'Updated ' + new Date().toLocaleTimeString('en-PH');
+    maybeShowSpendAlert();
+  } catch (e) {
+    document.getElementById('tableContainer').innerHTML = `<div class="error-msg">${escapeHtml(e.message)}</div>`;
+  } finally {
+    document.getElementById('loading').style.display = 'none';
+    btn.disabled = false;
+    btn.textContent = 'Apply';
+  }
+}
+
+async function loadProductTab(tabName) {
+  const products = PRODUCT_TABS[tabName];
+  const endDate = document.getElementById('toDate').value;
+  const fromDate = document.getElementById('fromDate').value;
+  const days = Math.max(1, Math.round((new Date(endDate) - new Date(fromDate)) / 86400000) + 1);
+  document.getElementById(`loading-${tabName}`).style.display = 'block';
+  document.getElementById(`tableContainer-${tabName}`).innerHTML = '';
+  document.getElementById(`kpiGrid-${tabName}`).style.display = 'none';
+  try {
+    const r = await fetch(`/api/ndap?endDate=${endDate}&days=${days}`);
+    const data = await r.json();
+    if (data.error) throw new Error(data.error);
+    latestNdapData = data;
+    const campaigns = data.campaigns.filter(c => products.includes((c.product || '').toUpperCase()));
+    renderBrandKPIs(campaigns, tabName, data);
+    renderProductCampaigns(campaigns, data.dates, tabName, PRODUCT_TAB_NAMES[tabName]);
+  } catch (e) {
+    document.getElementById(`tableContainer-${tabName}`).innerHTML = `<div class="error-msg">${escapeHtml(e.message)}</div>`;
+  } finally {
+    document.getElementById(`loading-${tabName}`).style.display = 'none';
+  }
+}
+
+function refreshActiveTab() {
+  if (currentTab === 'analytics') return loadAnalytics();
+  if (currentTab === 'history') return loadHistory();
+  if (PRODUCT_TABS[currentTab]) return loadProductTab(currentTab);
+  return loadData();
+}
+
+function switchTab(tab, el) {
+  currentTab = tab;
+  document.querySelectorAll('.nav-item-parent, .nav-subitem, .nav-subsubitem').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  if (tab === 'ndap') {
+    document.querySelector('.nav-item-parent[data-tab="ndap"]').classList.add('active');
+  } else {
+    const sub = document.querySelector(`.nav-subitem[data-tab="${tab}"], .nav-subsubitem[data-tab="${tab}"]`);
+    if (sub) sub.classList.add('active');
+  }
+  closeTopPanels();
+  const isAnalytics = tab === 'analytics';
+  const isHistory = tab === 'history';
+  document.getElementById('legendToggle').style.display = (isAnalytics || isHistory) ? 'none' : '';
+  document.getElementById('calendarToggle').style.display = isAnalytics ? 'none' : '';
+  if (tab === 'history') return loadHistory();
+  if (tab === 'analytics') {
+    document.getElementById('analyticsEmpty').style.display = 'block';
+    return;
+  }
+  if (PRODUCT_TABS[tab]) return loadProductTab(tab);
+  return loadData();
+}
+
+async function maybeShowSpendAlert() {
+  const now = new Date();
+  if (now.getHours() < 15) return;
+  const today = new Date().toISOString().split('T')[0];
+  const key = `spendAlertShown_${today}`;
+  if (localStorage.getItem(key)) return;
+  try {
+    const r = await fetch(`/api/ndap?endDate=${today}&days=1`);
+    const data = await r.json();
+    if (data.error) return;
+    const totalSpend = data.campaigns.reduce((sum, c) => sum + (c.totalSpend || 0), 0);
+    const declaredBudget = data.campaigns.reduce((sum, c) => sum + (c.budget || 0), 0);
+    const pacing = declaredBudget > 0 ? totalSpend / declaredBudget * 100 : 0;
+    const isUnder = totalSpend < declaredBudget * 0.6;
+    const gap = Math.abs(totalSpend - declaredBudget * 0.6);
+    document.getElementById('spendAlertContent').innerHTML = `
+      <div class="spend-alert-metric"><span>Total Ad Spent today</span><strong>${PHP(totalSpend)}</strong></div>
+      <div class="spend-alert-metric"><span>Declared Budget</span><strong>${PHP(declaredBudget)}</strong></div>
+      <div class="spend-alert-metric"><span>Pacing</span><strong>${FMT2(pacing)}%</strong></div>
+      <div class="spend-alert-progress">
+        <div class="spend-alert-fill" style="width:${Math.min(pacing, 100)}%"></div>
+        <div class="spend-alert-threshold"></div>
+      </div>
+      <div class="spend-alert-status ${isUnder ? 'status-under' : 'status-over'}">${isUnder ? 'UNDERSPEND' : 'OVERSPEND'} ${PHP(gap)}</div>
+    `;
+    document.getElementById('spendAlertModal').classList.add('show');
+    localStorage.setItem(key, '1');
+  } catch (e) {}
+}
+
+function closeSpendAlert() {
+  document.getElementById('spendAlertModal').classList.remove('show');
+}
+
+(async function initDashboardEnhancements() {
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('fromDate').value = today;
+  document.getElementById('toDate').value = today;
+  closeTopPanels();
+  await loadCreatives();
+  refreshActiveTab();
 })();
 </script>
 </body>
