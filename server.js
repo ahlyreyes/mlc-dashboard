@@ -195,12 +195,6 @@ function formatDate(d) {
     String(d.getDate()).padStart(2, '0');
 }
 
-function isClearSightProduct(productName) {
-  return (productName || '').toLowerCase().includes('clear sight');
-}
-function isHaplunasProduct(productName) {
-  return (productName || '').toLowerCase().includes('haplunas');
-}
 
 async function fetchPancakeSalesByDate() {
   const cached = cacheGet(pancakeCache, 'pancake', TTL_PANCAKE);
@@ -236,16 +230,15 @@ async function fetchPancakeSalesByDate() {
       const status = (row['status'] || '').trim().toUpperCase();
       if (status.includes('CANCEL')) { skipCancel++; continue; }
 
-      // Lowercase keys cover any capitalization variant from either sheet
-      const product = (row['product name'] || row['product variation'] || '').trim();
-      const fbPage  = (row['facebook page'] || '').trim();
       const adId = (row['ads'] || '').trim();
 
-      // Identify Clear Sight via product column OR Facebook Page column
-      const isClearSight = isClearSightProduct(product) || isClearSightProduct(fbPage);
+      // Scan ALL column values — catches any column naming/casing variant
+      const rowText      = Object.values(row).join(' ').toLowerCase();
+      const isClearSight = rowText.includes('clear sight');
+      const isHaplunas   = rowText.includes('haplunas');
 
       // ── Per-ad sales (NDAP matching) — excluded sellers skipped, requires adId, no Haplunas ──
-      if (!isExcludedSeller && adId && !isHaplunasProduct(product) && !isHaplunasProduct(fbPage)) {
+      if (!isExcludedSeller && adId && !isHaplunas) {
         if (!salesByDate[dateStr]) salesByDate[dateStr] = {};
         if (!salesByDate[dateStr][adId]) salesByDate[dateStr][adId] = {
           sales: 0, orders: 0,
