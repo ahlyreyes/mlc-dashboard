@@ -306,7 +306,7 @@ async function fetchAccountInsights(account, date) {
   let nextUrl = `https://graph.facebook.com/v19.0/${account.id}/insights` +
     `?fields=ad_id,ad_name,campaign_id,campaign_name,spend,impressions,clicks,cost_per_action_type,actions` +
     `&level=ad&time_range={"since":"${date}","until":"${date}"}` +
-    `&filtering=[{"field":"ad.effective_status","operator":"IN","value":["ACTIVE"]}]` +
+    `&filtering=[{"field":"ad.effective_status","operator":"IN","value":["ACTIVE","WITH_ISSUES","IN_PROCESS"]}]` +
     `&limit=500&access_token=${token}`;
 
   try {
@@ -421,7 +421,7 @@ async function fetchActiveAdsForAccount(account) {
   try {
     let nextUrl = `https://graph.facebook.com/v19.0/${account.id}/ads` +
       `?fields=id,name,campaign_id,campaign{name}` +
-      `&filtering=[{"field":"ad.effective_status","operator":"IN","value":["ACTIVE"]}]` +
+      `&filtering=[{"field":"ad.effective_status","operator":"IN","value":["ACTIVE","WITH_ISSUES","IN_PROCESS"]}]` +
       `&limit=100&access_token=${token}`;
     while (nextUrl) {
       const res = await fetchJson(nextUrl);
