@@ -1201,6 +1201,7 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
           <div class="kpi-card"><div class="kpi-label">Total Spend</div><div class="kpi-value" id="an-spend">—</div><div class="kpi-sub">Period total</div></div>
           <div class="kpi-card"><div class="kpi-label">Total Sales</div><div class="kpi-value" id="an-sales">—</div><div class="kpi-sub">Gross revenue</div></div>
           <div class="kpi-card"><div class="kpi-label">Total Orders</div><div class="kpi-value" id="an-orders">—</div><div class="kpi-sub">Pancake orders</div></div>
+          <div class="kpi-card"><div class="kpi-label">Total Inquiries</div><div class="kpi-value" id="an-inquiries">—</div><div class="kpi-sub">Messages started</div></div>
           <div class="kpi-card"><div class="kpi-label">Avg CVR</div><div class="kpi-value" id="an-cvr">—</div><div class="kpi-sub">Inquiries → orders</div></div>
           <div class="kpi-card"><div class="kpi-label">Avg AOV</div><div class="kpi-value" id="an-aov">—</div><div class="kpi-sub">Average order value</div></div>
         </div>
@@ -2427,8 +2428,9 @@ async function loadAnalytics() {
     document.getElementById('an-roas').textContent   = totSpend>0 ? FMT2(totSales/totSpend) : '—';
     document.getElementById('an-spend').textContent  = PHP(totSpend);
     document.getElementById('an-sales').textContent  = PHP(totSales);
-    document.getElementById('an-orders').textContent = NUM(totOrders);
-    document.getElementById('an-cvr').textContent    = totInq>0 ? (totOrders/totInq*100).toFixed(1)+'%' : '—';
+    document.getElementById('an-orders').textContent    = NUM(totOrders);
+    document.getElementById('an-inquiries').textContent = NUM(totInq);
+    document.getElementById('an-cvr').textContent       = totInq>0 ? (totOrders/totInq*100).toFixed(1)+'%' : '—';
     document.getElementById('an-aov').textContent    = totOrders>0 ? PHP(totAov) : '—';
     document.getElementById('analyticsKpis').style.display = 'grid';
 
