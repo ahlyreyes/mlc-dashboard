@@ -282,11 +282,10 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
 /* ── KPI GRID ── */
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
   gap: 8px;
   margin-bottom: 16px;
 }
-@media (max-width: 1200px) { .kpi-grid { grid-template-columns: repeat(3, 1fr); } }
 
 .kpi-card {
   background: var(--card);
@@ -823,6 +822,187 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
 
 /* ── ROW HOVER ── */
 .day-row:hover { background: rgba(0,0,0,0.03); border-radius: 4px; }
+
+/* ── CAMPAIGN GROUP BLOCK ── */
+.cg-block { border-bottom: 1px solid var(--border); }
+.cg-block:last-child { border-bottom: none; }
+.cg-header {
+  background: #F0F4FF;
+  border-bottom: 1px solid var(--border);
+  padding: 12px 16px;
+}
+.cg-header-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.cg-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cg-ads-pill {
+  background: rgba(37,99,235,0.10);
+  border-radius: 20px;
+  padding: 2px 9px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--amber-dark);
+  flex-shrink: 0;
+}
+.cg-logged {
+  font-size: 12px;
+  color: var(--scale);
+  flex-shrink: 0;
+}
+
+/* ── TWO-COLUMN AD CARD ── */
+.camp-card-2col {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 16px 10px;
+}
+.camp-card-2col-left { flex: 1; min-width: 0; }
+.camp-card-2col-right { text-align: right; flex-shrink: 0; }
+.camp-ad-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 1px;
+}
+.camp-ad-id {
+  font-family: monospace;
+  font-size: 10px;
+  color: var(--muted2);
+  margin-bottom: 4px;
+}
+.camp-total-roas-val {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1;
+  margin-top: 6px;
+  letter-spacing: -1px;
+}
+.camp-budget-day {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+.camp-r-label {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--muted2);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+.camp-r-sales {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+.camp-r-spent {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.camp-day-wrap { padding: 0 16px 14px; }
+
+/* ── COLLAPSIBLE TOPBAR PANELS ── */
+.topbar-panel {
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 20px;
+  display: none;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.topbar-panel.open { display: flex; }
+.btn-icon-toggle {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 5px 9px;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+.btn-icon-toggle:hover { border-color: var(--amber); color: var(--amber-dark); background: #EFF6FF; }
+.btn-icon-toggle.active { border-color: var(--amber); color: var(--amber-dark); background: var(--amber-light); }
+
+/* ── CREATIVE / CAMERA BUTTON ── */
+.btn-creative {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 3px 0 0;
+  opacity: 0.30;
+  transition: all 0.2s;
+  line-height: 1;
+  vertical-align: middle;
+}
+.btn-creative:hover { opacity: 0.65; }
+.btn-creative.has-creatives {
+  opacity: 1;
+  filter: drop-shadow(0 0 5px rgba(139,92,246,0.85));
+}
+
+/* ── PACING BAR (3PM ALERT) ── */
+.pacing-bar-wrap {
+  background: #E2E8F0;
+  border-radius: 4px;
+  height: 10px;
+  position: relative;
+  margin: 6px 0 4px;
+  overflow: visible;
+}
+.pacing-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+  position: absolute; top: 0; left: 0;
+}
+.pacing-bar-mark60 {
+  position: absolute;
+  top: -4px; bottom: -4px;
+  width: 2px;
+  background: #94A3B8;
+  left: 60%;
+  border-radius: 2px;
+}
+.alert-underspend { color: #D97706; font-weight: 700; font-size: 12px; }
+.alert-overspend  { color: #dc2626; font-weight: 700; font-size: 12px; }
+
+/* ── CREATIVES VIEW LIST ── */
+.creative-entry {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid #F1F5F9;
+  font-size: 12px;
+}
+.creative-entry:last-child { border-bottom: none; }
+.creative-entry-info { flex: 1; }
+.creative-entry-title { font-weight: 600; color: var(--text); }
+.creative-entry-meta { color: var(--muted2); font-size: 10px; margin-top: 1px; }
 </style>
 </head>
 <body>
@@ -876,11 +1056,8 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
     <header class="topbar">
       <div class="topbar-left">
         <button class="btn-sidebar-toggle" onclick="toggleSidebar()" title="Toggle menu">☰</button>
-        <span class="topbar-label" id="ndap-ctrl-label-from">From</span>
-        <input type="date" id="fromDate" class="ndap-ctrl">
-        <span class="topbar-label ndap-ctrl">To</span>
-        <input type="date" id="toDate" class="ndap-ctrl">
-        <button class="btn-refresh ndap-ctrl" id="refreshBtn" onclick="loadData()">Apply</button>
+        <button class="btn-icon-toggle ndap-ctrl" id="btnCalendar" onclick="togglePanel('calendar')" title="Date range">📅</button>
+        <button class="btn-icon-toggle ndap-ctrl" id="btnLegend" onclick="togglePanel('legend')" title="Legend / Color key">ℹ️</button>
       </div>
       <div class="topbar-right">
         <div class="user-pill"><span class="online-dot"></span><span id="userBadge">Loading...</span></div>
@@ -889,12 +1066,21 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
       </div>
     </header>
 
-    <!-- LEGEND -->
-    <div class="legend-strip" id="ndap-legend">
+    <!-- COLLAPSIBLE DATE PANEL -->
+    <div class="topbar-panel ndap-ctrl" id="panel-calendar">
+      <span class="topbar-label">From</span>
+      <input type="date" id="fromDate">
+      <span class="topbar-label">To</span>
+      <input type="date" id="toDate">
+      <button class="btn-refresh" id="refreshBtn" onclick="loadData()">Apply</button>
+    </div>
+
+    <!-- COLLAPSIBLE LEGEND PANEL -->
+    <div class="topbar-panel" id="panel-legend">
       <div class="legend-item"><div class="legend-dot" style="background:var(--scale)"></div>Scale (>=3.0)</div>
       <div class="legend-item"><div class="legend-dot" style="background:var(--stay)"></div>Stay (2.7–2.99)</div>
       <div class="legend-item"><div class="legend-dot" style="background:#111111"></div>Black Stay (consistent)</div>
-      <div class="legend-item"><div class="legend-dot" style="background:var(--observe)"></div>Observe (<2.7)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--observe)"></div>Observe (&lt;2.7)</div>
       <div class="legend-item"><div class="legend-dot" style="background:var(--kill)"></div>Kill (all bad)</div>
       <div class="legend-item"><div class="legend-dot" style="background:#ea580c"></div>Scale Down (3 consec. bad)</div>
     </div>
@@ -926,6 +1112,11 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
             <div class="kpi-sub">Spend / inquiry</div>
           </div>
           <div class="kpi-card">
+            <div class="kpi-label">Total Orders</div>
+            <div class="kpi-value" id="kpi-orders">—</div>
+            <div class="kpi-sub">POS orders (Pancake)</div>
+          </div>
+          <div class="kpi-card">
             <div class="kpi-label">Total Spend</div>
             <div class="kpi-value" id="kpi-spend">—</div>
             <div class="kpi-sub" id="kpi-spend-sub">All accounts</div>
@@ -951,6 +1142,7 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
         <div class="kpi-card"><div class="kpi-label">Total Sales</div><div class="kpi-value" id="kpi-clearsight-sales">—</div><div class="kpi-sub" id="kpi-clearsight-sales-sub">Gross (Pancake)</div></div>
         <div class="kpi-card"><div class="kpi-label">CVR</div><div class="kpi-value" id="kpi-clearsight-cvr">—</div><div class="kpi-sub">Inquiries to orders</div></div>
         <div class="kpi-card"><div class="kpi-label">Avg CPM</div><div class="kpi-value" id="kpi-clearsight-cpm">—</div><div class="kpi-sub">Spend / inquiry</div></div>
+        <div class="kpi-card"><div class="kpi-label">Total Orders</div><div class="kpi-value" id="kpi-clearsight-orders">—</div><div class="kpi-sub">POS orders (Pancake)</div></div>
         <div class="kpi-card"><div class="kpi-label">Avg AOV</div><div class="kpi-value" id="kpi-clearsight-aov">—</div><div class="kpi-sub">Average order value</div></div>
       </div>
       <div class="loading-wrap" id="loading-clearsight" style="display:none">Loading...</div>
@@ -1045,18 +1237,75 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
   </div>
 </div>
 
+<!-- CREATIVES SUBMIT MODAL -->
+<div class="modal-overlay" id="creativesSubmitModal">
+  <div class="modal">
+    <h3>📸 Submit Creative</h3>
+    <div class="modal-sub" id="creativesSubmitInfo"></div>
+    <label>Google Drive Link *</label>
+    <input type="url" id="creativeLink" placeholder="https://drive.google.com/..."/>
+    <div id="creativeLinkError" style="font-size:11px;color:var(--kill);margin:-8px 0 8px;display:none">Link must contain .com</div>
+    <label>Title (optional)</label>
+    <input type="text" id="creativeTitle" placeholder="e.g. APR16 Creative v2"/>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeCreativeModal()">Cancel</button>
+      <button class="btn-confirm" onclick="submitCreative()">Submit</button>
+    </div>
+  </div>
+</div>
+
+<!-- CREATIVES VIEW MODAL -->
+<div class="modal-overlay" id="creativesViewModal">
+  <div class="modal" style="max-width:480px">
+    <h3>📸 Creatives</h3>
+    <div class="modal-sub" id="creativesViewInfo"></div>
+    <div id="creativesViewList" style="margin-bottom:14px;max-height:280px;overflow-y:auto"></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeCreativeModal()">Close</button>
+      <button class="btn-confirm" onclick="switchToSubmitModal()">+ Submit New</button>
+    </div>
+  </div>
+</div>
+
+<!-- 3PM SPEND ALERT MODAL -->
+<div class="modal-overlay" id="spendAlertModal">
+  <div class="modal" style="max-width:380px">
+    <h3>⚠️ 3PM Spend Check</h3>
+    <div class="modal-sub">Today's ad spend pacing</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <span style="font-size:12px;color:var(--muted)">Total Spent Today</span>
+      <span style="font-size:14px;font-weight:700" id="alertSpend">—</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <span style="font-size:12px;color:var(--muted)">Declared Budget</span>
+      <span style="font-size:14px;font-weight:700" id="alertBudget">—</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <span style="font-size:12px;color:var(--muted)">Pacing</span>
+      <span style="font-size:14px;font-weight:700" id="alertPct">—</span>
+    </div>
+    <div class="pacing-bar-wrap" style="border-radius:4px;overflow:hidden;position:relative;height:10px;background:#E2E8F0">
+      <div class="pacing-bar-fill" id="alertPacingBar" style="width:0%;background:var(--amber);position:absolute;top:0;left:0;height:100%;border-radius:4px"></div>
+      <div class="pacing-bar-mark60" style="position:absolute;top:-4px;bottom:-4px;width:2px;background:#94A3B8;left:60%;border-radius:2px"></div>
+    </div>
+    <div id="alertStatus" style="margin-top:8px;margin-bottom:16px"></div>
+    <div class="modal-btns">
+      <button class="btn-confirm" onclick="document.getElementById('spendAlertModal').classList.remove('show')">Got it</button>
+    </div>
+  </div>
+</div>
+
 <script>
 let currentActionData = null;
 let actionLogs = {};
 let currentUser = null;
+let allCreatives = {};
+let currentCreativeKey = '';
+let currentCreativeName = '';
 
 fetch('/api/me').then(r=>r.json()).then(u=>{
   currentUser = u;
   document.getElementById('userBadge').textContent = u.name + ' · ' + u.role;
-  if (u.role === 'admin') {
-    document.getElementById('historyTab').style.display = '';
-    document.getElementById('historyTabBar').style.display = '';
-  }
 });
 
 fetch('/api/action-logs').then(r=>r.json()).then(logs=>{
@@ -1066,10 +1315,19 @@ fetch('/api/action-logs').then(r=>r.json()).then(logs=>{
   });
 });
 
-function openActionModal(campaignKey, campaignName, adAccount, recommendation) {
-  currentActionData = { campaignKey, campaignName, adAccount, recommendation };
+fetch('/api/creatives').then(r=>r.json()).then(list=>{
+  list.forEach(c => {
+    if (!allCreatives[c.campaign_key]) allCreatives[c.campaign_key] = [];
+    allCreatives[c.campaign_key].push(c);
+  });
+}).catch(()=>{});
+
+// ── ACTION MODAL ──
+function openActionModal(campaignKey, campaignName, adAccount, recommendation, date) {
+  currentActionData = { campaignKey, campaignName, adAccount, recommendation, date: date||null };
   document.getElementById('modalCampaignInfo').innerHTML =
-    '<b>' + campaignName + '</b><br>Recommended: <b>' + (recommendation||'N/A') + '</b>';
+    '<b>' + campaignName + '</b><br>Recommended: <b>' + (recommendation||'N/A') + '</b>' +
+    (date ? '<br>Date: <b>' + date + '</b>' : '');
   document.getElementById('modalAction').value = recommendation === 'SCALE' ? 'SCALED' :
     recommendation === 'KILL' ? 'KILLED' :
     recommendation === 'SCALE DOWN' ? 'SCALE DOWN' : 'MONITORING';
@@ -1092,6 +1350,7 @@ async function submitAction() {
       campaign_key: currentActionData.campaignKey,
       campaign_name: currentActionData.campaignName,
       ad_account: currentActionData.adAccount,
+      date: currentActionData.date,
       recommendation: currentActionData.recommendation,
       action_taken: action, new_budget: budget ? parseFloat(budget) : null, notes
     })
@@ -1101,12 +1360,144 @@ async function submitAction() {
     if (!actionLogs[currentActionData.campaignKey]) actionLogs[currentActionData.campaignKey] = [];
     actionLogs[currentActionData.campaignKey].unshift({
       action_taken: action, new_budget: budget||null,
-      done_by_name: currentUser.name, created_at: new Date().toLocaleString('en-PH')
+      done_by_name: currentUser.name, date: currentActionData.date,
+      created_at: new Date().toLocaleString('en-PH')
     });
     closeModal(); loadData();
   }
 }
 
+// ── COLLAPSIBLE PANELS ──
+function togglePanel(type) {
+  const panelId = type === 'calendar' ? 'panel-calendar' : 'panel-legend';
+  const btnId   = type === 'calendar' ? 'btnCalendar'   : 'btnLegend';
+  const panel = document.getElementById(panelId);
+  const btn   = document.getElementById(btnId);
+  if (!panel || !btn) return;
+  panel.classList.toggle('open');
+  btn.classList.toggle('active');
+}
+function closePanels() {
+  ['panel-calendar','panel-legend'].forEach(id => {
+    const p = document.getElementById(id);
+    if (p) p.classList.remove('open');
+  });
+  ['btnCalendar','btnLegend'].forEach(id => {
+    const b = document.getElementById(id);
+    if (b) b.classList.remove('active');
+  });
+}
+
+// ── CREATIVES MODALS ──
+function openCreativesModal(adId, adName) {
+  currentCreativeKey  = adId;
+  currentCreativeName = adName;
+  const list = allCreatives[adId] || [];
+  if (list.length > 0) {
+    openCreativesViewModal(list);
+  } else {
+    openCreativesSubmitModal();
+  }
+}
+function openCreativesSubmitModal() {
+  document.getElementById('creativesSubmitInfo').textContent = currentCreativeName;
+  document.getElementById('creativeLink').value  = '';
+  document.getElementById('creativeTitle').value = '';
+  document.getElementById('creativeLinkError').style.display = 'none';
+  document.getElementById('creativesSubmitModal').classList.add('show');
+  document.getElementById('creativesViewModal').classList.remove('show');
+}
+function openCreativesViewModal(list) {
+  document.getElementById('creativesViewInfo').textContent = currentCreativeName;
+  const container = document.getElementById('creativesViewList');
+  if (!list || !list.length) {
+    container.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:8px 0">No creatives submitted yet.</div>';
+  } else {
+    container.innerHTML = list.map(c => `<div class="creative-entry">
+      <div class="creative-entry-info">
+        <div class="creative-entry-title">${c.title || '(no title)'}</div>
+        <div class="creative-entry-meta">By ${c.submitted_by_name} · ${new Date(c.created_at).toLocaleDateString('en-PH')}</div>
+      </div>
+      <a href="${c.link}" target="_blank" rel="noopener" style="font-size:11px;font-weight:600;color:var(--amber);text-decoration:none;flex-shrink:0">Open ↗</a>
+    </div>`).join('');
+  }
+  document.getElementById('creativesViewModal').classList.add('show');
+  document.getElementById('creativesSubmitModal').classList.remove('show');
+}
+function switchToSubmitModal() {
+  openCreativesSubmitModal();
+}
+function closeCreativeModal() {
+  document.getElementById('creativesSubmitModal').classList.remove('show');
+  document.getElementById('creativesViewModal').classList.remove('show');
+}
+async function submitCreative() {
+  const link  = (document.getElementById('creativeLink').value||'').trim();
+  const title = (document.getElementById('creativeTitle').value||'').trim();
+  const errEl = document.getElementById('creativeLinkError');
+  if (!link.includes('.com')) {
+    errEl.style.display = 'block';
+    return;
+  }
+  errEl.style.display = 'none';
+  try {
+    const res = await fetch('/api/creatives', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ campaign_key: currentCreativeKey, link, title })
+    });
+    const data = await res.json();
+    if (data.success) {
+      if (!allCreatives[currentCreativeKey]) allCreatives[currentCreativeKey] = [];
+      allCreatives[currentCreativeKey].unshift(data.creative);
+      closeCreativeModal();
+      // Refresh the creative button state
+      document.querySelectorAll(`[data-creative-key="${currentCreativeKey}"]`).forEach(btn => {
+        btn.classList.add('has-creatives');
+      });
+    } else {
+      alert(data.error || 'Failed to submit');
+    }
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
+// ── 3PM SPEND ALERT ──
+async function check3PMAlert() {
+  const now   = new Date();
+  const hour  = now.getHours();
+  if (hour < 15) return;
+  const today = now.toISOString().split('T')[0];
+  const key   = 'spendAlertShown_' + today;
+  if (localStorage.getItem(key)) return;
+  localStorage.setItem(key, '1');
+  try {
+    const r    = await fetch(`/api/ndap?endDate=${today}&days=1`);
+    const data = await r.json();
+    if (data.error) return;
+    let totalSpend = 0, totalBudget = 0;
+    for (const c of (data.campaigns || [])) {
+      totalSpend  += c.totalSpend || 0;
+      totalBudget += c.budget     || 0;
+    }
+    const pct  = totalBudget > 0 ? totalSpend / totalBudget * 100 : 0;
+    const mark = totalBudget * 0.6;
+    const gap  = Math.abs(mark - totalSpend);
+    const isUnder = totalSpend < mark;
+    document.getElementById('alertSpend').textContent  = PHP(totalSpend);
+    document.getElementById('alertBudget').textContent = PHP(totalBudget);
+    document.getElementById('alertPct').textContent    = pct.toFixed(1) + '%';
+    const bar = document.getElementById('alertPacingBar');
+    bar.style.width      = Math.min(100, pct) + '%';
+    bar.style.background = isUnder ? '#D97706' : '#dc2626';
+    const statusEl = document.getElementById('alertStatus');
+    statusEl.textContent = isUnder
+      ? `UNDERSPEND — ₱${gap.toLocaleString('en-PH',{minimumFractionDigits:2})} below 60% threshold`
+      : `OVERSPEND — ₱${gap.toLocaleString('en-PH',{minimumFractionDigits:2})} above 60% threshold`;
+    statusEl.className = isUnder ? 'alert-underspend' : 'alert-overspend';
+    document.getElementById('spendAlertModal').classList.add('show');
+  } catch(e) {}
+}
+
+// ── DATE INIT ──
 const _today = new Date().toISOString().split('T')[0];
 document.getElementById('toDate').value   = _today;
 document.getElementById('fromDate').value = _today;
@@ -1114,14 +1505,6 @@ document.getElementById('fromDate').value = _today;
 const PHP  = n => '₱' + Number(n||0).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
 const FMT2 = n => Number(n||0).toFixed(2);
 const NUM  = n => Number(n||0).toLocaleString('en-PH');
-
-function roasClass(roas, spend) {
-  if (!spend || spend === 0) return 'c-empty';
-  if (roas >= 3.0) return 'c-scale';
-  if (roas >= 2.7) return 'c-stay';
-  if (roas > 0)    return 'c-below';
-  return 'c-kill';
-}
 
 function actionForDay(campaign, dates, targetDateIdx) {
   const datesUpTo = dates.slice(0, targetDateIdx + 1);
@@ -1187,7 +1570,6 @@ function renderKPIs({ dates, campaigns, clearSightByDate }) {
       totalInquiries += d.messagesStarted || 0;
     }
   }
-  // Use clearSightByDate for accurate sales/orders — includes all Clear Sight orders, not just per-ad
   const csbd = clearSightByDate || {};
   for (const date of dates) {
     totalSales  += (csbd[date] ? csbd[date].sales  : 0);
@@ -1199,15 +1581,16 @@ function renderKPIs({ dates, campaigns, clearSightByDate }) {
   const cpm     = totalInquiries > 0 ? totalSpend / totalInquiries : 0;
   const _f = document.getElementById('fromDate').value, _t = document.getElementById('toDate').value;
   const days    = (_f && _t) ? Math.max(1, Math.round((new Date(_t)-new Date(_f))/86400000)+1) : 1;
-  const dayLabel = days === 1 ? 'for 1 day' : `for ${days} days`;
-  document.getElementById('kpi-roas').textContent  = FMT2(avgRoas);
-  document.getElementById('kpi-aov').textContent   = PHP(aov);
-  document.getElementById('kpi-cvr').textContent   = cvr.toFixed(1) + '%';
-  document.getElementById('kpi-cpm').textContent   = PHP(cpm);
-  document.getElementById('kpi-spend').textContent = PHP(totalSpend);
-  document.getElementById('kpi-sales').textContent = PHP(totalSales);
-  document.getElementById('kpi-spend-sub').textContent = dayLabel;
-  document.getElementById('kpi-sales-sub').textContent = dayLabel;
+  const dayLbl  = days === 1 ? 'for 1 day' : `for ${days} days`;
+  document.getElementById('kpi-roas').textContent   = FMT2(avgRoas);
+  document.getElementById('kpi-aov').textContent    = PHP(aov);
+  document.getElementById('kpi-cvr').textContent    = cvr.toFixed(1) + '%';
+  document.getElementById('kpi-cpm').textContent    = PHP(cpm);
+  document.getElementById('kpi-orders').textContent = NUM(totalOrders);
+  document.getElementById('kpi-spend').textContent  = PHP(totalSpend);
+  document.getElementById('kpi-sales').textContent  = PHP(totalSales);
+  document.getElementById('kpi-spend-sub').textContent = dayLbl;
+  document.getElementById('kpi-sales-sub').textContent = dayLbl;
   document.getElementById('kpiGrid').style.display = 'grid';
 }
 
@@ -1240,6 +1623,226 @@ function overallRoasClass(roas) {
   return 'roas-empty';
 }
 
+// ── BUILD AGGREGATED GROUP DATA ──
+function buildGroupData(ads, dates) {
+  const grouped = { dates: {}, budget: ads.reduce((s,a)=>s+(a.budget||0),0) };
+  for (const d of dates) {
+    grouped.dates[d] = { spend:0, grossSales:0, orders:0, messagesStarted:0, delivered:0, rts:0, roas:0, cpm:0, delRate:null };
+    for (const c of ads) {
+      if (!c.dates[d]) continue;
+      const dd = c.dates[d];
+      grouped.dates[d].spend           += dd.spend           || 0;
+      grouped.dates[d].grossSales      += dd.grossSales      || 0;
+      grouped.dates[d].orders          += dd.orders          || 0;
+      grouped.dates[d].messagesStarted += dd.messagesStarted || 0;
+      grouped.dates[d].delivered       += dd.delivered       || 0;
+      grouped.dates[d].rts             += dd.rts             || 0;
+    }
+    const gd = grouped.dates[d];
+    gd.roas    = gd.spend > 0 ? gd.grossSales / gd.spend : 0;
+    gd.cpm     = gd.messagesStarted > 0 ? gd.spend / gd.messagesStarted : 0;
+    gd.delRate = (gd.delivered + gd.rts) > 0 ? gd.delivered / (gd.delivered + gd.rts) * 100 : null;
+  }
+  return grouped;
+}
+
+// ── DAY CARDS: NDAP / BRAND TAB (no action badge, no declared budget) ──
+function renderDayCardsNdap(c, dates) {
+  return dates.map((d, i) => {
+    const dd = c.dates[d];
+    const isLatest = i === dates.length - 1;
+    const roas = dd ? dd.roas : 0; const spend = dd ? dd.spend : 0;
+    const cvr  = dd && dd.messagesStarted > 0 ? (dd.orders / dd.messagesStarted * 100) : 0;
+    const aov  = dd && dd.orders > 0 ? dd.grossSales / dd.orders : 0;
+    const rCls = roasColorClass(roas, spend);
+    return `<div class="day-card${isLatest?' latest':''}">
+      <div class="day-card-header">${dayLabel(d)}</div>
+      <div class="day-card-body">
+        <div class="day-row"><span class="day-row-label">ROAS</span><span class="day-row-val ${rCls}">${spend>0?FMT2(roas):'—'}</span></div>
+        <div class="day-row"><span class="day-row-label">CVR</span><span class="day-row-val">${dd&&dd.messagesStarted>0?cvr.toFixed(1)+'%':'—'}</span></div>
+        <div class="day-row"><span class="day-row-label">AOV</span><span class="day-row-val">${dd&&dd.orders>0?PHP(aov):'—'}</span></div>
+        <div class="day-row"><span class="day-row-label">CPM</span><span class="day-row-val">${spend>0?PHP(dd.cpm):'—'}</span></div>
+        <div class="day-row"><span class="day-row-label">Gross Sales</span><span class="day-row-val">${dd?PHP(dd.grossSales):'—'}</span></div>
+        <div class="day-row"><span class="day-row-label">Actual Adspent</span><span class="day-row-val">${spend>0?PHP(spend):'—'}</span></div>
+        <div class="day-row"><span class="day-row-label">Inquiries</span><span class="day-row-val">${dd&&dd.messagesStarted>0?NUM(dd.messagesStarted):'—'}</span></div>
+        <div class="day-row"><span class="day-row-label">Orders</span><span class="day-row-val">${dd?dd.orders:'—'}</span></div>
+        <div class="day-row"><span class="day-row-label">Delivery Rate</span><span class="day-row-val">${dd&&dd.delRate!=null?dd.delRate.toFixed(1)+'%':'—'}</span></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── DAY CARDS: CAMPAIGN GROUP AGGREGATED (includes declared budget) ──
+function renderGroupDayCards(groupData, dates) {
+  return dates.map((d, i) => {
+    const dd = groupData.dates[d];
+    const isLatest = i === dates.length - 1;
+    const roas = dd ? dd.roas : 0; const spend = dd ? dd.spend : 0;
+    const cvr  = dd && dd.messagesStarted > 0 ? (dd.orders / dd.messagesStarted * 100) : 0;
+    const aov  = dd && dd.orders > 0 ? dd.grossSales / dd.orders : 0;
+    const rCls = roasColorClass(roas, spend);
+    return `<div class="day-card${isLatest?' latest':''}">
+      <div class="day-card-header">${dayLabel(d)}</div>
+      <div class="day-card-body">
+        <div class="day-row"><span class="day-row-label">ROAS</span><span class="day-row-val ${rCls}">${spend>0?FMT2(roas):'—'}</span></div>
+        <div class="day-row"><span class="day-row-label">CVR</span><span class="day-row-val">${dd&&dd.messagesStarted>0?cvr.toFixed(1)+'%':'—'}</span></div>
+        <div class="day-row"><span class="day-row-label">AOV</span><span class="day-row-val">${dd&&dd.orders>0?PHP(aov):'—'}</span></div>
+        <div class="day-row"><span class="day-row-label">CPM</span><span class="day-row-val">${spend>0?PHP(dd.cpm):'—'}</span></div>
+        <div class="day-row"><span class="day-row-label">Gross Sales</span><span class="day-row-val">${dd?PHP(dd.grossSales):'—'}</span></div>
+        <div class="day-row"><span class="day-row-label">Actual Adspent</span><span class="day-row-val">${spend>0?PHP(spend):'—'}</span></div>
+        <div class="day-row"><span class="day-row-label">Declared Budget</span><span class="day-row-val">${PHP(groupData.budget)}</span></div>
+        <div class="day-row"><span class="day-row-label">Inquiries</span><span class="day-row-val">${dd&&dd.messagesStarted>0?NUM(dd.messagesStarted):'—'}</span></div>
+        <div class="day-row"><span class="day-row-label">Orders</span><span class="day-row-val">${dd?dd.orders:'—'}</span></div>
+        <div class="day-row"><span class="day-row-label">Delivery Rate</span><span class="day-row-val">${dd&&dd.delRate!=null?dd.delRate.toFixed(1)+'%':'—'}</span></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── DAY CARDS: PRODUCT SUBPAGE (action badge in header, declared budget shown) ──
+function renderDayCardsProduct(c, dates) {
+  const isSingleDay = dates.length === 1;
+  return dates.map((d, i) => {
+    const dd = c.dates[d];
+    const isLatest = i === dates.length - 1;
+    const ap   = actionForDay(c, dates, i);
+    const roas = dd ? dd.roas : 0; const spend = dd ? dd.spend : 0;
+    const cvr  = dd && dd.messagesStarted > 0 ? (dd.orders / dd.messagesStarted * 100) : 0;
+    const aov  = dd && dd.orders > 0 ? dd.grossSales / dd.orders : 0;
+    const rCls = roasColorClass(roas, spend);
+    const safeKey  = c.campaignId.replace(/'/g,"\\'");
+    const safeName = c.campaignName.replace(/'/g,"\\'").replace(/"/g,'&quot;');
+    const safeAcct = c.accountName.replace(/'/g,"\\'");
+    let actionHtml = '';
+    if (ap.text) {
+      if (isSingleDay) {
+        actionHtml = `<button class="action-badge ${ap.cls}" style="border:none;cursor:pointer;font-family:inherit;font-size:11px" onclick="openActionModal('${safeKey}','${safeName}','${safeAcct}','${ap.text}','${d}')">${ap.text}</button>`;
+      } else {
+        actionHtml = `<span class="action-badge ${ap.cls}" style="font-size:11px">${ap.text}</span>`;
+      }
+    }
+    return `<div class="day-card${isLatest?' latest':''}">
+      <div class="day-card-header" style="display:flex;justify-content:space-between;align-items:center;gap:6px">
+        <span>${dayLabel(d)}</span>${actionHtml}
+      </div>
+      <div class="day-card-body">
+        <div class="day-row"><span class="day-row-label">ROAS</span><span class="day-row-val ${rCls}">${spend>0?FMT2(roas):'—'}</span></div>
+        <div class="day-row"><span class="day-row-label">CVR</span><span class="day-row-val">${dd&&dd.messagesStarted>0?cvr.toFixed(1)+'%':'—'}</span></div>
+        <div class="day-row"><span class="day-row-label">AOV</span><span class="day-row-val">${dd&&dd.orders>0?PHP(aov):'—'}</span></div>
+        <div class="day-row"><span class="day-row-label">CPM</span><span class="day-row-val">${spend>0?PHP(dd.cpm):'—'}</span></div>
+        <div class="day-row"><span class="day-row-label">Gross Sales</span><span class="day-row-val">${dd?PHP(dd.grossSales):'—'}</span></div>
+        <div class="day-row"><span class="day-row-label">Actual Adspent</span><span class="day-row-val">${spend>0?PHP(spend):'—'}</span></div>
+        <div class="day-row"><span class="day-row-label">Declared Budget</span><span class="day-row-val">${PHP(c.budget)}</span></div>
+        <div class="day-row"><span class="day-row-label">Inquiries</span><span class="day-row-val">${dd&&dd.messagesStarted>0?NUM(dd.messagesStarted):'—'}</span></div>
+        <div class="day-row"><span class="day-row-label">Orders</span><span class="day-row-val">${dd?dd.orders:'—'}</span></div>
+        <div class="day-row"><span class="day-row-label">Delivery Rate</span><span class="day-row-val">${dd&&dd.delRate!=null?dd.delRate.toFixed(1)+'%':'—'}</span></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── AD CARD: NDAP / BRAND TAB (two-column, no action badge) ──
+function renderAdCardNdap(c, dates) {
+  const loggedList = (actionLogs[c.campaignId]||[]).filter(l=>dates.includes(l.date)).slice(0,1);
+  const roasCls    = roasColorClass(c.totalRoas||0, c.totalSpend||0);
+  return `<div class="camp-card">
+    <div class="camp-card-2col">
+      <div class="camp-card-2col-left">
+        <div class="camp-ad-name">${c.adName}</div>
+        <div class="camp-ad-id">${c.adId}</div>
+        <div class="camp-meta-row" style="margin-top:4px">
+          <span class="account-pill">${c.accountName}</span>
+          ${loggedList.map(l=>`<span class="logged-entry">&#10003; ${l.action_taken}${l.new_budget?' →₱'+Number(l.new_budget).toLocaleString():''} · ${l.done_by_name}</span>`).join('')}
+        </div>
+        <div class="camp-total-roas-val ${roasCls}">${c.totalSpend>0?FMT2(c.totalRoas):'—'}</div>
+        <div class="camp-budget-day">Budget/day: ${PHP(c.budget)}</div>
+      </div>
+      <div class="camp-card-2col-right">
+        <div class="camp-r-label">Total Sales</div>
+        <div class="camp-r-sales">${PHP(c.totalSales)}</div>
+        <div class="camp-r-label" style="margin-top:6px">Total Spent</div>
+        <div class="camp-r-spent">${PHP(c.totalSpend)}</div>
+      </div>
+    </div>
+    <div class="camp-day-wrap">
+      <div class="day-cards-row">${renderDayCardsNdap(c, dates)}</div>
+    </div>
+  </div>`;
+}
+
+// ── AD CARD: PRODUCT SUBPAGE (two-column, camera icon, action badge in day header) ──
+function renderAdCardProduct(c, dates) {
+  const loggedList  = (actionLogs[c.campaignId]||[]).filter(l=>dates.includes(l.date)).slice(0,1);
+  const roasCls     = roasColorClass(c.totalRoas||0, c.totalSpend||0);
+  const hasCreative = (allCreatives[c.adId]||[]).length > 0;
+  const safeAdId    = c.adId.replace(/'/g,"\\'");
+  const safeAdName  = c.adName.replace(/'/g,"\\'").replace(/"/g,'&quot;');
+  return `<div class="camp-card">
+    <div class="camp-card-2col">
+      <div class="camp-card-2col-left">
+        <div class="camp-ad-name">
+          <button class="btn-creative ${hasCreative?'has-creatives':''}" data-creative-key="${c.adId}" onclick="openCreativesModal('${safeAdId}','${safeAdName}')" title="View/submit creatives">📸</button>${c.adName}
+        </div>
+        <div class="camp-ad-id">${c.adId}</div>
+        <div class="camp-meta-row" style="margin-top:4px">
+          <span class="account-pill">${c.accountName}</span>
+          ${loggedList.map(l=>`<span class="logged-entry">&#10003; ${l.action_taken}${l.new_budget?' →₱'+Number(l.new_budget).toLocaleString():''} · ${l.done_by_name}</span>`).join('')}
+        </div>
+        <div class="camp-total-roas-val ${roasCls}">${c.totalSpend>0?FMT2(c.totalRoas):'—'}</div>
+        <div class="camp-budget-day">Budget/day: ${PHP(c.budget)}</div>
+      </div>
+      <div class="camp-card-2col-right">
+        <div class="camp-r-label">Total Sales</div>
+        <div class="camp-r-sales">${PHP(c.totalSales)}</div>
+        <div class="camp-r-label" style="margin-top:6px">Total Spent</div>
+        <div class="camp-r-spent">${PHP(c.totalSpend)}</div>
+      </div>
+    </div>
+    <div class="camp-day-wrap">
+      <div class="day-cards-row">${renderDayCardsProduct(c, dates)}</div>
+    </div>
+  </div>`;
+}
+
+// ── BUILD CAMPAIGN GROUPS HTML ──
+function renderCampaignGroups(camps, dates, isProduct) {
+  const byCampaign = {};
+  for (const c of camps) {
+    if (!byCampaign[c.campaignId]) {
+      byCampaign[c.campaignId] = { campaignId:c.campaignId, campaignName:c.campaignName, ads:[] };
+    }
+    byCampaign[c.campaignId].ads.push(c);
+  }
+  let html = '';
+  for (const group of Object.values(byCampaign)) {
+    const groupData      = buildGroupData(group.ads, dates);
+    const overallAP      = actionForDay(groupData, dates, dates.length - 1);
+    const groupTotalSpend= group.ads.reduce((s,a)=>s+a.totalSpend,0);
+    const groupTotalSales= group.ads.reduce((s,a)=>s+a.totalSales,0);
+    const groupTotalRoas = groupTotalSpend > 0 ? groupTotalSales / groupTotalSpend : 0;
+    const roasCls        = overallRoasClass(groupTotalRoas);
+    const cgLogged       = (actionLogs[group.campaignId]||[]).filter(l=>dates.includes(l.date)).slice(0,1);
+    const safeCampId     = group.campaignId.replace(/'/g,"\\'");
+    const safeCampName   = group.campaignName.replace(/'/g,"\\'").replace(/"/g,'&quot;');
+    const safeAcct       = (group.ads[0]?.accountName||'').replace(/'/g,"\\'");
+    html += `<div class="cg-block">
+      <div class="cg-header">
+        <div class="cg-header-top">
+          <span class="cg-name">${group.campaignName}</span>
+          <span class="cg-ads-pill">${group.ads.length} ad${group.ads.length>1?'s':''}</span>
+          <span class="overall-roas ${roasCls}" style="font-size:18px;font-weight:700">${groupTotalSpend>0?FMT2(groupTotalRoas):'—'}</span>
+          <span class="action-badge ${overallAP.cls}">${overallAP.text||'—'}</span>
+          ${cgLogged.map(l=>`<span class="cg-logged">&#10003; ${l.action_taken}${l.new_budget?' →₱'+Number(l.new_budget).toLocaleString():''} · ${l.done_by_name}</span>`).join('')}
+          <button class="btn-log-action" onclick="openActionModal('${safeCampId}','${safeCampName}','${safeAcct}','${overallAP.text}',null)">Log Action</button>
+        </div>
+        <div class="day-cards-row">${renderGroupDayCards(groupData, dates)}</div>
+      </div>
+      ${group.ads.map(c => isProduct ? renderAdCardProduct(c, dates) : renderAdCardNdap(c, dates)).join('')}
+    </div>`;
+  }
+  return html;
+}
+
 function render({ dates, campaigns }) {
   const byProduct = {};
   for (const c of campaigns) {
@@ -1247,184 +1850,62 @@ function render({ dates, campaigns }) {
     if (!byProduct[prod]) byProduct[prod] = [];
     byProduct[prod].push(c);
   }
-
   const renderedProducts = new Set();
   let html = '';
 
   for (const { brand, bg, products } of BRAND_MAP) {
     const activeProd = products.filter(p => byProduct[p] && byProduct[p].length > 0);
     if (!activeProd.length) continue;
-
-    const totalCamps = activeProd.reduce((s,p)=>s+byProduct[p].length,0);
-
+    const totalAds = activeProd.reduce((s,p)=>s+byProduct[p].length,0);
     html += `<div class="brand-block">
       <div class="brand-header" style="background:${bg}">
         <span class="brand-name-txt">${brand}</span>
-        <span class="brand-count-pill">${totalCamps} campaigns</span>
+        <span class="brand-count-pill">${totalAds} ads</span>
       </div>`;
-
     for (const prod of activeProd) {
       renderedProducts.add(prod);
-      const camps = byProduct[prod];
-      const prodSpend = camps.reduce((s,c)=>s+c.totalSpend,0);
-      const prodSales = camps.reduce((s,c)=>s+c.totalSales,0);
-      const prodRoas  = prodSpend > 0 ? prodSales / prodSpend : 0;
-      const pill = PRODUCT_PILLS[prod] || { bg:'#f5f4ef', color:'#555' };
-
+      const camps    = byProduct[prod];
+      const pSpend   = camps.reduce((s,c)=>s+c.totalSpend,0);
+      const pSales   = camps.reduce((s,c)=>s+c.totalSales,0);
+      const pRoas    = pSpend > 0 ? pSales / pSpend : 0;
+      const pill     = PRODUCT_PILLS[prod] || { bg:'#f5f4ef', color:'#555' };
       html += `<div class="product-section">
         <div class="product-subheader">
           <span class="product-pill" style="background:${pill.bg};color:${pill.color}">${prod}</span>
-          <span style="font-size:10px;color:var(--muted)">${camps.length} campaigns</span>
-          <div class="product-stats">
-            Spend: <span>${PHP(prodSpend)}</span>
-            &nbsp;&nbsp;Sales: <span>${PHP(prodSales)}</span>
-            &nbsp;&nbsp;ROAS: <span style="color:${prodRoas>=3?'var(--scale)':prodRoas>=2.7?'var(--stay)':'var(--kill)'}">${FMT2(prodRoas)}</span>
-          </div>
-        </div>`;
-
-      for (const c of camps) {
-        const overallAP   = actionForDay(c, dates, dates.length - 1);
-        const latestDay   = c.dates[dates[dates.length - 1]];
-        const latestRoas  = latestDay ? latestDay.roas : 0;
-        const roasCls     = overallRoasClass(latestRoas);
-        const loggedList  = (actionLogs[c.campaignId] || []).slice(0,1);
-
-        // Totals strip
-        const totalsHtml = `<div class="camp-totals">
-          <div class="totals-item"><div class="totals-label">Total Gross Sales</div><div class="totals-val">${PHP(c.totalSales)}</div></div>
-          <div class="totals-item"><div class="totals-label">Total Ads Spent</div><div class="totals-val">${PHP(c.totalSpend)}</div></div>
-          <div class="totals-item"><div class="totals-label">Budget / day</div><div class="totals-val">${PHP(c.budget)}</div></div>
-          <div class="totals-item"><div class="totals-label">Ad ID</div><div class="totals-val" style="font-size:10px;font-family:monospace">${c.adId}</div></div>
-        </div>`;
-
-        // Day cards
-        const dayCardsHtml = `<div class="day-cards-row">
-          ${dates.map((d, i) => {
-            const dd = c.dates[d];
-            const isLatest = i === dates.length - 1;
-            const ap = actionForDay(c, dates, i);
-            const roas  = dd ? dd.roas   : 0;
-            const spend = dd ? dd.spend  : 0;
-            const cvr   = dd && dd.messagesStarted > 0 ? (dd.orders / dd.messagesStarted * 100) : 0;
-            const aov   = dd && dd.orders > 0 ? dd.grossSales / dd.orders : 0;
-            const cpm   = dd ? dd.cpm    : 0;
-            const rCls  = roasColorClass(roas, spend);
-
-            return `<div class="day-card${isLatest?' latest':''}">
-              <div class="day-card-header">${dayLabel(d)}</div>
-              <div class="day-card-body">
-                <div class="day-row"><span class="day-row-label">ROAS</span><span class="day-row-val ${rCls}">${spend>0?FMT2(roas):'—'}</span></div>
-                <div class="day-row"><span class="day-row-label">CVR</span><span class="day-row-val">${dd&&dd.messagesStarted>0?cvr.toFixed(1)+'%':'—'}</span></div>
-                <div class="day-row"><span class="day-row-label">AOV</span><span class="day-row-val">${dd&&dd.orders>0?PHP(aov):'—'}</span></div>
-                <div class="day-row"><span class="day-row-label">CPM</span><span class="day-row-val">${spend>0?PHP(cpm):'—'}</span></div>
-                <div class="day-row"><span class="day-row-label">Gross Sales</span><span class="day-row-val">${dd?PHP(dd.grossSales):'—'}</span></div>
-                <div class="day-row"><span class="day-row-label">Actual Adspent</span><span class="day-row-val">${spend>0?PHP(spend):'—'}</span></div>
-                <div class="day-row"><span class="day-row-label">Declared Budget</span><span class="day-row-val">${PHP(c.budget)}</span></div>
-                <div class="day-row"><span class="day-row-label">Inquiries</span><span class="day-row-val">${dd&&dd.messagesStarted>0?NUM(dd.messagesStarted):'—'}</span></div>
-                <div class="day-row"><span class="day-row-label">Orders</span><span class="day-row-val">${dd?dd.orders:'—'}</span></div>
-                <div class="day-row"><span class="day-row-label">Delivery Rate</span><span class="day-row-val">${dd&&dd.delRate!=null?dd.delRate.toFixed(1)+'%':'—'}</span></div>
-              </div>
-              <div class="day-card-footer">
-                ${ap.text ? `<span class="action-badge ${ap.cls}">${ap.text}</span>` : '<span style="color:var(--muted2);font-size:10px">—</span>'}
-              </div>
-            </div>`;
-          }).join('')}
-        </div>`;
-
-        html += `<div class="camp-card">
-          <div class="camp-header">
-            <div class="camp-title-block">
-              <div class="camp-name">${c.campaignName}</div>
-              <div class="camp-meta-row">
-                <span class="account-pill">${c.accountName}</span>
-                ${loggedList.map(l=>`<span class="logged-entry">&#10003; ${l.action_taken}${l.new_budget?' →₱'+Number(l.new_budget).toLocaleString():''} · ${l.done_by_name}</span>`).join('')}
-              </div>
-            </div>
-            <div class="camp-overall">
-              <span class="overall-label">Latest ROAS</span>
-              <span class="overall-roas ${roasCls}">${latestDay && latestDay.spend > 0 ? FMT2(latestRoas) : '—'}</span>
-              <span class="action-badge ${overallAP.cls}">${overallAP.text||'—'}</span>
-              <button class="btn-log-action" onclick="openActionModal('${c.campaignId}','${c.campaignName.replace(/'/g,"\\'").replace(/"/g,'&quot;')}','${c.accountName}','${overallAP.text}')">Log Action</button>
-            </div>
-          </div>
-          ${totalsHtml}
-          ${dayCardsHtml}
-        </div>`;
-      }
-      html += `</div>`; // /product-section
+          <span style="font-size:10px;color:var(--muted)">${camps.length} ads</span>
+          <div class="product-stats">Spend: <span>${PHP(pSpend)}</span>&nbsp;&nbsp;Sales: <span>${PHP(pSales)}</span>&nbsp;&nbsp;ROAS: <span style="color:${pRoas>=3?'var(--scale)':pRoas>=2.7?'var(--stay)':'var(--kill)'}">${FMT2(pRoas)}</span></div>
+        </div>
+        ${renderCampaignGroups(camps, dates, false)}
+      </div>`;
     }
-    html += `</div>`; // /brand-block
+    html += `</div>`;
   }
 
-  // Fallback for unmapped products
+  // Fallback unmapped products
   for (const [prod, camps] of Object.entries(byProduct)) {
     if (renderedProducts.has(prod)) continue;
-    const pill = { bg:'#f5f4ef', color:'#555' };
+    const pSpend = camps.reduce((s,c)=>s+c.totalSpend,0);
+    const pSales = camps.reduce((s,c)=>s+c.totalSales,0);
+    const pRoas  = pSpend > 0 ? pSales / pSpend : 0;
     html += `<div class="brand-block">
       <div class="brand-header" style="background:#333">
         <span class="brand-name-txt">${prod}</span>
-        <span class="brand-count-pill">${camps.length} campaigns</span>
+        <span class="brand-count-pill">${camps.length} ads</span>
       </div>
-      <div class="product-section">`;
-    for (const c of camps) {
-      const overallAP   = actionForDay(c, dates, dates.length-1);
-      const latestDayFb = c.dates[dates[dates.length - 1]];
-      const latestRoasFb = latestDayFb ? latestDayFb.roas : 0;
-      const roasCls     = overallRoasClass(latestRoasFb);
-      html += `<div class="camp-card">
-        <div class="camp-header">
-          <div class="camp-title-block">
-            <div class="camp-name">${c.campaignName}</div>
-            <div class="camp-meta-row"><span class="account-pill">${c.accountName}</span></div>
-          </div>
-          <div class="camp-overall">
-            <span class="overall-label">Latest ROAS</span>
-            <span class="overall-roas ${roasCls}">${latestDayFb && latestDayFb.spend > 0 ? FMT2(latestRoasFb) : '—'}</span>
-            <span class="action-badge ${overallAP.cls}">${overallAP.text||'—'}</span>
-            <button class="btn-log-action" onclick="openActionModal('${c.campaignId}','${c.campaignName.replace(/'/g,"\\'").replace(/"/g,'&quot;')}','${c.accountName}','${overallAP.text}')">Log Action</button>
-          </div>
+      <div class="product-section">
+        <div class="product-subheader">
+          <span class="product-pill" style="background:#f5f4ef;color:#555">${prod}</span>
+          <div class="product-stats">Spend: <span>${PHP(pSpend)}</span>&nbsp;&nbsp;Sales: <span>${PHP(pSales)}</span>&nbsp;&nbsp;ROAS: <span style="color:${pRoas>=3?'var(--scale)':pRoas>=2.7?'var(--stay)':'var(--kill)'}">${FMT2(pRoas)}</span></div>
         </div>
-        <div class="camp-totals">
-          <div class="totals-item"><div class="totals-label">Total Gross Sales</div><div class="totals-val">${PHP(c.totalSales)}</div></div>
-          <div class="totals-item"><div class="totals-label">Total Ads Spent</div><div class="totals-val">${PHP(c.totalSpend)}</div></div>
-          <div class="totals-item"><div class="totals-label">Budget / day</div><div class="totals-val">${PHP(c.budget)}</div></div>
-          <div class="totals-item"><div class="totals-label">Ad ID</div><div class="totals-val" style="font-size:10px;font-family:monospace">${c.adId}</div></div>
-        </div>
-        <div class="day-cards-row">
-          ${dates.map((d,i)=>{
-            const dd=c.dates[d]; const isLatest=i===dates.length-1;
-            const ap=actionForDay(c,dates,i);
-            const roas=dd?dd.roas:0; const spend=dd?dd.spend:0;
-            const cvr=dd&&dd.messagesStarted>0?(dd.orders/dd.messagesStarted*100):0;
-            const aov=dd&&dd.orders>0?dd.grossSales/dd.orders:0;
-            const rCls=roasColorClass(roas,spend);
-            return `<div class="day-card${isLatest?' latest':''}">
-              <div class="day-card-header">${dayLabel(d)}</div>
-              <div class="day-card-body">
-                <div class="day-row"><span class="day-row-label">ROAS</span><span class="day-row-val ${rCls}">${spend>0?FMT2(roas):'—'}</span></div>
-                <div class="day-row"><span class="day-row-label">CVR</span><span class="day-row-val">${dd&&dd.messagesStarted>0?cvr.toFixed(1)+'%':'—'}</span></div>
-                <div class="day-row"><span class="day-row-label">AOV</span><span class="day-row-val">${dd&&dd.orders>0?PHP(aov):'—'}</span></div>
-                <div class="day-row"><span class="day-row-label">CPM</span><span class="day-row-val">${spend>0?PHP(dd.cpm):'—'}</span></div>
-                <div class="day-row"><span class="day-row-label">Gross Sales</span><span class="day-row-val">${dd?PHP(dd.grossSales):'—'}</span></div>
-                <div class="day-row"><span class="day-row-label">Actual Adspent</span><span class="day-row-val">${spend>0?PHP(spend):'—'}</span></div>
-                <div class="day-row"><span class="day-row-label">Declared Budget</span><span class="day-row-val">${PHP(c.budget)}</span></div>
-                <div class="day-row"><span class="day-row-label">Inquiries</span><span class="day-row-val">${dd&&dd.messagesStarted>0?NUM(dd.messagesStarted):'—'}</span></div>
-                <div class="day-row"><span class="day-row-label">Orders</span><span class="day-row-val">${dd?dd.orders:'—'}</span></div>
-                <div class="day-row"><span class="day-row-label">Delivery Rate</span><span class="day-row-val">${dd&&dd.delRate!=null?dd.delRate.toFixed(1)+'%':'—'}</span></div>
-              </div>
-              <div class="day-card-footer">${ap.text?`<span class="action-badge ${ap.cls}">${ap.text}</span>`:'<span style="color:var(--muted2);font-size:10px">—</span>'}</div>
-            </div>`;
-          }).join('')}
-        </div>
-      </div>`;
-    }
-    html += `</div></div>`;
+        ${renderCampaignGroups(camps, dates, false)}
+      </div>
+    </div>`;
   }
-
   document.getElementById('tableContainer').innerHTML = html;
 }
 
 loadData();
+check3PMAlert();
 
 // PAGE MAP
 const PAGE_MAP = [
@@ -1480,6 +1961,7 @@ function toggleSubGroup(id) {
 }
 
 function switchTab(tab, el) {
+  closePanels();
   document.querySelectorAll('.nav-item-parent, .nav-subitem, .nav-subsubitem').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   document.getElementById('tab-' + tab).classList.add('active');
@@ -1492,17 +1974,13 @@ function switchTab(tab, el) {
     const sub = document.querySelector(`.nav-subitem[data-tab="${tab}"]`);
     if (sub) sub.classList.add('active');
   }
-  const productTabs = Object.keys(PRODUCT_TABS);
-  const showLegend = (tab === 'ndap' || tab === 'naturals' || tab === 'eyecare' || productTabs.includes(tab));
-  document.getElementById('ndap-legend').style.display = showLegend ? 'flex' : 'none';
   if (tab === 'naturals')  loadBrandTab('NATURALS');
   if (tab === 'eyecare')   loadBrandTab('EYECARE');
   if (PRODUCT_TABS[tab])   loadProductTab(tab);
   if (tab === 'analytics') document.getElementById('analyticsEmpty').style.display = 'block';
-  // Hide NDAP top controls on Analytics tab, show on all others
-  document.querySelectorAll('.ndap-ctrl, #ndap-ctrl-label-from').forEach(el => {
-    el.style.display = (tab === 'analytics' || tab === 'history') ? 'none' : '';
-  });
+  // Hide NDAP top controls on Analytics/History tabs
+  const hideControls = (tab === 'analytics' || tab === 'history');
+  document.querySelectorAll('.ndap-ctrl').forEach(c => { c.style.display = hideControls ? 'none' : ''; });
   if (tab === 'checklist') loadChecklist();
   if (tab === 'history')   loadHistory();
 }
@@ -1693,13 +2171,22 @@ function renderChecklist({ dates, campaigns }, endDate, savedBudgets = {}) {
 const NATURALS_PRODUCTS = ['CANPRO','AUDICURE','SINUXYL','SINUXYL 2','GINSENG'];
 const EYECARE_PRODUCTS  = ['CLEAR SIGHT','PTERYGIUM'];
 
-function renderBrandKPIs(campaigns, prefix) {
+function renderBrandKPIs(campaigns, prefix, clearSightByDate, dates) {
   let spend=0, sales=0, orders=0, inquiries=0;
   for (const c of campaigns) {
     spend  += c.totalSpend  || 0;
     sales  += c.totalSales  || 0;
     orders += c.totalOrders || 0;
     for (const d of Object.values(c.dates)) inquiries += d.messagesStarted || 0;
+  }
+  // Use clearSightByDate for orders if provided (more accurate POS total)
+  if (clearSightByDate && dates) {
+    let csOrders = 0;
+    for (const d of dates) {
+      const row = clearSightByDate[d];
+      if (row) csOrders += row.orders || 0;
+    }
+    if (csOrders > 0) orders = csOrders;
   }
   const roas = spend > 0 ? sales / spend : 0;
   const aov  = orders > 0 ? sales / orders : 0;
@@ -1716,6 +2203,8 @@ function renderBrandKPIs(campaigns, prefix) {
   document.getElementById(`kpi-${prefix}-aov`).textContent   = PHP(aov);
   document.getElementById(`kpi-${prefix}-spend-sub`).textContent = dayLabel;
   document.getElementById(`kpi-${prefix}-sales-sub`).textContent = dayLabel;
+  const ordersEl = document.getElementById(`kpi-${prefix}-orders`);
+  if (ordersEl) ordersEl.textContent = NUM(orders);
   document.getElementById(`kpiGrid-${prefix}`).style.display = 'grid';
 }
 
@@ -1733,7 +2222,7 @@ async function loadBrandTab(brand) {
     const data = await r.json();
     if (data.error) throw new Error(data.error);
     const filtered = { ...data, campaigns: data.campaigns.filter(c => products.includes((c.product||'').toUpperCase())) };
-    renderBrandKPIs(filtered.campaigns, prefix);
+    renderBrandKPIs(filtered.campaigns, prefix, data.clearSightByDate, data.dates);
     renderFiltered(filtered, prefix);
   } catch(e) {
     document.getElementById(`tableContainer-${prefix}`).innerHTML = `<div class="error-msg">${e.message}</div>`;
@@ -1756,7 +2245,7 @@ async function loadProductTab(tabName) {
     const data = await r.json();
     if (data.error) throw new Error(data.error);
     const campaigns = data.campaigns.filter(c => products.includes((c.product||'').toUpperCase()));
-    renderBrandKPIs(campaigns, tabName);
+    renderBrandKPIs(campaigns, tabName, data.clearSightByDate, data.dates);
     renderProductCampaigns(campaigns, data.dates, tabName, displayName);
   } catch(e) {
     document.getElementById(`tableContainer-${tabName}`).innerHTML = `<div class="error-msg">${e.message}</div>`;
@@ -1775,73 +2264,22 @@ function renderProductCampaigns(campaigns, dates, prefix, displayName) {
   const prodRoas  = prodSpend > 0 ? prodSales / prodSpend : 0;
   const firstProd = (campaigns[0].product||'').toUpperCase();
   const pill = PRODUCT_PILLS[firstProd] || { bg:'#f5f4ef', color:'#555' };
-  let html = `<div class="product-section"><div class="product-subheader">
-    <span class="product-pill" style="background:${pill.bg};color:${pill.color}">${displayName}</span>
-    <span style="font-size:10px;color:var(--muted)">${campaigns.length} campaigns</span>
-    <div class="product-stats">Spend: <span>${PHP(prodSpend)}</span>&nbsp;&nbsp;Sales: <span>${PHP(prodSales)}</span>&nbsp;&nbsp;ROAS: <span style="color:${prodRoas>=3?'var(--scale)':prodRoas>=2.7?'var(--stay)':'var(--kill)'}">${FMT2(prodRoas)}</span></div>
+  const html = `<div class="product-section">
+    <div class="product-subheader">
+      <span class="product-pill" style="background:${pill.bg};color:${pill.color}">${displayName}</span>
+      <span style="font-size:10px;color:var(--muted)">${campaigns.length} ads</span>
+      <div class="product-stats">Spend: <span>${PHP(prodSpend)}</span>&nbsp;&nbsp;Sales: <span>${PHP(prodSales)}</span>&nbsp;&nbsp;ROAS: <span style="color:${prodRoas>=3?'var(--scale)':prodRoas>=2.7?'var(--stay)':'var(--kill)'}">${FMT2(prodRoas)}</span></div>
+    </div>
+    ${renderCampaignGroups(campaigns, dates, true)}
   </div>`;
-  for (const c of campaigns) {
-    const overallAP  = actionForDay(c, dates, dates.length - 1);
-    const latestDay  = c.dates[dates[dates.length - 1]];
-    const latestRoas = latestDay ? latestDay.roas : 0;
-    const roasCls    = overallRoasClass(latestRoas);
-    const loggedList = (actionLogs[c.campaignId] || []).slice(0,1);
-    const totalsHtml = `<div class="camp-totals">
-      <div class="totals-item"><div class="totals-label">Total Gross Sales</div><div class="totals-val">${PHP(c.totalSales)}</div></div>
-      <div class="totals-item"><div class="totals-label">Total Ads Spent</div><div class="totals-val">${PHP(c.totalSpend)}</div></div>
-      <div class="totals-item"><div class="totals-label">Budget / day</div><div class="totals-val">${PHP(c.budget)}</div></div>
-      <div class="totals-item"><div class="totals-label">Ad ID</div><div class="totals-val" style="font-size:10px;font-family:monospace">${c.adId}</div></div>
-    </div>`;
-    const dayCardsHtml = `<div class="day-cards-row">${dates.map((d,i)=>{
-      const dd=c.dates[d]; const isLatest=i===dates.length-1;
-      const ap=actionForDay(c,dates,i);
-      const roas=dd?dd.roas:0; const spend=dd?dd.spend:0;
-      const cvr=dd&&dd.messagesStarted>0?(dd.orders/dd.messagesStarted*100):0;
-      const aov=dd&&dd.orders>0?dd.grossSales/dd.orders:0;
-      const rCls=roasColorClass(roas,spend);
-      return `<div class="day-card${isLatest?' latest':''}">
-        <div class="day-card-header">${dayLabel(d)}</div>
-        <div class="day-card-body">
-          <div class="day-row"><span class="day-row-label">ROAS</span><span class="day-row-val ${rCls}">${spend>0?FMT2(roas):'—'}</span></div>
-          <div class="day-row"><span class="day-row-label">CVR</span><span class="day-row-val">${dd&&dd.messagesStarted>0?cvr.toFixed(1)+'%':'—'}</span></div>
-          <div class="day-row"><span class="day-row-label">AOV</span><span class="day-row-val">${dd&&dd.orders>0?PHP(aov):'—'}</span></div>
-          <div class="day-row"><span class="day-row-label">CPM</span><span class="day-row-val">${spend>0?PHP(dd.cpm):'—'}</span></div>
-          <div class="day-row"><span class="day-row-label">Gross Sales</span><span class="day-row-val">${dd?PHP(dd.grossSales):'—'}</span></div>
-          <div class="day-row"><span class="day-row-label">Actual Adspent</span><span class="day-row-val">${spend>0?PHP(spend):'—'}</span></div>
-          <div class="day-row"><span class="day-row-label">Declared Budget</span><span class="day-row-val">${PHP(c.budget)}</span></div>
-          <div class="day-row"><span class="day-row-label">Inquiries</span><span class="day-row-val">${dd&&dd.messagesStarted>0?NUM(dd.messagesStarted):'—'}</span></div>
-          <div class="day-row"><span class="day-row-label">Orders</span><span class="day-row-val">${dd?dd.orders:'—'}</span></div>
-          <div class="day-row"><span class="day-row-label">Delivery Rate</span><span class="day-row-val">${dd&&dd.delRate!=null?dd.delRate.toFixed(1)+'%':'—'}</span></div>
-        </div>
-        <div class="day-card-footer">${ap.text?`<span class="action-badge ${ap.cls}">${ap.text}</span>`:'<span style="color:var(--muted2);font-size:10px">—</span>'}</div>
-      </div>`;
-    }).join('')}</div>`;
-    html += `<div class="camp-card">
-      <div class="camp-header">
-        <div class="camp-name-row">
-          <span class="camp-name ${roasCls}">${c.campaignName}</span>
-          <span class="roas-badge ${roasCls}">${latestDay&&latestDay.spend>0?FMT2(latestRoas):'—'}</span>
-        </div>
-        <div class="camp-meta-row">
-          <span class="account-pill">${c.accountName}</span>
-          ${loggedList.map(l=>`<span class="logged-badge">${l.action_taken}</span>`).join('')}
-        </div>
-      </div>
-      ${totalsHtml}${dayCardsHtml}
-      <div class="camp-action-row">
-        <span class="action-rec ${overallAP.cls}">${overallAP.text||'No recommendation'}</span>
-        <button class="btn-log-action" onclick="openLogModal('${c.campaignId}','${c.campaignName.replace(/'/g,"\\'")}','${c.accountName.replace(/'/g,"\\'")}')">Log Action</button>
-      </div>
-    </div>`;
-  }
-  html += '</div>';
   document.getElementById(`tableContainer-${prefix}`).innerHTML = html;
 }
 
 function renderFiltered({ dates, campaigns }, prefix) {
-  // Reuse same render logic but output to brand-specific container
-  const saved = render.__lastHTML || '';
-  // Build HTML using same render logic, filtered campaigns
+  if (!campaigns.length) {
+    document.getElementById(`tableContainer-${prefix}`).innerHTML = '<div class="loading-wrap" style="display:block">No active campaigns in this date range.</div>';
+    return;
+  }
   const byProduct = {};
   for (const c of campaigns) {
     const prod = (c.product || 'Other').toUpperCase();
@@ -1849,81 +2287,20 @@ function renderFiltered({ dates, campaigns }, prefix) {
     byProduct[prod].push(c);
   }
   let html = '';
-  const brandKey = prefix === 'naturals' ? 'SH Naturals Brand' : 'SH Eyecare Brand';
-  const brandEntry = BRAND_MAP.find(b => b.brand === brandKey);
-  if (!brandEntry) { document.getElementById(`tableContainer-${prefix}`).innerHTML = '<div class="loading-wrap">No data</div>'; return; }
-  const { brand, bg, products } = brandEntry;
-  const activeProd = products.filter(p => byProduct[p] && byProduct[p].length > 0);
-  if (!activeProd.length) { document.getElementById(`tableContainer-${prefix}`).innerHTML = '<div class="loading-wrap" style="display:block">No active campaigns in this date range.</div>'; return; }
-  const totalCamps = activeProd.reduce((s,p)=>s+byProduct[p].length,0);
-  html += `<div class="brand-block"><div class="brand-header" style="background:${bg}"><span class="brand-name-txt">${brand}</span><span class="brand-count-pill">${totalCamps} campaigns</span></div>`;
-  for (const prod of activeProd) {
-    const camps = byProduct[prod];
-    const prodSpend = camps.reduce((s,c)=>s+c.totalSpend,0);
-    const prodSales = camps.reduce((s,c)=>s+c.totalSales,0);
-    const prodRoas  = prodSpend > 0 ? prodSales / prodSpend : 0;
-    const pill = PRODUCT_PILLS[prod] || { bg:'#f5f4ef', color:'#555' };
-    html += `<div class="product-section"><div class="product-subheader">
-      <span class="product-pill" style="background:${pill.bg};color:${pill.color}">${prod}</span>
-      <span style="font-size:10px;color:var(--muted)">${camps.length} campaigns</span>
-      <div class="product-stats">Spend: <span>${PHP(prodSpend)}</span>&nbsp;&nbsp;Sales: <span>${PHP(prodSales)}</span>&nbsp;&nbsp;ROAS: <span style="color:${prodRoas>=3?'var(--scale)':prodRoas>=2.7?'var(--stay)':'var(--kill)'}">${FMT2(prodRoas)}</span></div>
+  for (const [prod, camps] of Object.entries(byProduct)) {
+    const pSpend = camps.reduce((s,c)=>s+c.totalSpend,0);
+    const pSales = camps.reduce((s,c)=>s+c.totalSales,0);
+    const pRoas  = pSpend > 0 ? pSales / pSpend : 0;
+    const pill   = PRODUCT_PILLS[prod] || { bg:'#f5f4ef', color:'#555' };
+    html += `<div class="product-section">
+      <div class="product-subheader">
+        <span class="product-pill" style="background:${pill.bg};color:${pill.color}">${prod}</span>
+        <span style="font-size:10px;color:var(--muted)">${camps.length} ads</span>
+        <div class="product-stats">Spend: <span>${PHP(pSpend)}</span>&nbsp;&nbsp;Sales: <span>${PHP(pSales)}</span>&nbsp;&nbsp;ROAS: <span style="color:${pRoas>=3?'var(--scale)':pRoas>=2.7?'var(--stay)':'var(--kill)'}">${FMT2(pRoas)}</span></div>
+      </div>
+      ${renderCampaignGroups(camps, dates, false)}
     </div>`;
-    for (const c of camps) {
-      const overallAP  = actionForDay(c, dates, dates.length - 1);
-      const latestDay  = c.dates[dates[dates.length - 1]];
-      const latestRoas = latestDay ? latestDay.roas : 0;
-      const roasCls    = overallRoasClass(latestRoas);
-      const loggedList = (actionLogs[c.campaignId] || []).slice(0,1);
-      const totalsHtml = `<div class="camp-totals">
-        <div class="totals-item"><div class="totals-label">Total Gross Sales</div><div class="totals-val">${PHP(c.totalSales)}</div></div>
-        <div class="totals-item"><div class="totals-label">Total Ads Spent</div><div class="totals-val">${PHP(c.totalSpend)}</div></div>
-        <div class="totals-item"><div class="totals-label">Budget / day</div><div class="totals-val">${PHP(c.budget)}</div></div>
-        <div class="totals-item"><div class="totals-label">Ad ID</div><div class="totals-val" style="font-size:10px;font-family:monospace">${c.adId}</div></div>
-      </div>`;
-      const dayCardsHtml = `<div class="day-cards-row">${dates.map((d,i)=>{
-        const dd=c.dates[d]; const isLatest=i===dates.length-1;
-        const ap=actionForDay(c,dates,i);
-        const roas=dd?dd.roas:0; const spend=dd?dd.spend:0;
-        const cvr=dd&&dd.messagesStarted>0?(dd.orders/dd.messagesStarted*100):0;
-        const aov=dd&&dd.orders>0?dd.grossSales/dd.orders:0;
-        const rCls=roasColorClass(roas,spend);
-        return `<div class="day-card${isLatest?' latest':''}">
-          <div class="day-card-header">${dayLabel(d)}</div>
-          <div class="day-card-body">
-            <div class="day-row"><span class="day-row-label">ROAS</span><span class="day-row-val ${rCls}">${spend>0?FMT2(roas):'—'}</span></div>
-            <div class="day-row"><span class="day-row-label">CVR</span><span class="day-row-val">${dd&&dd.messagesStarted>0?cvr.toFixed(1)+'%':'—'}</span></div>
-            <div class="day-row"><span class="day-row-label">AOV</span><span class="day-row-val">${dd&&dd.orders>0?PHP(aov):'—'}</span></div>
-            <div class="day-row"><span class="day-row-label">CPM</span><span class="day-row-val">${spend>0?PHP(dd.cpm):'—'}</span></div>
-            <div class="day-row"><span class="day-row-label">Gross Sales</span><span class="day-row-val">${dd?PHP(dd.grossSales):'—'}</span></div>
-            <div class="day-row"><span class="day-row-label">Actual Adspent</span><span class="day-row-val">${spend>0?PHP(spend):'—'}</span></div>
-            <div class="day-row"><span class="day-row-label">Declared Budget</span><span class="day-row-val">${PHP(c.budget)}</span></div>
-            <div class="day-row"><span class="day-row-label">Inquiries</span><span class="day-row-val">${dd&&dd.messagesStarted>0?NUM(dd.messagesStarted):'—'}</span></div>
-            <div class="day-row"><span class="day-row-label">Orders</span><span class="day-row-val">${dd?dd.orders:'—'}</span></div>
-          </div>
-          <div class="day-card-footer">${ap.text?`<span class="action-badge ${ap.cls}">${ap.text}</span>`:'<span style="color:var(--muted2);font-size:10px">—</span>'}</div>
-        </div>`;
-      }).join('')}</div>`;
-      html += `<div class="camp-card">
-        <div class="camp-header">
-          <div class="camp-title-block">
-            <div class="camp-name">${c.campaignName}</div>
-            <div class="camp-meta-row"><span class="account-pill">${c.accountName}</span>
-              ${loggedList.map(l=>`<span class="logged-entry">&#10003; ${l.action_taken}${l.new_budget?' →₱'+Number(l.new_budget).toLocaleString():''} · ${l.done_by_name}</span>`).join('')}
-            </div>
-          </div>
-          <div class="camp-overall">
-            <span class="overall-label">Latest ROAS</span>
-            <span class="overall-roas ${roasCls}">${latestDay&&latestDay.spend>0?FMT2(latestRoas):'—'}</span>
-            <span class="action-badge ${overallAP.cls}">${overallAP.text||'—'}</span>
-            <button class="btn-log-action" onclick="openActionModal('${c.campaignId}','${c.campaignName.replace(/'/g,"\\'").replace(/"/g,'&quot;')}','${c.accountName}','${overallAP.text}')">Log Action</button>
-          </div>
-        </div>
-        ${totalsHtml}${dayCardsHtml}
-      </div>`;
-    }
-    html += `</div>`;
   }
-  html += `</div>`;
   document.getElementById(`tableContainer-${prefix}`).innerHTML = html;
 }
 
