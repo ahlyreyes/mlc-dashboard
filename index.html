@@ -824,12 +824,26 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
 .day-row:hover { background: rgba(0,0,0,0.03); border-radius: 4px; }
 
 /* ── CAMPAIGN GROUP BLOCK ── */
-.cg-block { border-bottom: 1px solid var(--border); }
-.cg-block:last-child { border-bottom: none; }
+.cg-block {
+  border: 1.5px solid #C7D7F8;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+.cg-block:last-child { margin-bottom: 0; }
 .cg-header {
-  background: #F0F4FF;
-  border-bottom: 1px solid var(--border);
-  padding: 12px 16px;
+  background: linear-gradient(90deg, #EEF3FF 0%, #F5F8FF 100%);
+  border-bottom: 1.5px solid #C7D7F8;
+  padding: 10px 14px;
+}
+.cg-header-label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: #2563EB;
+  margin-bottom: 4px;
 }
 .cg-header-top {
   display: flex;
@@ -849,7 +863,7 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
   white-space: nowrap;
 }
 .cg-ads-pill {
-  background: rgba(37,99,235,0.10);
+  background: rgba(37,99,235,0.12);
   border-radius: 20px;
   padding: 2px 9px;
   font-size: 11px;
@@ -861,6 +875,17 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
   font-size: 12px;
   color: var(--scale);
   flex-shrink: 0;
+}
+/* Ads inside a group get an indent line */
+.cg-ads-wrap { border-top: none; }
+.cg-ads-wrap .camp-card {
+  border-left: 3px solid #C7D7F8;
+  margin-left: 10px;
+  border-radius: 0 0 0 0;
+  background: #FAFCFF;
+}
+.cg-ads-wrap .camp-card + .camp-card {
+  border-top: 1px solid var(--border);
 }
 
 /* ── TWO-COLUMN AD CARD ── */
@@ -1821,6 +1846,12 @@ function renderCampaignGroups(camps, dates, isProduct) {
   }
   let html = '';
   for (const group of Object.values(byCampaign)) {
+    // Single ad — render directly, no campaign wrapper
+    if (group.ads.length === 1) {
+      html += isProduct ? renderAdCardProduct(group.ads[0], dates) : renderAdCardNdap(group.ads[0], dates);
+      continue;
+    }
+    // Multiple ads — render campaign group block
     const groupData      = buildGroupData(group.ads, dates);
     const overallAP      = actionForDay(groupData, dates, dates.length - 1);
     const groupTotalSpend= group.ads.reduce((s,a)=>s+a.totalSpend,0);
@@ -1833,9 +1864,10 @@ function renderCampaignGroups(camps, dates, isProduct) {
     const safeAcct       = (group.ads[0]?.accountName||'').replace(/'/g,"\\'");
     html += `<div class="cg-block">
       <div class="cg-header">
+        <div class="cg-header-label">Campaign</div>
         <div class="cg-header-top">
           <span class="cg-name">${group.campaignName}</span>
-          <span class="cg-ads-pill">${group.ads.length} ad${group.ads.length>1?'s':''}</span>
+          <span class="cg-ads-pill">${group.ads.length} ads</span>
           <span class="overall-roas ${roasCls}" style="font-size:18px;font-weight:700">${groupTotalSpend>0?FMT2(groupTotalRoas):'—'}</span>
           <span class="action-badge ${overallAP.cls}">${overallAP.text||'—'}</span>
           ${cgLogged.map(l=>`<span class="cg-logged">&#10003; ${l.action_taken}${l.new_budget?' →₱'+Number(l.new_budget).toLocaleString():''} · ${l.done_by_name}</span>`).join('')}
@@ -1843,7 +1875,9 @@ function renderCampaignGroups(camps, dates, isProduct) {
         </div>
         <div class="day-cards-row">${renderGroupDayCards(groupData, dates)}</div>
       </div>
-      ${group.ads.map(c => isProduct ? renderAdCardProduct(c, dates) : renderAdCardNdap(c, dates)).join('')}
+      <div class="cg-ads-wrap">
+        ${group.ads.map(c => isProduct ? renderAdCardProduct(c, dates) : renderAdCardNdap(c, dates)).join('')}
+      </div>
     </div>`;
   }
   return html;
