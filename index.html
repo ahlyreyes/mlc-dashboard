@@ -1158,6 +1158,7 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
             <div class="ceo-kpi-card">
               <div class="ceo-kpi-label">Total Sales</div>
               <div class="ceo-kpi-val" id="ceo-sales">—</div>
+              <div id="ceo-sales-breakdown" style="margin-bottom:2px"></div>
               <div class="ceo-delta" id="ceo-sales-delta"></div>
             </div>
             <div class="ceo-kpi-card">
@@ -2336,11 +2337,16 @@ function renderCEO({ dates, campaigns, clearSightByDate }) {
   const yesterSales  = yest ? (csbd[yest]?.sales  || 0) : null;
   const yesterOrders = yest ? (csbd[yest]?.orders || 0) : null;
 
-  let todaySpend = 0, yesterSpend = 0;
+  let todaySpend = 0, yesterSpend = 0, salesWithAdId = 0, yesterSalesWithAdId = 0;
   for (const c of campaigns) {
-    todaySpend  += c.dates[today]?.spend  || 0;
-    if (yest) yesterSpend += c.dates[yest]?.spend || 0;
+    todaySpend       += c.dates[today]?.spend      || 0;
+    salesWithAdId    += c.dates[today]?.grossSales || 0;
+    if (yest) {
+      yesterSpend          += c.dates[yest]?.spend      || 0;
+      yesterSalesWithAdId  += c.dates[yest]?.grossSales || 0;
+    }
   }
+  const salesWithoutAdId = Math.max(0, todaySales - salesWithAdId);
   const todayRoas = todaySpend  > 0 ? todaySales  / todaySpend  : 0;
   const yesterRoas= yesterSpend > 0 ? yesterSales / yesterSpend : 0;
 
@@ -2353,6 +2359,8 @@ function renderCEO({ dates, campaigns, clearSightByDate }) {
   }
 
   document.getElementById('ceo-sales').textContent   = PHP(todaySales);
+  document.getElementById('ceo-sales-breakdown').innerHTML =
+    `<span style="color:var(--muted);font-size:10px">w/ Ad: ${PHP(salesWithAdId)} &nbsp;·&nbsp; w/o Ad: ${PHP(salesWithoutAdId)}</span>`;
   document.getElementById('ceo-spend').textContent   = PHP(todaySpend);
   document.getElementById('ceo-roas').textContent    = todaySpend > 0 ? FMT2(todayRoas) : '—';
   document.getElementById('ceo-orders').textContent  = NUM(todayOrders);
