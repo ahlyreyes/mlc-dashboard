@@ -304,7 +304,7 @@ async function fetchAccountInsights(account, date) {
   // Fetch all pages of ad-level insights
   const allRows = [];
   let nextUrl = `https://graph.facebook.com/v19.0/${account.id}/insights` +
-    `?fields=ad_id,ad_name,campaign_id,campaign_name,spend,impressions,clicks,cost_per_action_type,actions` +
+    `?fields=ad_id,ad_name,campaign_id,campaign_name,spend,impressions,clicks,frequency,cost_per_action_type,actions` +
     `&level=ad&time_range={"since":"${date}","until":"${date}"}` +
     `&limit=500&access_token=${token}`;
 
@@ -363,6 +363,7 @@ async function fetchAccountInsights(account, date) {
         spend: parseFloat(r.spend || 0) * fxRate,
         impressions: parseInt(r.impressions || 0),
         clicks: parseInt(r.clicks || 0),
+        frequency: parseFloat(r.frequency || 0),
         costPerMessage,
         messagesStarted
       };
@@ -653,7 +654,7 @@ app.get('/api/ndap', requireAuth, async (req, res) => {
         if (!adMap[row.adId].dates[date]) {
           adMap[row.adId].dates[date] = {
             spend: 0, grossSales: 0, orders: 0,
-            impressions: 0, clicks: 0,
+            impressions: 0, clicks: 0, frequency: 0,
             costPerMessage: 0, messagesStarted: 0,
             delivered: 0, deliveredValue: 0,
             rts: 0, rtsValue: 0, shipped: 0, shippedValue: 0
@@ -666,6 +667,7 @@ app.get('/api/ndap', requireAuth, async (req, res) => {
         d.impressions    += row.impressions;
         d.clicks         += row.clicks;
         d.messagesStarted += row.messagesStarted || 0;
+        if (row.frequency > d.frequency) d.frequency = row.frequency;
         d.costPerMessage  += row.costPerMessage || 0;
         d.delivered      += sales.delivered || 0;
         d.deliveredValue += sales.deliveredValue || 0;
@@ -687,14 +689,15 @@ app.get('/api/ndap', requireAuth, async (req, res) => {
     }
 
     const campaigns = Object.values(adMap).map(c => {
-      let ts = 0, tsp = 0, to = 0, tDel = 0, tRts = 0, tShip = 0, tDelVal = 0, tRtsVal = 0;
+      let ts = 0, tsp = 0, to = 0, tDel = 0, tRts = 0, tShip = 0, tDelVal = 0, tRtsVal = 0, maxFreq = 0;
       for (const d of Object.values(c.dates)) {
         ts += d.grossSales; tsp += d.spend; to += d.orders;
         tDel += d.delivered || 0; tRts += d.rts || 0; tShip += d.shipped || 0;
         tDelVal += d.deliveredValue || 0; tRtsVal += d.rtsValue || 0;
+        if ((d.frequency || 0) > maxFreq) maxFreq = d.frequency;
       }
       const overallDelRate = (tDel + tRts) > 0 ? (tDel / (tDel + tRts) * 100) : null;
-      return { ...c, totalSales: ts, totalSpend: tsp, totalOrders: to,
+      return { ...c, totalSales: ts, totalSpend: tsp, totalOrders: to, maxFrequency: maxFreq,
         totalRoas: tsp > 0 ? ts / tsp : 0,
         totalDelivered: tDel, totalRts: tRts, totalShipped: tShip,
         totalDeliveredValue: tDelVal, totalRtsValue: tRtsVal, overallDelRate };
