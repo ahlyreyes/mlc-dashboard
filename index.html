@@ -1729,7 +1729,12 @@ function overallRoasClass(roas) {
 
 // ── BUILD AGGREGATED GROUP DATA ──
 function buildGroupData(ads, dates) {
-  const grouped = { dates: {}, budget: ads.reduce((s,a)=>s+(a.budget||0),0) };
+  // For CBO campaigns, all ads share the same campaign budget — avoid multiplying it.
+  // If all non-zero budgets are identical → CBO, use once. Otherwise sum (ABO).
+  const nonZeroBudgets = ads.map(a => a.budget||0).filter(b => b > 0);
+  const uniqueBudgets  = [...new Set(nonZeroBudgets)];
+  const groupBudget    = uniqueBudgets.length <= 1 ? (uniqueBudgets[0]||0) : nonZeroBudgets.reduce((s,b)=>s+b,0);
+  const grouped = { dates: {}, budget: groupBudget };
   for (const d of dates) {
     grouped.dates[d] = { spend:0, grossSales:0, orders:0, messagesStarted:0, delivered:0, rts:0, roas:0, cpm:0, delRate:null };
     for (const c of ads) {
