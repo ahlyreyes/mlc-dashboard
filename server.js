@@ -239,7 +239,7 @@ async function fetchPancakeSalesByDate() {
       } catch(e) { skipNoDate++; continue; }
 
       const status = (row['status'] || '').trim().toUpperCase();
-      if (status.includes('CANCEL')) { skipCancel++; continue; }
+      const isCancelled = status.includes('CANCEL');
 
       const adId = (row['ads'] || '').trim();
 
@@ -248,8 +248,8 @@ async function fetchPancakeSalesByDate() {
       const isClearSight = rowText.includes('clear sight');
       const isHaplunas   = rowText.includes('haplunas');
 
-      // ── Per-ad sales (NDAP matching) — excluded sellers skipped, requires adId, no Haplunas ──
-      if (!isExcludedSeller && adId && !isHaplunas) {
+      // ── Per-ad sales (NDAP matching) — excluded sellers, cancelled, and Haplunas skipped ──
+      if (!isExcludedSeller && !isCancelled && adId && !isHaplunas) {
         if (!salesByDate[dateStr]) salesByDate[dateStr] = {};
         if (!salesByDate[dateStr][adId]) salesByDate[dateStr][adId] = {
           sales: 0, orders: 0,
@@ -269,9 +269,9 @@ async function fetchPancakeSalesByDate() {
           salesByDate[dateStr][adId].shipped += 1;
           salesByDate[dateStr][adId].shippedValue += price;
         }
-      }
+      } else if (isCancelled) { skipCancel++; }
 
-      // ── Clear Sight total (Ad Spend page) — includes rows with no adId ──
+      // ── Clear Sight total — ALL orders incl. cancelled, to match mainfile ──
       if (isClearSight) {
         if (!clearSightByDate[dateStr]) clearSightByDate[dateStr] = { sales: 0, orders: 0 };
         clearSightByDate[dateStr].sales  += price;
