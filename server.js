@@ -646,9 +646,20 @@ app.get('/api/ndap', requireAuth, async (req, res) => {
     }
 
     // Merge insights into adMap — one row per ad, grouped by adId
+    // Also add ads that had spend but are no longer active (paused/stopped after the date)
     for (const date of dates) {
       for (const row of (insightsByDate[date] || [])) {
-        if (!adMap[row.adId]) continue;
+        if (!adMap[row.adId]) {
+          // Ad not in activeAdsList (paused/stopped) but had spend — add dynamically
+          adMap[row.adId] = {
+            campaignId: row.campaignId, campaignName: row.campaignName,
+            adId: row.adId, adName: row.adName,
+            accountName: row.accountName,
+            product: row.product || '',
+            budget: budgetMap[row.adId] || 0,
+            dates: {}
+          };
+        }
         const sales = salesByDate[date]?.[row.adId] || { sales: 0, orders: 0, delivered: 0, deliveredValue: 0, rts: 0, rtsValue: 0, shipped: 0, shippedValue: 0 };
 
         if (!adMap[row.adId].dates[date]) {
