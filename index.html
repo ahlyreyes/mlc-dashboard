@@ -1193,24 +1193,19 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
         <!-- KPI BAR -->
         <div class="kpi-grid" id="kpiGrid" style="display:none">
           <div class="kpi-card">
-            <div class="kpi-label">Avg ROAS</div>
+            <div class="kpi-label">Total Sales</div>
+            <div class="kpi-value" id="kpi-sales">—</div>
+            <div class="kpi-sub" id="kpi-sales-sub">Gross (Pancake)</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Total Adspent</div>
+            <div class="kpi-value" id="kpi-spend">—</div>
+            <div class="kpi-sub" id="kpi-spend-sub">All accounts</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">ROAS</div>
             <div class="kpi-value" id="kpi-roas">—</div>
             <div class="kpi-sub">Revenue / peso spent</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-label">Avg AOV</div>
-            <div class="kpi-value" id="kpi-aov">—</div>
-            <div class="kpi-sub">Average order value</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-label">CVR</div>
-            <div class="kpi-value" id="kpi-cvr">—</div>
-            <div class="kpi-sub">Inquiries to orders</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-label">Avg CPM</div>
-            <div class="kpi-value" id="kpi-cpm">—</div>
-            <div class="kpi-sub">Spend / inquiry</div>
           </div>
           <div class="kpi-card">
             <div class="kpi-label">Total Orders</div>
@@ -1218,14 +1213,19 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
             <div class="kpi-sub">POS orders (Pancake)</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-label">Total Spend</div>
-            <div class="kpi-value" id="kpi-spend">—</div>
-            <div class="kpi-sub" id="kpi-spend-sub">All accounts</div>
+            <div class="kpi-label">CVR</div>
+            <div class="kpi-value" id="kpi-cvr">—</div>
+            <div class="kpi-sub">Inquiries to orders</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-label">Total Sales</div>
-            <div class="kpi-value" id="kpi-sales">—</div>
-            <div class="kpi-sub" id="kpi-sales-sub">Gross (Pancake)</div>
+            <div class="kpi-label">AOV</div>
+            <div class="kpi-value" id="kpi-aov">—</div>
+            <div class="kpi-sub">Average order value</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Avg CPM</div>
+            <div class="kpi-value" id="kpi-cpm">—</div>
+            <div class="kpi-sub">Spend / inquiry</div>
           </div>
         </div>
 
@@ -1771,8 +1771,6 @@ function renderDayCardsNdap(c, dates) {
         <div class="day-row"><span class="day-row-label">CVR</span><span class="day-row-val">${dd&&dd.messagesStarted>0?cvr.toFixed(1)+'%':'—'}</span></div>
         <div class="day-row"><span class="day-row-label">AOV</span><span class="day-row-val">${dd&&dd.orders>0?PHP(aov):'—'}</span></div>
         <div class="day-row"><span class="day-row-label">CPM</span><span class="day-row-val">${spend>0?PHP(dd.cpm):'—'}</span></div>
-        <div class="day-row"><span class="day-row-label">Gross Sales</span><span class="day-row-val">${dd?PHP(dd.grossSales):'—'}</span></div>
-        <div class="day-row"><span class="day-row-label">Actual Adspent</span><span class="day-row-val">${spend>0?PHP(spend):'—'}</span></div>
         <div class="day-row"><span class="day-row-label">Inquiries</span><span class="day-row-val">${dd&&dd.messagesStarted>0?NUM(dd.messagesStarted):'—'}</span></div>
         <div class="day-row"><span class="day-row-label">Orders</span><span class="day-row-val">${dd?dd.orders:'—'}</span></div>
         <div class="day-row"><span class="day-row-label">Delivery Rate</span><span class="day-row-val">${dd&&dd.delRate!=null?dd.delRate.toFixed(1)+'%':'—'}</span></div>
@@ -1797,8 +1795,6 @@ function renderGroupDayCards(groupData, dates) {
         <div class="day-row"><span class="day-row-label">CVR</span><span class="day-row-val">${dd&&dd.messagesStarted>0?cvr.toFixed(1)+'%':'—'}</span></div>
         <div class="day-row"><span class="day-row-label">AOV</span><span class="day-row-val">${dd&&dd.orders>0?PHP(aov):'—'}</span></div>
         <div class="day-row"><span class="day-row-label">CPM</span><span class="day-row-val">${spend>0?PHP(dd.cpm):'—'}</span></div>
-        <div class="day-row"><span class="day-row-label">Gross Sales</span><span class="day-row-val">${dd?PHP(dd.grossSales):'—'}</span></div>
-        <div class="day-row"><span class="day-row-label">Actual Adspent</span><span class="day-row-val">${spend>0?PHP(spend):'—'}</span></div>
         <div class="day-row"><span class="day-row-label">Declared Budget</span><span class="day-row-val">${PHP(groupData.budget)}</span></div>
         <div class="day-row"><span class="day-row-label">Inquiries</span><span class="day-row-val">${dd&&dd.messagesStarted>0?NUM(dd.messagesStarted):'—'}</span></div>
         <div class="day-row"><span class="day-row-label">Orders</span><span class="day-row-val">${dd?dd.orders:'—'}</span></div>
@@ -1839,8 +1835,6 @@ function renderDayCardsProduct(c, dates) {
         <div class="day-row"><span class="day-row-label">CVR</span><span class="day-row-val">${dd&&dd.messagesStarted>0?cvr.toFixed(1)+'%':'—'}</span></div>
         <div class="day-row"><span class="day-row-label">AOV</span><span class="day-row-val">${dd&&dd.orders>0?PHP(aov):'—'}</span></div>
         <div class="day-row"><span class="day-row-label">CPM</span><span class="day-row-val">${spend>0?PHP(dd.cpm):'—'}</span></div>
-        <div class="day-row"><span class="day-row-label">Gross Sales</span><span class="day-row-val">${dd?PHP(dd.grossSales):'—'}</span></div>
-        <div class="day-row"><span class="day-row-label">Actual Adspent</span><span class="day-row-val">${spend>0?PHP(spend):'—'}</span></div>
         <div class="day-row"><span class="day-row-label">Declared Budget</span><span class="day-row-val">${PHP(c.budget)}</span></div>
         <div class="day-row"><span class="day-row-label">Inquiries</span><span class="day-row-val">${dd&&dd.messagesStarted>0?NUM(dd.messagesStarted):'—'}</span></div>
         <div class="day-row"><span class="day-row-label">Orders</span><span class="day-row-val">${dd?dd.orders:'—'}</span></div>
