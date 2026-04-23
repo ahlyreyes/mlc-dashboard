@@ -1820,25 +1820,13 @@ function renderDayCardsProduct(c, dates) {
   return dates.map((d, i) => {
     const dd = c.dates[d];
     const isLatest = i === dates.length - 1;
-    const ap   = actionForDay(c, dates, i);
     const roas = dd ? dd.roas : 0; const spend = dd ? dd.spend : 0;
     const cvr  = dd && dd.messagesStarted > 0 ? (dd.orders / dd.messagesStarted * 100) : 0;
     const aov  = dd && dd.orders > 0 ? dd.grossSales / dd.orders : 0;
     const rCls = roasColorClass(roas, spend);
-    const safeKey  = c.campaignId.replace(/'/g,"\\'");
-    const safeName = c.campaignName.replace(/'/g,"\\'").replace(/"/g,'&quot;');
-    const safeAcct = c.accountName.replace(/'/g,"\\'");
-    let actionHtml = '';
-    if (ap.text) {
-      if (isSingleDay) {
-        actionHtml = `<button class="action-badge ${ap.cls}" style="border:none;cursor:pointer;font-family:inherit;font-size:11px" onclick="openActionModal('${safeKey}','${safeName}','${safeAcct}','${ap.text}','${d}')">${ap.text}</button>`;
-      } else {
-        actionHtml = `<span class="action-badge ${ap.cls}" style="font-size:11px">${ap.text}</span>`;
-      }
-    }
     return `<div class="day-card${isLatest?' latest':''}">
-      <div class="day-card-header" style="display:flex;justify-content:space-between;align-items:center;gap:6px">
-        <span>${dayLabel(d)}</span>${actionHtml}
+      <div class="day-card-header">
+        <span>${dayLabel(d)}</span>
       </div>
       <div class="day-card-body">
         <div class="day-row"><span class="day-row-label">ROAS</span><span class="day-row-val ${rCls}">${spend>0?FMT2(roas):'—'}</span></div>
@@ -1965,7 +1953,7 @@ function renderCampaignGroupsOLD(camps, dates, isProduct) {
       continue;
     }
     const groupData      = buildGroupData(group.ads, dates);
-    const overallAP      = actionForDay(groupData, dates, dates.length - 1);
+    const overallAP      = { text: '', cls: '' };
     const groupTotalSpend= group.ads.reduce((s,a)=>s+a.totalSpend,0);
     const groupTotalSales= group.ads.reduce((s,a)=>s+a.totalSales,0);
     const groupTotalRoas = groupTotalSpend > 0 ? groupTotalSales / groupTotalSpend : 0;
