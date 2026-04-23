@@ -911,7 +911,13 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
   font-family: monospace;
   font-size: 10px;
   color: var(--muted2);
+  margin-bottom: 2px;
+}
+.camp-campaign-label {
+  font-size: 10px;
+  color: var(--muted2);
   margin-bottom: 4px;
+  font-style: italic;
 }
 .camp-total-roas-val {
   font-size: 26px;
@@ -1856,7 +1862,7 @@ function fatigueTag(c) {
   return '';
 }
 
-function renderAdCardNdap(c, dates) {
+function renderAdCardNdap(c, dates, showCampaign) {
   const loggedList = (actionLogs[c.campaignId]||[]).filter(l=>dates.includes(l.date)).slice(0,1);
   const roasCls    = roasColorClass(c.totalRoas||0, c.totalSpend||0);
   return `<div class="camp-card">
@@ -1864,6 +1870,7 @@ function renderAdCardNdap(c, dates) {
       <div class="camp-card-2col-left">
         <div class="camp-ad-name" style="display:flex;align-items:center;gap:0">${c.adName}${fatigueTag(c)}</div>
         <div class="camp-ad-id">${c.adId}</div>
+        ${showCampaign ? `<div class="camp-campaign-label">Campaign: ${c.campaignName}</div>` : ''}
         <div class="camp-meta-row" style="margin-top:4px">
           <span class="account-pill">${c.accountName}</span>
           ${loggedList.map(l=>`<span class="logged-entry">&#10003; ${l.action_taken}${l.new_budget?' →₱'+Number(l.new_budget).toLocaleString():''} · ${l.done_by_name}</span>`).join('')}
@@ -1931,9 +1938,9 @@ function renderCampaignGroups(camps, dates, isProduct) {
   }
   let html = '';
   for (const group of Object.values(byCampaign)) {
-    // Single ad — render directly, no campaign wrapper
+    // Single ad — render directly, no campaign wrapper (show campaign name for context)
     if (group.ads.length === 1) {
-      html += isProduct ? renderAdCardProduct(group.ads[0], dates) : renderAdCardNdap(group.ads[0], dates);
+      html += isProduct ? renderAdCardProduct(group.ads[0], dates) : renderAdCardNdap(group.ads[0], dates, true);
       continue;
     }
     // Multiple ads — render campaign group block

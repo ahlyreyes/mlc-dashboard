@@ -714,14 +714,34 @@ app.get('/api/ndap', requireAuth, async (req, res) => {
         totalDeliveredValue: tDelVal, totalRtsValue: tRtsVal, overallDelRate };
     });
 
-    // Show all active ads (even 0 spend) — filter only truly inactive ones not in activeAdsList
-    const activeCampaigns = campaigns.filter(c =>
-      c.totalSpend > 0 || activeAdsList.some(a => a.adId === c.adId)
-    );
+    // Only show ads that actually spent in the selected date range
+    const activeCampaigns = campaigns.filter(c => c.totalSpend > 0);
 
+    // Mirror the manual NDAP order; unknown/new ads go to the end
+    const AD_SORT_ORDER = [
+      '120239574138660721',
+      '120239500552690721',
+      '120245022766230721',
+      '120245023075110721',
+      '120242885178630617',
+      '120242885220370617',
+      '120241663175620617',
+      '120242025285400617',
+      '120243655307940617',
+      '120243392946150617',
+      '120243392500850617',
+      '120243392998560617',
+      '120246106321330721',
+      '120246106300370721',
+      '120246106033340721',
+    ];
     activeCampaigns.sort((a, b) => {
-      if (a.accountName !== b.accountName) return a.accountName.localeCompare(b.accountName);
-      return a.adName.localeCompare(b.adName);
+      const ia = AD_SORT_ORDER.indexOf(a.adId);
+      const ib = AD_SORT_ORDER.indexOf(b.adId);
+      if (ia === -1 && ib === -1) return a.adName.localeCompare(b.adName);
+      if (ia === -1) return 1;
+      if (ib === -1) return -1;
+      return ia - ib;
     });
 
     const result = { dates, campaigns: activeCampaigns, clearSightByDate };
