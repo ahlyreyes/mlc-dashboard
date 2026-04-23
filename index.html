@@ -931,6 +931,11 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
   color: var(--muted);
   margin-top: 3px;
 }
+.camp-r-row {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+}
 .camp-r-label {
   font-size: 9px;
   font-weight: 700;
@@ -945,9 +950,9 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
   color: var(--text);
 }
 .camp-r-spent {
-  font-size: 12px;
+  font-size: 16px;
+  font-weight: 700;
   color: var(--muted);
-  margin-top: 2px;
 }
 .camp-day-wrap { padding: 0 16px 14px; }
 
@@ -1076,7 +1081,6 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
           <span class="nav-arrow">▾</span>
         </div>
         <div class="nav-submenu">
-          <div class="nav-subitem" onclick="switchTab('ndap', this)" data-tab="ndap">Ad Detail</div>
           <div class="nav-subitem" onclick="switchTab('clearsight', this)" data-tab="clearsight">Clear Sight</div>
           <div class="nav-subitem" onclick="switchTab('analytics', this)" data-tab="analytics">Data Analytics</div>
           <div class="nav-subitem" onclick="switchTab('history', this)" data-tab="history">Action History</div>
@@ -1869,21 +1873,26 @@ function renderAdCardNdap(c, dates, showCampaign) {
     <div class="camp-card-2col">
       <div class="camp-card-2col-left">
         <div class="camp-ad-name" style="display:flex;align-items:center;gap:0">${c.adName}${fatigueTag(c)}</div>
-        <div class="camp-ad-id">${c.adId}</div>
-        ${showCampaign ? `<div class="camp-campaign-label">Campaign: ${c.campaignName}</div>` : ''}
-        <div class="camp-meta-row" style="margin-top:4px">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
           <span class="account-pill">${c.accountName}</span>
-          ${loggedList.map(l=>`<span class="logged-entry">&#10003; ${l.action_taken}${l.new_budget?' →₱'+Number(l.new_budget).toLocaleString():''} · ${l.done_by_name}</span>`).join('')}
+          <span class="camp-ad-id" style="margin-bottom:0">${c.adId}</span>
         </div>
+        ${loggedList.map(l=>`<span class="logged-entry">&#10003; ${l.action_taken}${l.new_budget?' →₱'+Number(l.new_budget).toLocaleString():''} · ${l.done_by_name}</span>`).join('')}
         <div class="camp-total-roas-val ${roasCls}">${c.totalSpend>0?FMT2(c.totalRoas):'—'}</div>
         <div class="camp-budget-day">Budget/day: ${PHP(c.budget)}</div>
         ${adPacingBar(c, dates)}
       </div>
       <div class="camp-card-2col-right">
-        <div class="camp-r-label">Total Sales</div>
-        <div class="camp-r-sales">${PHP(c.totalSales)}</div>
-        <div class="camp-r-label" style="margin-top:6px">Total Spent</div>
-        <div class="camp-r-spent">${PHP(c.totalSpend)}</div>
+        <div class="camp-r-row">
+          <div>
+            <div class="camp-r-label">Total Sales</div>
+            <div class="camp-r-sales">${PHP(c.totalSales)}</div>
+          </div>
+          <div>
+            <div class="camp-r-label">Ads Spent</div>
+            <div class="camp-r-spent">${PHP(c.totalSpend)}</div>
+          </div>
+        </div>
       </div>
     </div>
     <div class="camp-day-wrap">
@@ -1905,20 +1914,26 @@ function renderAdCardProduct(c, dates) {
         <div class="camp-ad-name" style="display:flex;align-items:center;gap:0">
           <button class="btn-creative ${hasCreative?'has-creatives':''}" data-creative-key="${c.adId}" onclick="openCreativesModal('${safeAdId}','${safeAdName}')" title="View/submit creatives">📸</button>${c.adName}${fatigueTag(c)}
         </div>
-        <div class="camp-ad-id">${c.adId}</div>
-        <div class="camp-meta-row" style="margin-top:4px">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
           <span class="account-pill">${c.accountName}</span>
-          ${loggedList.map(l=>`<span class="logged-entry">&#10003; ${l.action_taken}${l.new_budget?' →₱'+Number(l.new_budget).toLocaleString():''} · ${l.done_by_name}</span>`).join('')}
+          <span class="camp-ad-id" style="margin-bottom:0">${c.adId}</span>
         </div>
+        ${loggedList.map(l=>`<span class="logged-entry">&#10003; ${l.action_taken}${l.new_budget?' →₱'+Number(l.new_budget).toLocaleString():''} · ${l.done_by_name}</span>`).join('')}
         <div class="camp-total-roas-val ${roasCls}">${c.totalSpend>0?FMT2(c.totalRoas):'—'}</div>
         <div class="camp-budget-day">Budget/day: ${PHP(c.budget)}</div>
         ${adPacingBar(c, dates)}
       </div>
       <div class="camp-card-2col-right">
-        <div class="camp-r-label">Total Sales</div>
-        <div class="camp-r-sales">${PHP(c.totalSales)}</div>
-        <div class="camp-r-label" style="margin-top:6px">Total Spent</div>
-        <div class="camp-r-spent">${PHP(c.totalSpend)}</div>
+        <div class="camp-r-row">
+          <div>
+            <div class="camp-r-label">Total Sales</div>
+            <div class="camp-r-sales">${PHP(c.totalSales)}</div>
+          </div>
+          <div>
+            <div class="camp-r-label">Ads Spent</div>
+            <div class="camp-r-spent">${PHP(c.totalSpend)}</div>
+          </div>
+        </div>
       </div>
     </div>
     <div class="camp-day-wrap">
