@@ -1927,8 +1927,15 @@ function renderAdCardProduct(c, dates) {
   </div>`;
 }
 
-// ── BUILD CAMPAIGN GROUPS HTML ──
+// ── BUILD CAMPAIGN GROUPS HTML — each ad rendered individually to match manual NDAP format ──
 function renderCampaignGroups(camps, dates, isProduct) {
+  return camps.map(c =>
+    isProduct ? renderAdCardProduct(c, dates) : renderAdCardNdap(c, dates, true)
+  ).join('');
+}
+
+// kept for reference but no longer used in main NDAP view
+function renderCampaignGroupsOLD(camps, dates, isProduct) {
   const byCampaign = {};
   for (const c of camps) {
     if (!byCampaign[c.campaignId]) {
@@ -1938,12 +1945,10 @@ function renderCampaignGroups(camps, dates, isProduct) {
   }
   let html = '';
   for (const group of Object.values(byCampaign)) {
-    // Single ad — render directly, no campaign wrapper (show campaign name for context)
     if (group.ads.length === 1) {
       html += isProduct ? renderAdCardProduct(group.ads[0], dates) : renderAdCardNdap(group.ads[0], dates, true);
       continue;
     }
-    // Multiple ads — render campaign group block
     const groupData      = buildGroupData(group.ads, dates);
     const overallAP      = actionForDay(groupData, dates, dates.length - 1);
     const groupTotalSpend= group.ads.reduce((s,a)=>s+a.totalSpend,0);
