@@ -13,18 +13,40 @@ body { font-family: 'DM Sans', sans-serif; background: #F0F2F7; min-height: 100v
 .top-bar { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; flex-wrap: wrap; }
 .back-btn { display: inline-flex; align-items: center; gap: 6px; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 8px 16px; font-size: 0.82rem; font-weight: 600; color: #374151; cursor: pointer; text-decoration: none; transition: background 0.15s; }
 .back-btn:hover { background: #f8fafc; }
+.title-row { display: flex; align-items: center; gap: 10px; }
 .page-title { font-size: 1.2rem; font-weight: 700; color: #111827; }
 .page-sub   { font-size: 0.78rem; color: #6B7280; margin-top: 1px; }
 
-/* ── CONTROLS ── */
-.controls { background: #fff; border-radius: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); padding: 18px 22px; display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; margin-bottom: 22px; }
+/* ── CALENDAR DROPDOWN ── */
+.cal-wrap { position: relative; }
+.cal-icon-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px;
+  background: #fff; border: 1px solid #E5E7EB; border-radius: 10px;
+  cursor: pointer; color: #3B82F6; transition: background 0.15s, border-color 0.15s;
+}
+.cal-icon-btn:hover { background: #EFF6FF; border-color: #93C5FD; }
+.cal-icon-btn.active { background: #EFF6FF; border-color: #3B82F6; }
+.cal-icon-btn svg { width: 16px; height: 16px; }
+
+.cal-dropdown {
+  display: none; position: absolute; top: calc(100% + 8px); left: 0;
+  background: #fff; border: 1px solid #E5E7EB; border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12); padding: 18px 18px 14px;
+  z-index: 100; min-width: 260px;
+}
+.cal-dropdown.open { display: block; }
+.cal-row { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
 .ctrl-group { display: flex; flex-direction: column; gap: 4px; }
-.ctrl-label { font-size: 0.68rem; font-weight: 700; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.5px; }
-.ctrl-input { border: 1px solid #E5E7EB; border-radius: 8px; padding: 8px 12px; font-size: 0.84rem; font-family: inherit; color: #1F2937; background: #fff; outline: none; }
+.ctrl-label { font-size: 0.65rem; font-weight: 700; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.5px; }
+.ctrl-input { border: 1px solid #E5E7EB; border-radius: 8px; padding: 8px 10px; font-size: 0.84rem; font-family: inherit; color: #1F2937; background: #fff; outline: none; width: 100%; }
 .ctrl-input:focus { border-color: #3B82F6; }
-.load-btn { background: #3B82F6; color: #fff; border: none; border-radius: 10px; padding: 9px 22px; font-size: 0.85rem; font-weight: 600; font-family: inherit; cursor: pointer; transition: background 0.15s; }
+.load-btn { width: 100%; background: #3B82F6; color: #fff; border: none; border-radius: 10px; padding: 9px 0; font-size: 0.85rem; font-weight: 600; font-family: inherit; cursor: pointer; transition: background 0.15s; }
 .load-btn:hover { background: #2563EB; }
 .load-btn:disabled { background: #93C5FD; cursor: not-allowed; }
+
+/* date range chip shown in top bar */
+.date-chip { font-size: 0.75rem; font-weight: 600; color: #374151; background: #F1F5F9; border-radius: 8px; padding: 4px 10px; }
 
 /* ── STATE ── */
 .state-msg { text-align: center; padding: 60px 20px; color: #9CA3AF; font-size: 0.9rem; }
@@ -170,21 +192,32 @@ td { padding: 8px 14px; color: #374151; vertical-align: middle; }
 <div class="top-bar">
   <a href="/home" class="back-btn">← Reports</a>
   <div>
-    <div class="page-title">AOV &amp; CVR Report</div>
+    <div class="title-row">
+      <div class="page-title">AOV &amp; CVR Report</div>
+      <div class="cal-wrap" id="calWrap">
+        <button class="cal-icon-btn" id="calBtn" onclick="toggleCal()" title="Select date range">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+        </button>
+        <div class="cal-dropdown" id="calDropdown">
+          <div class="cal-row">
+            <div class="ctrl-group">
+              <div class="ctrl-label">From</div>
+              <input type="date" id="fromDate" class="ctrl-input">
+            </div>
+            <div class="ctrl-group">
+              <div class="ctrl-label">To</div>
+              <input type="date" id="toDate" class="ctrl-input">
+            </div>
+          </div>
+          <button class="load-btn" id="loadBtn" onclick="applyDates()">Load Report</button>
+        </div>
+      </div>
+      <span class="date-chip" id="dateChip"></span>
+    </div>
     <div class="page-sub">Clear Sight · FSA Performance</div>
   </div>
-</div>
-
-<div class="controls">
-  <div class="ctrl-group">
-    <div class="ctrl-label">From</div>
-    <input type="date" id="fromDate" class="ctrl-input">
-  </div>
-  <div class="ctrl-group">
-    <div class="ctrl-label">To</div>
-    <input type="date" id="toDate" class="ctrl-input">
-  </div>
-  <button class="load-btn" id="loadBtn" onclick="loadReport()">Load Report</button>
 </div>
 
 <div id="reportRoot">
@@ -196,10 +229,37 @@ const PHP = n => '₱' + Number(n||0).toLocaleString('en-PH',{minimumFractionDig
 const PCT = (n,d=1) => (n*100).toFixed(d)+'%';
 const FMT = n => Number(n||0).toLocaleString('en-PH',{minimumFractionDigits:0,maximumFractionDigits:0});
 
+function toggleCal() {
+  const drop = document.getElementById('calDropdown');
+  const btn  = document.getElementById('calBtn');
+  const open = drop.classList.toggle('open');
+  btn.classList.toggle('active', open);
+}
+
+function closeCal() {
+  document.getElementById('calDropdown').classList.remove('open');
+  document.getElementById('calBtn').classList.remove('active');
+}
+
+document.addEventListener('click', e => {
+  if (!document.getElementById('calWrap').contains(e.target)) closeCal();
+});
+
+function updateChip(from, to) {
+  const fmt = d => { const p = d.split('-'); return `${p[1]}/${p[2]}/${p[0]}`; };
+  document.getElementById('dateChip').textContent = from === to ? fmt(from) : `${fmt(from)} – ${fmt(to)}`;
+}
+
+function applyDates() {
+  closeCal();
+  loadReport();
+}
+
 (function init(){
   const t = new Date().toISOString().split('T')[0];
   document.getElementById('fromDate').value = t;
   document.getElementById('toDate').value   = t;
+  updateChip(t, t);
   loadReport();
 })();
 
@@ -207,6 +267,7 @@ async function loadReport() {
   const from = document.getElementById('fromDate').value;
   const to   = document.getElementById('toDate').value;
   if (!from || !to) return;
+  updateChip(from, to);
   const btn = document.getElementById('loadBtn');
   btn.disabled = true; btn.textContent = 'Loading…';
   document.getElementById('reportRoot').innerHTML = '<div class="state-msg">Fetching data…</div>';
