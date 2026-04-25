@@ -126,6 +126,9 @@ const PANCAKE_CSV_URLS = [
   process.env.PANCAKE_CSV_URL_APRIL || 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSWfevqFhSyLoIFwvwFFdgFY3NzyhTOu6nbW3_2CfhI460Etz60TPWH2yA1TkVfG2y439O43BOvXHb4/pub?gid=0&single=true&output=csv'
 ];
 
+// MLC mainfile — source for AOV & CVR FSA report (John Hovey Cabatic, Lex Dela Cruz)
+const MLC_MAINFILE_CSV_URL = process.env.MLC_MAINFILE_CSV_URL || 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRTziENAURT5p8ix0v0FOizV9a_i-p4Igeovw21jv09aqbJbqvsjKMEftGVfG8Dm0rmVvcKUv0MQkul/pub?output=csv';
+
 const PANCAKE_TOKEN = process.env.PANCAKE_TOKEN || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpbmZvIjp7Im9zIjoxLCJjbGllbnRfaXAiOiI2NC4yMjQuOTcuMTU0IiwiYnJvd3NlciI6MSwiZGV2aWNlX3R5cGUiOjN9LCJuYW1lIjoiQ2xhcmljZSBEYWxvbmRvbmFuIiwiZXhwIjoxNzgyMzA1MTQzLCJhcHBsaWNhdGlvbiI6MSwidWlkIjoiMWNjYjM3YTgtZjQ4NS00ZjdiLWJiMWQtZjhjNTQ0Nzg4NWM2Iiwic2Vzc2lvbl9pZCI6ImQ3MDM5OWFhLTIxYTMtNDRmZi05ZmI5LWVmMDBjNzI3YmE2YSIsImlhdCI6MTc3NDUyOTE0MywiZmJfaWQiOiIxMjIxMTI2MzIwNDg5OTY4NTUiLCJsb2dpbl9zZXNzaW9uIjpudWxsLCJmYl9uYW1lIjoiQ2xhcmljZSBEYWxvbmRvbmFuIn0.FUzLeVPKVMDqbruljozSc93SBsX76gj0HMfeiv4kpAA';
 
 // Clear Sight FSA definitions — update seller names if they differ in the CSV
@@ -849,9 +852,8 @@ app.get('/api/aov-cvr', requireAuth, async (req, res) => {
     const fromDate = req.query.from || new Date().toISOString().split('T')[0];
     const toDate   = req.query.to   || fromDate;
 
-    // Step 1 — Fetch POS orders from CSV
-    const allCsvs = await Promise.all(PANCAKE_CSV_URLS.map(u => fetchRaw(u)));
-    const rows = allCsvs.flatMap(csv => parseCSV(csv));
+    // Step 1 — Fetch POS orders from MLC mainfile
+    const rows = parseCSV(await fetchRaw(MLC_MAINFILE_CSV_URL));
 
     const fromDt = new Date(fromDate + 'T00:00:00Z');
     const toDt   = new Date(toDate   + 'T23:59:59Z');
