@@ -935,9 +935,13 @@ app.get('/api/aov-cvr', requireAuth, async (req, res) => {
       const tagDefs = tagDefsMap[pid] || {};
       let sdiCount = 0;
       for (const conv of convs) {
+        // Pancake API filters by updated_at (last activity), not inserted_at.
+        // Use updated_at for the inquiry count; inserted_at for SDI/FUI per-order tagging.
+        const updatedDate = (conv.updated_at || conv.inserted_at || '').split('T')[0];
+        const isActiveToday = updatedDate >= fromDate && updatedDate <= toDate;
+        if (isActiveToday) sdiCount++;
         const convDate = (conv.inserted_at || '').split('T')[0];
         const isInRange = convDate >= fromDate && convDate <= toDate;
-        if (isInRange) sdiCount++;
         const cxName = (conv.from && conv.from.name) || (conv.customers && conv.customers[0] && conv.customers[0].name) || '';
         const key = normCxName(cxName);
         if (key && !convLookup[pid][key]) {
