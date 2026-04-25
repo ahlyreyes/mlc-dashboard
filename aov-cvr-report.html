@@ -147,6 +147,14 @@ td { padding: 8px 14px; color: #374151; vertical-align: middle; }
 .b-status.returned   { background: #FEE2E2; color: #991B1B; }
 .b-status.cancelled  { background: #F3F4F6; color: #6B7280; }
 
+/* ── PER-PAGE ORDER BLOCKS ── */
+.page-orders-wrap { display: none; }
+.page-orders-wrap.open { display: block; }
+.page-orders-block { border-top: 1px solid #F1F5F9; }
+.page-orders-header { display: flex; align-items: center; justify-content: space-between; padding: 9px 20px; background: #F8FAFF; border-bottom: 1px solid #EEF2FF; }
+.page-orders-name  { font-size: 0.72rem; font-weight: 700; color: #3B82F6; text-transform: uppercase; letter-spacing: 0.4px; }
+.page-orders-count { font-size: 0.72rem; color: #6B7280; }
+
 .no-orders { text-align: center; padding: 24px; color: #9CA3AF; font-size: 0.82rem; }
 
 @media (max-width: 700px) {
@@ -306,17 +314,42 @@ function renderFSACard(fsaName, orders, dateLabel, pageInquiries, totalSDI) {
     else pageMap[pid].fuiOrders.push(o);
   }
 
-  const orderRows = orders.length>0 ? orders.map(o=>`
-    <tr>
-      <td>${o.pageShortName||o.posPageName||'—'}</td>
-      <td>${o.cxName||'—'}</td>
-      <td style="font-weight:700">${PHP(o.amount)}</td>
-      <td>${o.remarks.map(tagBadge).join('')||'—'}</td>
-      <td>${tagBadge(o.upsells)}</td>
-      <td>${tagBadge(o.typeOfInq)}</td>
-      <td>${o.remarksForOrder?tagBadge(o.remarksForOrder):'—'}</td>
-      <td>${statusBadge(o.status)}</td>
-    </tr>`).join('') : `<tr><td colspan="8" class="no-orders">No orders found for this period.</td></tr>`;
+  // Group orders by page for split tables
+  const ordersByPage = {};
+  for (const o of orders) {
+    const pg = o.pageShortName || o.posPageName || 'Unknown';
+    if (!ordersByPage[pg]) ordersByPage[pg] = [];
+    ordersByPage[pg].push(o);
+  }
+  const pageTablesCols = `<thead><tr>
+    <th>CX Name</th><th>Amount</th><th>Type of Inq.</th><th>Remarks</th>
+    <th>Upsells</th><th>Remarks for Order</th><th>Status</th>
+  </tr></thead>`;
+  const orderTablesHtml = Object.keys(ordersByPage).length > 0
+    ? Object.entries(ordersByPage).map(([pgName, pgOrders]) => `
+      <div class="page-orders-block">
+        <div class="page-orders-header">
+          <span class="page-orders-name">${pgName}</span>
+          <span class="page-orders-count">${pgOrders.length} orders &nbsp;·&nbsp; ${PHP(pgOrders.reduce((s,o)=>s+o.amount,0))}</span>
+        </div>
+        <div class="table-wrap open">
+          <table>
+            ${pageTablesCols}
+            <tbody>${pgOrders.map(o=>`
+              <tr>
+                <td>${o.cxName||'—'}</td>
+                <td style="font-weight:700">${PHP(o.amount)}</td>
+                <td>${tagBadge(o.typeOfInq)}</td>
+                <td>${o.remarks.map(tagBadge).join('')||'—'}</td>
+                <td>${tagBadge(o.upsells)}</td>
+                <td>${o.remarksForOrder?tagBadge(o.remarksForOrder):'—'}</td>
+                <td>${statusBadge(o.status)}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>`).join('')
+    : `<div class="no-orders">No orders found for this period.</div>`;
 
   const pageSummaryCards = Object.entries(pageMap).map(([pid,pg])=>{
     const sdiInq = (pageInquiries[pid]||{}).sdi||0;
@@ -399,21 +432,15 @@ function renderFSACard(fsaName, orders, dateLabel, pageInquiries, totalSDI) {
       </div>
     </div>
 
-    <!-- ORDER TABLE (collapsible) -->
+    <!-- ORDER TABLES (per page, collapsible) -->
     <div class="order-section">
       <div class="order-toggle" onclick="toggleTable('${cardId}')">
         <span class="order-toggle-label">Orders</span>
         <span class="order-toggle-count">${orderCount}</span>
         <span class="order-toggle-arrow open" id="${cardId}_arrow">▼</span>
       </div>
-      <div class="table-wrap open" id="${cardId}_table">
-        <table>
-          <thead><tr>
-            <th>Page</th><th>CX Name</th><th>Amount</th><th>Remarks</th>
-            <th>Upsells</th><th>Type of Inq.</th><th>Remarks for Order</th><th>Status</th>
-          </tr></thead>
-          <tbody>${orderRows}</tbody>
-        </table>
+      <div id="${cardId}_table" class="page-orders-wrap open">
+        ${orderTablesHtml}
       </div>
     </div>
 
@@ -425,9 +452,9 @@ function renderFSACard(fsaName, orders, dateLabel, pageInquiries, totalSDI) {
 }
 
 function toggleTable(id) {
-  const tbl = document.getElementById(id+'_table');
-  const arr = document.getElementById(id+'_arrow');
-  const open = tbl.classList.toggle('open');
+  const wrap = document.getElementById(id+'_table');
+  const arr  = document.getElementById(id+'_arrow');
+  const open = wrap.classList.toggle('open');
   arr.classList.toggle('open', open);
 }
 
