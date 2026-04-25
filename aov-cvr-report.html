@@ -272,14 +272,15 @@ function renderReport(data) {
     <div class="grand-bar-sub">${FMT(grandOrders)} orders &nbsp;·&nbsp; ${dateLabel}</div>
   </div>`;
 
+  const isSingleDay = from === to;
   for (const name of allSellers) {
-    html += renderFSACard(name, fsaGroups[name]||[], dateLabel, pageInquiries, totalSDI);
+    html += renderFSACard(name, fsaGroups[name]||[], dateLabel, pageInquiries, totalSDI, isSingleDay);
   }
 
   document.getElementById('reportRoot').innerHTML = html || '<div class="state-msg">No data found for this date range.</div>';
 }
 
-function renderFSACard(fsaName, orders, dateLabel, pageInquiries, totalSDI) {
+function renderFSACard(fsaName, orders, dateLabel, pageInquiries, totalSDI, showOrders=true) {
   const totalSales  = orders.reduce((s,o)=>s+o.amount,0);
   const sdiOrders   = orders.filter(o=>o.typeOfInq==='SDI');
   const fuiOrders   = orders.filter(o=>o.typeOfInq==='FUI');
@@ -432,7 +433,7 @@ function renderFSACard(fsaName, orders, dateLabel, pageInquiries, totalSDI) {
       </div>
     </div>
 
-    <!-- ORDER TABLES (per page, collapsible) -->
+    ${showOrders ? `<!-- ORDER TABLES (per page, collapsible) -->
     <div class="order-section">
       <div class="order-toggle" onclick="toggleTable('${cardId}')">
         <span class="order-toggle-label">Orders</span>
@@ -442,7 +443,7 @@ function renderFSACard(fsaName, orders, dateLabel, pageInquiries, totalSDI) {
       <div id="${cardId}_table" class="page-orders-wrap open">
         ${orderTablesHtml}
       </div>
-    </div>
+    </div>` : ''}
 
     ${pageSummaryCards?`<div class="page-summary-section">
       <div class="page-summary-title">Per-Page Summary</div>
