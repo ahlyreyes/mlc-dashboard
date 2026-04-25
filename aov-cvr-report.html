@@ -4,67 +4,132 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AOV &amp; CVR Report — MLC Insights</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: 'DM Sans', sans-serif; background: #F0F2F7; min-height: 100vh; padding: 28px 20px 60px; }
+body { font-family: 'DM Sans', sans-serif; background: #F0F2F7; min-height: 100vh; padding: 24px 20px 60px; }
 
 /* ── TOP BAR ── */
-.top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 12px; }
-.top-bar-left { display: flex; align-items: center; gap: 14px; }
+.top-bar { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; flex-wrap: wrap; }
 .back-btn { display: inline-flex; align-items: center; gap: 6px; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 8px 16px; font-size: 0.82rem; font-weight: 600; color: #374151; cursor: pointer; text-decoration: none; transition: background 0.15s; }
 .back-btn:hover { background: #f8fafc; }
-.page-title { font-size: 1.25rem; font-weight: 700; color: #111827; }
-.page-sub { font-size: 0.8rem; color: #6B7280; margin-top: 2px; }
+.page-title { font-size: 1.2rem; font-weight: 700; color: #111827; }
+.page-sub   { font-size: 0.78rem; color: #6B7280; margin-top: 1px; }
 
 /* ── CONTROLS ── */
-.controls { background: #fff; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.07); padding: 20px 24px; display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 28px; }
+.controls { background: #fff; border-radius: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); padding: 18px 22px; display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; margin-bottom: 22px; }
 .ctrl-group { display: flex; flex-direction: column; gap: 4px; }
-.ctrl-label { font-size: 0.72rem; font-weight: 600; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.5px; }
-.ctrl-input { border: 1px solid #E5E7EB; border-radius: 8px; padding: 8px 12px; font-size: 0.85rem; font-family: inherit; color: #1F2937; background: #fff; outline: none; }
+.ctrl-label { font-size: 0.68rem; font-weight: 700; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.5px; }
+.ctrl-input { border: 1px solid #E5E7EB; border-radius: 8px; padding: 8px 12px; font-size: 0.84rem; font-family: inherit; color: #1F2937; background: #fff; outline: none; }
 .ctrl-input:focus { border-color: #3B82F6; }
 .load-btn { background: #3B82F6; color: #fff; border: none; border-radius: 10px; padding: 9px 22px; font-size: 0.85rem; font-weight: 600; font-family: inherit; cursor: pointer; transition: background 0.15s; }
 .load-btn:hover { background: #2563EB; }
 .load-btn:disabled { background: #93C5FD; cursor: not-allowed; }
 
-/* ── LOADING / EMPTY ── */
+/* ── STATE ── */
 .state-msg { text-align: center; padding: 60px 20px; color: #9CA3AF; font-size: 0.9rem; }
 
+/* ── GRAND TOTAL BAR ── */
+.grand-bar { background: linear-gradient(135deg,#1E3A8A,#3B82F6); border-radius: 14px; padding: 14px 24px; margin-bottom: 18px; display: flex; align-items: center; gap: 28px; flex-wrap: wrap; }
+.grand-bar-label { font-size: 0.68rem; font-weight: 700; color: rgba(255,255,255,0.65); text-transform: uppercase; letter-spacing: 0.6px; }
+.grand-bar-val   { font-size: 1.4rem; font-weight: 800; color: #fff; }
+.grand-bar-sub   { font-size: 0.82rem; color: rgba(255,255,255,0.7); }
+
 /* ── FSA CARD ── */
-.fsa-card { background: #fff; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.07); margin-bottom: 28px; overflow: hidden; }
-.fsa-card-header { background: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%); padding: 20px 28px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
-.fsa-name { font-size: 1.05rem; font-weight: 700; color: #fff; }
-.fsa-daterange { font-size: 0.78rem; color: rgba(255,255,255,0.75); background: rgba(255,255,255,0.12); border-radius: 8px; padding: 4px 10px; }
-.fsa-body { padding: 24px 28px; }
+.fsa-card { background: #fff; border-radius: 16px; box-shadow: 0 2px 14px rgba(0,0,0,0.07); margin-bottom: 20px; overflow: hidden; }
 
-/* ── KPI + STATS ROW ── */
-.kpi-stats-row { display: flex; gap: 24px; margin-bottom: 24px; flex-wrap: wrap; }
-.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; flex: 1; min-width: 0; }
-.kpi-cell { background: #F8FAFF; border: 1px solid #EEF2FF; border-radius: 12px; padding: 14px 16px; }
-.kpi-label { font-size: 0.68rem; font-weight: 600; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 4px; }
-.kpi-val { font-size: 1.15rem; font-weight: 700; color: #111827; }
-.kpi-val.blue  { color: #2563EB; }
-.kpi-val.green { color: #059669; }
-.kpi-val.red   { color: #DC2626; }
+/* FSA header */
+.fsa-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; border-bottom: 1px solid #F1F5F9; flex-wrap: wrap; gap: 8px; }
+.fsa-header-name { font-size: 0.92rem; font-weight: 700; color: #111827; }
+.fsa-header-badge { font-size: 0.68rem; font-weight: 600; color: #6B7280; background: #F1F5F9; border-radius: 20px; padding: 3px 10px; letter-spacing: 0.3px; }
 
-.stats-panel { width: 200px; flex-shrink: 0; background: #F8FAFF; border: 1px solid #EEF2FF; border-radius: 14px; padding: 16px 18px; }
-.stats-title { font-size: 0.7rem; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
-.stat-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid #EEF2FF; }
-.stat-row:last-child { border-bottom: none; }
-.stat-name { font-size: 0.75rem; color: #374151; }
-.stat-val { font-size: 0.85rem; font-weight: 700; color: #111827; }
+/* ── MAIN KPI ROW (matches screenshot layout) ── */
+.kpi-row { display: flex; min-height: 160px; border-bottom: 1px solid #F1F5F9; }
+
+/* Left panel */
+.kpi-left {
+  width: 200px; flex-shrink: 0;
+  padding: 18px 18px;
+  border-right: 1px solid #F1F5F9;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.kpi-left-date { font-size: 0.65rem; font-weight: 700; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.kpi-left-sales { font-size: 1.7rem; font-weight: 800; color: #111827; line-height: 1; margin-bottom: 10px; }
+.kpi-left-row { display: flex; justify-content: space-between; align-items: baseline; }
+.kpi-left-metric { font-size: 0.72rem; color: #6B7280; }
+.kpi-left-val    { font-size: 0.78rem; font-weight: 700; color: #111827; }
+.kpi-left-val.green { color: #059669; }
+.kpi-left-val.red   { color: #DC2626; }
+.kpi-divider { height: 1px; background: #F1F5F9; margin: 6px 0; }
+
+/* Center sections */
+.kpi-center { flex: 1; display: flex; }
+.kpi-section {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 20px 16px; border-right: 1px solid #F1F5F9;
+  text-align: center;
+}
+.kpi-section:last-child { border-right: none; }
+.kpi-section-big { font-size: 2rem; font-weight: 800; color: #111827; line-height: 1; }
+.kpi-section-big.blue   { color: #2563EB; }
+.kpi-section-big.gold   { color: #92400E; }
+.kpi-section-big.green  { color: #059669; }
+.kpi-section-label { font-size: 0.64rem; font-weight: 700; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.6px; margin-top: 8px; }
+
+/* CVR bar */
+.cvr-bar-track { width: 100%; height: 6px; background: #E5E7EB; border-radius: 99px; overflow: hidden; margin-bottom: 10px; }
+.cvr-bar-fill  { height: 100%; background: #3B82F6; border-radius: 99px; transition: width 0.4s; }
+.cvr-pct { font-size: 1.5rem; font-weight: 800; color: #2563EB; line-height: 1; margin-bottom: 4px; }
+
+/* Right stats panel */
+.kpi-stats {
+  width: 190px; flex-shrink: 0;
+  border-left: 1px solid #F1F5F9;
+  padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 0;
+}
+.stat-item { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid #FAFAFA; }
+.stat-item:last-child { border-bottom: none; }
+.stat-item-name { font-size: 0.7rem; font-weight: 600; color: #6B7280; text-transform: uppercase; letter-spacing: 0.3px; }
+.stat-item-val  { font-size: 0.88rem; font-weight: 700; }
+.s-red    { color: #DC2626; }
+.s-blue   { color: #2563EB; }
+.s-green  { color: #059669; }
+.s-purple { color: #7C3AED; }
+.s-dark   { color: #111827; }
+.s-gray   { color: #6B7280; }
+.stat-spacer { height: 8px; }
 
 /* ── ORDER TABLE ── */
-.table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid #E5E7EB; margin-bottom: 24px; }
-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
-thead th { background: #F1F5F9; color: #6B7280; font-weight: 600; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.4px; padding: 10px 14px; text-align: left; border-bottom: 1px solid #E5E7EB; white-space: nowrap; }
-tbody tr { border-bottom: 1px solid #F1F5F9; }
+.order-section { padding: 0 0 4px; }
+.order-toggle { display: flex; align-items: center; gap: 10px; padding: 12px 20px; cursor: pointer; user-select: none; border-bottom: 1px solid #F1F5F9; }
+.order-toggle-label { font-size: 0.75rem; font-weight: 700; color: #374151; text-transform: uppercase; letter-spacing: 0.4px; }
+.order-toggle-count { font-size: 0.72rem; background: #EEF2FF; color: #3B82F6; border-radius: 20px; padding: 2px 10px; font-weight: 600; }
+.order-toggle-arrow { margin-left: auto; font-size: 0.7rem; color: #9CA3AF; transition: transform 0.2s; }
+.order-toggle-arrow.open { transform: rotate(180deg); }
+.table-wrap { overflow-x: auto; display: none; }
+.table-wrap.open { display: block; }
+table { width: 100%; border-collapse: collapse; font-size: 0.77rem; }
+thead th { background: #F8FAFF; color: #6B7280; font-weight: 700; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.4px; padding: 9px 14px; text-align: left; border-bottom: 1px solid #E5E7EB; white-space: nowrap; }
+tbody tr { border-bottom: 1px solid #F9FAFB; }
 tbody tr:last-child { border-bottom: none; }
 tbody tr:hover { background: #FAFBFF; }
-td { padding: 9px 14px; color: #374151; vertical-align: middle; }
+td { padding: 8px 14px; color: #374151; vertical-align: middle; }
+
+/* ── PER-PAGE SUMMARY ── */
+.page-summary-section { padding: 16px 20px; border-top: 1px solid #F1F5F9; }
+.page-summary-title { font-size: 0.68rem; font-weight: 700; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+.page-summary-grid { display: flex; flex-wrap: wrap; gap: 12px; }
+.page-summary-card { flex: 1; min-width: 220px; border: 1px solid #E5E7EB; border-radius: 10px; overflow: hidden; }
+.page-summary-header { background: #F8FAFF; padding: 8px 12px; font-size: 0.68rem; font-weight: 700; color: #3B82F6; text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 1px solid #E5E7EB; }
+.ps-table { width: 100%; border-collapse: collapse; font-size: 0.73rem; }
+.ps-table th { background: #F1F5F9; color: #6B7280; font-size: 0.62rem; text-transform: uppercase; padding: 6px 10px; border-bottom: 1px solid #E5E7EB; letter-spacing: 0.3px; }
+.ps-table td { padding: 6px 10px; color: #374151; border-bottom: 1px solid #F9FAFB; }
+.ps-table tr:last-child td { border-bottom: none; }
 
 /* ── TAG BADGES ── */
-.badge { display: inline-block; border-radius: 6px; padding: 2px 8px; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.3px; margin: 1px 2px; }
+.badge { display: inline-block; border-radius: 5px; padding: 2px 7px; font-size: 0.64rem; font-weight: 700; letter-spacing: 0.3px; margin: 1px 2px; }
 .b-called    { background: #D1FAE5; color: #065F46; }
 .b-unattended{ background: #FEF3C7; color: #92400E; }
 .b-cbr       { background: #FEE2E2; color: #991B1B; }
@@ -73,7 +138,7 @@ td { padding: 9px 14px; color: #374151; vertical-align: middle; }
 .b-fui       { background: #FEF9C3; color: #713F12; }
 .b-ai-upsell { background: #EDE9FE; color: #5B21B6; }
 .b-fsa-upsell{ background: #FED7AA; color: #7C2D12; }
-.b-wo-upsell { background: #F3F4F6; color: #6B7280; }
+.b-wo-upsell { background: #F3F4F6; color: #9CA3AF; }
 .b-auto-order{ background: #E2E8F0; color: #334155; }
 .b-fsa-spiels{ background: #D1FAE5; color: #065F46; }
 .b-teleconsult{ background: #EDE9FE; color: #5B21B6; }
@@ -82,37 +147,23 @@ td { padding: 9px 14px; color: #374151; vertical-align: middle; }
 .b-status.returned   { background: #FEE2E2; color: #991B1B; }
 .b-status.cancelled  { background: #F3F4F6; color: #6B7280; }
 
-/* ── PER-PAGE SUMMARY ── */
-.page-summary-section { border-top: 1px solid #E5E7EB; padding-top: 20px; }
-.page-summary-title { font-size: 0.8rem; font-weight: 700; color: #374151; margin-bottom: 14px; }
-.page-summary-grid { display: flex; flex-wrap: wrap; gap: 16px; }
-.page-summary-card { flex: 1; min-width: 260px; border: 1px solid #E5E7EB; border-radius: 12px; overflow: hidden; }
-.page-summary-header { background: #F8FAFF; padding: 10px 14px; font-size: 0.72rem; font-weight: 700; color: #3B82F6; text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 1px solid #E5E7EB; }
-.page-summary-header span { color: #9CA3AF; font-weight: 400; margin-left: 6px; font-size: 0.66rem; }
-.ps-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
-.ps-table th { background: #F1F5F9; color: #6B7280; font-size: 0.64rem; text-transform: uppercase; padding: 7px 12px; text-align: left; letter-spacing: 0.3px; border-bottom: 1px solid #E5E7EB; }
-.ps-table td { padding: 7px 12px; color: #374151; border-bottom: 1px solid #F1F5F9; }
-.ps-table td:last-child { font-weight: 600; }
-.ps-table tr:last-child td { border-bottom: none; }
-
-.no-orders { text-align: center; padding: 30px; color: #9CA3AF; font-size: 0.82rem; }
+.no-orders { text-align: center; padding: 24px; color: #9CA3AF; font-size: 0.82rem; }
 
 @media (max-width: 700px) {
-  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
-  .kpi-stats-row { flex-direction: column; }
-  .stats-panel { width: 100%; }
+  .kpi-row { flex-direction: column; }
+  .kpi-left { width: 100%; border-right: none; border-bottom: 1px solid #F1F5F9; }
+  .kpi-center { flex-direction: column; }
+  .kpi-stats { width: 100%; border-left: none; border-top: 1px solid #F1F5F9; }
 }
 </style>
 </head>
 <body>
 
 <div class="top-bar">
-  <div class="top-bar-left">
-    <a href="/home" class="back-btn">← Reports</a>
-    <div>
-      <div class="page-title">AOV &amp; CVR Report</div>
-      <div class="page-sub">Clear Sight · FSA Performance</div>
-    </div>
+  <a href="/home" class="back-btn">← Reports</a>
+  <div>
+    <div class="page-title">AOV &amp; CVR Report</div>
+    <div class="page-sub">Clear Sight · FSA Performance</div>
   </div>
 </div>
 
@@ -133,15 +184,12 @@ td { padding: 9px 14px; color: #374151; vertical-align: middle; }
 </div>
 
 <script>
-const PHP = n => '₱' + Number(n||0).toLocaleString('en-PH', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-const PCT = n => (n * 100).toFixed(1) + '%';
+const PHP = n => '₱' + Number(n||0).toLocaleString('en-PH',{minimumFractionDigits:0,maximumFractionDigits:0});
+const PCT = (n,d=1) => (n*100).toFixed(d)+'%';
+const FMT = n => Number(n||0).toLocaleString('en-PH',{minimumFractionDigits:0,maximumFractionDigits:0});
 
-function today() {
-  return new Date().toISOString().split('T')[0];
-}
-
-(function init() {
-  const t = today();
+(function init(){
+  const t = new Date().toISOString().split('T')[0];
   document.getElementById('fromDate').value = t;
   document.getElementById('toDate').value   = t;
 })();
@@ -151,8 +199,7 @@ async function loadReport() {
   const to   = document.getElementById('toDate').value;
   if (!from || !to) return;
   const btn = document.getElementById('loadBtn');
-  btn.disabled = true;
-  btn.textContent = 'Loading…';
+  btn.disabled = true; btn.textContent = 'Loading…';
   document.getElementById('reportRoot').innerHTML = '<div class="state-msg">Fetching data…</div>';
   try {
     const r = await fetch(`/api/aov-cvr?from=${from}&to=${to}`);
@@ -162,32 +209,36 @@ async function loadReport() {
   } catch(e) {
     document.getElementById('reportRoot').innerHTML = `<div class="state-msg">Error: ${e.message}</div>`;
   } finally {
-    btn.disabled = false;
-    btn.textContent = 'Load Report';
+    btn.disabled = false; btn.textContent = 'Load Report';
   }
 }
 
 function tagBadge(t) {
   const map = {
-    'CALLED': 'b-called', 'UNATTENDED': 'b-unattended',
-    'CBR': 'b-cbr', 'CVC': 'b-cvc',
-    'SDI': 'b-sdi', 'FUI': 'b-fui',
-    'AI UPSELL': 'b-ai-upsell', 'FSA UPSELL': 'b-fsa-upsell', 'W/O UPSELL': 'b-wo-upsell',
-    'AUTO ORDER': 'b-auto-order', 'FSA SPIELS': 'b-fsa-spiels', 'TELECONSULT': 'b-teleconsult',
+    'CALLED':'b-called','UNATTENDED':'b-unattended','CBR':'b-cbr','CVC':'b-cvc',
+    'SDI':'b-sdi','FUI':'b-fui','AI UPSELL':'b-ai-upsell','FSA UPSELL':'b-fsa-upsell',
+    'W/O UPSELL':'b-wo-upsell','AUTO ORDER':'b-auto-order','FSA SPIELS':'b-fsa-spiels',
+    'TELECONSULT':'b-teleconsult',
   };
-  const cls = map[t] || 'b-wo-upsell';
-  return `<span class="badge ${cls}">${t}</span>`;
+  return `<span class="badge ${map[t]||'b-wo-upsell'}">${t}</span>`;
 }
 
 function statusBadge(s) {
-  const sl = (s || '').toLowerCase();
-  const cls = sl.includes('deliver') ? 'delivered' : sl.includes('return') ? 'returned' : sl.includes('cancel') ? 'cancelled' : '';
+  const sl = (s||'').toLowerCase();
+  const cls = sl.includes('deliver')?'delivered':sl.includes('return')?'returned':sl.includes('cancel')?'cancelled':'';
   return `<span class="badge b-status ${cls}">${s||'—'}</span>`;
 }
 
+function dayLabel(dateStr) {
+  const d = new Date(dateStr+'T00:00:00');
+  const day = d.toLocaleDateString('en-US',{weekday:'short'}).toUpperCase();
+  const mon = d.toLocaleDateString('en-US',{month:'short'}).toUpperCase();
+  return `${day}, ${mon} ${d.getDate()}`;
+}
+
 function renderReport(data) {
-  const { from, to, orders, pageInquiries, fsaPriority = [] } = data;
-  const dateLabel = from === to ? from : `${from} – ${to}`;
+  const { from, to, orders, pageInquiries, fsaPriority=[] } = data;
+  const dateLabel = from===to ? dayLabel(from) : `${from} – ${to}`;
 
   // Group by seller
   const fsaGroups = {};
@@ -196,158 +247,191 @@ function renderReport(data) {
     fsaGroups[o.fsa].push(o);
   }
 
-  // Priority sellers first, then others sorted by total sales desc
   const prioritySet = new Set(fsaPriority);
-  const otherSellers = Object.keys(fsaGroups)
+  const others = Object.keys(fsaGroups)
     .filter(s => !prioritySet.has(s))
-    .sort((a, b) => fsaGroups[b].reduce((s,o)=>s+o.amount,0) - fsaGroups[a].reduce((s,o)=>s+o.amount,0));
-  const allSellers = [...fsaPriority.filter(s => fsaGroups[s]), ...otherSellers];
+    .sort((a,b) => fsaGroups[b].reduce((s,o)=>s+o.amount,0) - fsaGroups[a].reduce((s,o)=>s+o.amount,0));
+  const allSellers = [...fsaPriority.filter(s=>fsaGroups[s]), ...others];
 
-  const totalSDI = Object.values(pageInquiries).reduce((s, p) => s + p.sdi, 0);
-
-  // Grand total bar
-  const grandTotal = orders.reduce((s, o) => s + o.amount, 0);
+  const totalSDI = Object.values(pageInquiries).reduce((s,p)=>s+p.sdi,0);
+  const grandTotal = orders.reduce((s,o)=>s+o.amount,0);
   const grandOrders = orders.length;
-  let html = `<div style="background:#1E3A8A;color:#fff;border-radius:14px;padding:14px 24px;margin-bottom:20px;display:flex;gap:32px;align-items:center;flex-wrap:wrap;">
-    <div style="font-size:0.72rem;font-weight:700;opacity:0.7;text-transform:uppercase;letter-spacing:0.5px;">Clear Sight Total</div>
-    <div style="font-size:1.3rem;font-weight:700;">${PHP(grandTotal)}</div>
-    <div style="font-size:0.85rem;opacity:0.8;">${grandOrders} orders &nbsp;·&nbsp; ${dateLabel}</div>
+
+  let html = `<div class="grand-bar">
+    <div class="grand-bar-label">Clear Sight Total</div>
+    <div class="grand-bar-val">${PHP(grandTotal)}</div>
+    <div class="grand-bar-sub">${FMT(grandOrders)} orders &nbsp;·&nbsp; ${dateLabel}</div>
   </div>`;
 
-  for (const fsaName of allSellers) {
-    html += renderFSACard(fsaName, fsaGroups[fsaName] || [], dateLabel, pageInquiries, totalSDI);
+  for (const name of allSellers) {
+    html += renderFSACard(name, fsaGroups[name]||[], dateLabel, pageInquiries, totalSDI);
   }
 
   document.getElementById('reportRoot').innerHTML = html || '<div class="state-msg">No data found for this date range.</div>';
 }
 
 function renderFSACard(fsaName, orders, dateLabel, pageInquiries, totalSDI) {
-  // KPI calculations
-  const totalSales  = orders.reduce((s, o) => s + o.amount, 0);
-  const sdiOrders   = orders.filter(o => o.typeOfInq === 'SDI');
-  const fuiOrders   = orders.filter(o => o.typeOfInq === 'FUI');
-  const sds         = sdiOrders.reduce((s, o) => s + o.amount, 0);
-  const fus         = fuiOrders.reduce((s, o) => s + o.amount, 0);
+  const totalSales  = orders.reduce((s,o)=>s+o.amount,0);
+  const sdiOrders   = orders.filter(o=>o.typeOfInq==='SDI');
+  const fuiOrders   = orders.filter(o=>o.typeOfInq==='FUI');
+  const sds = sdiOrders.reduce((s,o)=>s+o.amount,0);
+  const fus = fuiOrders.reduce((s,o)=>s+o.amount,0);
   const orderCount  = orders.length;
-  const contactedCx = orders.filter(o => o.remarks.includes('CALLED') || o.remarks.includes('UNATTENDED')).length;
-  const calledCx    = orders.filter(o => o.remarks.includes('CALLED')).length;
-  const pickupRate  = contactedCx > 0 ? calledCx / contactedCx : 0;
-  const upsellCount = orders.filter(o => o.upsells === 'AI UPSELL' || o.upsells === 'FSA UPSELL').length;
-  const upsellRate  = orderCount > 0 ? upsellCount / orderCount : 0;
-  const cvr         = totalSDI > 0 ? sdiOrders.length / totalSDI : 0;
-  const aov         = orderCount > 0 ? totalSales / orderCount : 0;
+  const contactedCx = orders.filter(o=>o.remarks.includes('CALLED')||o.remarks.includes('UNATTENDED')).length;
+  const calledCx    = orders.filter(o=>o.remarks.includes('CALLED')).length;
+  const pickupRate  = contactedCx>0 ? calledCx/contactedCx : 0;
+  const upsellCount = orders.filter(o=>o.upsells==='AI UPSELL'||o.upsells==='FSA UPSELL').length;
+  const upsellRate  = orderCount>0 ? upsellCount/orderCount : 0;
+  const cvrPct      = totalSDI>0 ? sdiOrders.length/totalSDI : 0;
+  const aov         = orderCount>0 ? totalSales/orderCount : 0;
 
-  // Stats panel
-  const unattended  = orders.filter(o => o.remarks.includes('UNATTENDED')).length;
-  const cbr         = orders.filter(o => o.remarks.includes('CBR')).length;
-  const cvc         = orders.filter(o => o.remarks.includes('CVC')).length;
-  const autoOrder   = orders.filter(o => o.remarksForOrder === 'AUTO ORDER').length;
-  const fsaSpiel    = orders.filter(o => o.remarksForOrder === 'FSA SPIELS').length;
-  const teleconsult = orders.filter(o => o.remarksForOrder === 'TELECONSULT').length;
-  const aiUpsell    = orders.filter(o => o.upsells === 'AI UPSELL').length;
+  // Stats
+  const unattended  = orders.filter(o=>o.remarks.includes('UNATTENDED')).length;
+  const cbr         = orders.filter(o=>o.remarks.includes('CBR')).length;
+  const cvc         = orders.filter(o=>o.remarks.includes('CVC')).length;
+  const autoOrder   = orders.filter(o=>o.remarksForOrder==='AUTO ORDER').length;
+  const fsaSpiel    = orders.filter(o=>o.remarksForOrder==='FSA SPIELS').length;
+  const teleconsult = orders.filter(o=>o.remarksForOrder==='TELECONSULT').length;
+  const aiUpsell    = orders.filter(o=>o.upsells==='AI UPSELL').length;
+
+  const cvrBarW = Math.min(100, cvrPct*100).toFixed(1);
 
   // Per-page summary
   const pageMap = {};
   for (const o of orders) {
-    const pid = o.pageId || o.posPageName;
-    if (!pageMap[pid]) pageMap[pid] = { shortName: o.pageShortName, sdiOrders: [], fuiOrders: [] };
-    if (o.typeOfInq === 'SDI') pageMap[pid].sdiOrders.push(o);
+    const pid = o.pageId||o.posPageName;
+    if (!pageMap[pid]) pageMap[pid]={shortName:o.pageShortName,sdiOrders:[],fuiOrders:[]};
+    if (o.typeOfInq==='SDI') pageMap[pid].sdiOrders.push(o);
     else pageMap[pid].fuiOrders.push(o);
   }
 
-  const orderTableRows = orders.length > 0 ? orders.map(o => `
+  const orderRows = orders.length>0 ? orders.map(o=>`
     <tr>
-      <td>${o.pageShortName || o.posPageName || '—'}</td>
-      <td>${o.cxName || '—'}</td>
-      <td style="font-weight:600">${PHP(o.amount)}</td>
-      <td>${o.remarks.map(tagBadge).join('') || '—'}</td>
+      <td>${o.pageShortName||o.posPageName||'—'}</td>
+      <td>${o.cxName||'—'}</td>
+      <td style="font-weight:700">${PHP(o.amount)}</td>
+      <td>${o.remarks.map(tagBadge).join('')||'—'}</td>
       <td>${tagBadge(o.upsells)}</td>
       <td>${tagBadge(o.typeOfInq)}</td>
-      <td>${o.remarksForOrder ? tagBadge(o.remarksForOrder) : '—'}</td>
+      <td>${o.remarksForOrder?tagBadge(o.remarksForOrder):'—'}</td>
       <td>${statusBadge(o.status)}</td>
-    </tr>`).join('') : `<tr><td colspan="8" class="no-orders">No orders found for this FSA in the selected period.</td></tr>`;
+    </tr>`).join('') : `<tr><td colspan="8" class="no-orders">No orders found for this period.</td></tr>`;
 
-  const pageSummaryCards = Object.entries(pageMap).map(([pid, pg]) => {
-    const sdiInq = (pageInquiries[pid] || {}).sdi || 0;
-    const sdiOrd = pg.sdiOrders.length;
-    const fuiOrd = pg.fuiOrders.length;
-    const sdiSales = pg.sdiOrders.reduce((s, o) => s + o.amount, 0);
-    const fuiSales = pg.fuiOrders.reduce((s, o) => s + o.amount, 0);
-    const sdiCvr = sdiInq > 0 ? (sdiOrd / sdiInq * 100).toFixed(1) + '%' : '—';
-    const sdiAov = sdiOrd > 0 ? PHP(sdiSales / sdiOrd) : '—';
-    const fuiAov = fuiOrd > 0 ? PHP(fuiSales / fuiOrd) : '—';
-    return `
-      <div class="page-summary-card">
-        <div class="page-summary-header">${pg.shortName}<span>Same Day &amp; Follow Up</span></div>
-        <table class="ps-table">
-          <thead><tr><th>Metric</th><th>Same Day</th><th>Follow Up</th></tr></thead>
-          <tbody>
-            <tr><td># Inquiries</td><td>${sdiInq}</td><td>—</td></tr>
-            <tr><td># Orders</td><td>${sdiOrd}</td><td>${fuiOrd}</td></tr>
-            <tr><td>Sales</td><td>${PHP(sdiSales)}</td><td>${PHP(fuiSales)}</td></tr>
-            <tr><td>CVR</td><td>${sdiCvr}</td><td>—</td></tr>
-            <tr><td>AOV</td><td>${sdiAov}</td><td>${fuiAov}</td></tr>
-          </tbody>
-        </table>
-      </div>`;
+  const pageSummaryCards = Object.entries(pageMap).map(([pid,pg])=>{
+    const sdiInq = (pageInquiries[pid]||{}).sdi||0;
+    const sdiOrd=pg.sdiOrders.length, fuiOrd=pg.fuiOrders.length;
+    const sdiSales=pg.sdiOrders.reduce((s,o)=>s+o.amount,0);
+    const fuiSales=pg.fuiOrders.reduce((s,o)=>s+o.amount,0);
+    const sdiCvr = sdiInq>0?(sdiOrd/sdiInq*100).toFixed(1)+'%':'—';
+    const sdiAov = sdiOrd>0?PHP(sdiSales/sdiOrd):'—';
+    const fuiAov = fuiOrd>0?PHP(fuiSales/fuiOrd):'—';
+    return `<div class="page-summary-card">
+      <div class="page-summary-header">${pg.shortName}</div>
+      <table class="ps-table">
+        <thead><tr><th>Metric</th><th>Same Day</th><th>Follow Up</th></tr></thead>
+        <tbody>
+          <tr><td># Inquiries</td><td>${sdiInq}</td><td>—</td></tr>
+          <tr><td># Orders</td><td>${sdiOrd}</td><td>${fuiOrd}</td></tr>
+          <tr><td>Sales</td><td>${PHP(sdiSales)}</td><td>${PHP(fuiSales)}</td></tr>
+          <tr><td>CVR</td><td>${sdiCvr}</td><td>—</td></tr>
+          <tr><td>AOV</td><td>${sdiAov}</td><td>${fuiAov}</td></tr>
+        </tbody>
+      </table>
+    </div>`;
   }).join('');
 
-  return `
-  <div class="fsa-card">
-    <div class="fsa-card-header">
-      <div class="fsa-name">${fsaName}</div>
-      <div class="fsa-daterange">${dateLabel}</div>
+  const cardId = 'card_' + fsaName.replace(/\W/g,'_');
+
+  return `<div class="fsa-card">
+    <div class="fsa-header">
+      <div class="fsa-header-name">${fsaName}</div>
+      <div class="fsa-header-badge">${dateLabel}</div>
     </div>
-    <div class="fsa-body">
-      <div class="kpi-stats-row">
-        <div class="kpi-grid">
-          <div class="kpi-cell"><div class="kpi-label">Total Sales</div><div class="kpi-val">${PHP(totalSales)}</div></div>
-          <div class="kpi-cell"><div class="kpi-label">SDS (Same Day)</div><div class="kpi-val">${PHP(sds)}</div></div>
-          <div class="kpi-cell"><div class="kpi-label">FUS (Follow Up)</div><div class="kpi-val">${PHP(fus)}</div></div>
-          <div class="kpi-cell"><div class="kpi-label"># of Orders</div><div class="kpi-val">${orderCount}</div></div>
-          <div class="kpi-cell"><div class="kpi-label">Contacted CX</div><div class="kpi-val">${contactedCx}</div></div>
-          <div class="kpi-cell"><div class="kpi-label">Called CX</div><div class="kpi-val">${calledCx}</div></div>
-          <div class="kpi-cell"><div class="kpi-label">Pick-up Rate</div><div class="kpi-val ${pickupRate >= 0.5 ? 'green' : 'red'}">${contactedCx > 0 ? PCT(pickupRate) : '—'}</div></div>
-          <div class="kpi-cell"><div class="kpi-label">Upsell Count</div><div class="kpi-val">${upsellCount}</div></div>
-          <div class="kpi-cell"><div class="kpi-label">Upselling Rate</div><div class="kpi-val ${upsellRate >= 0.3 ? 'green' : ''}">${orderCount > 0 ? PCT(upsellRate) : '—'}</div></div>
-          <div class="kpi-cell"><div class="kpi-label">CVR</div><div class="kpi-val blue">${totalSDI > 0 ? PCT(cvr) : '—'}</div></div>
-          <div class="kpi-cell"><div class="kpi-label"># Inquiries</div><div class="kpi-val">${totalSDI}</div></div>
-          <div class="kpi-cell"><div class="kpi-label">AOV</div><div class="kpi-val">${orderCount > 0 ? PHP(aov) : '—'}</div></div>
+
+    <div class="kpi-row">
+      <!-- LEFT: sales + sub-metrics -->
+      <div class="kpi-left">
+        <div class="kpi-left-sales">${PHP(totalSales)}</div>
+        <div class="kpi-left-row"><span class="kpi-left-metric">SDS</span><span class="kpi-left-val">${PHP(sds)}</span></div>
+        <div class="kpi-left-row"><span class="kpi-left-metric">FUS</span><span class="kpi-left-val">${PHP(fus)}</span></div>
+        <div class="kpi-divider"></div>
+        <div class="kpi-left-row"><span class="kpi-left-metric"># Orders</span><span class="kpi-left-val">${orderCount}</span></div>
+        <div class="kpi-left-row"><span class="kpi-left-metric">Contacted CX</span><span class="kpi-left-val">${contactedCx}</span></div>
+        <div class="kpi-left-row"><span class="kpi-left-metric">Called CX</span><span class="kpi-left-val">${calledCx}</span></div>
+        <div class="kpi-left-row"><span class="kpi-left-metric">Pick-up Rate</span><span class="kpi-left-val ${pickupRate>=0.5?'green':'red'}">${contactedCx>0?PCT(pickupRate):'—'}</span></div>
+        <div class="kpi-divider"></div>
+        <div class="kpi-left-row"><span class="kpi-left-metric">Upsell</span><span class="kpi-left-val">${upsellCount}</span></div>
+        <div class="kpi-left-row"><span class="kpi-left-metric">Upselling Rate</span><span class="kpi-left-val">${orderCount>0?PCT(upsellRate):'—'}</span></div>
+      </div>
+
+      <!-- CENTER -->
+      <div class="kpi-center">
+        <!-- CVR -->
+        <div class="kpi-section">
+          <div class="cvr-bar-track"><div class="cvr-bar-fill" style="width:${cvrBarW}%"></div></div>
+          <div class="cvr-pct">${totalSDI>0?PCT(cvrPct,2):'—'}</div>
+          <div class="kpi-section-label">CVR</div>
         </div>
-        <div class="stats-panel">
-          <div class="stats-title">Stats</div>
-          <div class="stat-row"><span class="stat-name">Unattended</span><span class="stat-val">${unattended}</span></div>
-          <div class="stat-row"><span class="stat-name">CBR</span><span class="stat-val">${cbr}</span></div>
-          <div class="stat-row"><span class="stat-name">CVC</span><span class="stat-val">${cvc}</span></div>
-          <div class="stat-row"><span class="stat-name">Auto Order</span><span class="stat-val">${autoOrder}</span></div>
-          <div class="stat-row"><span class="stat-name">FSA Spiels</span><span class="stat-val">${fsaSpiel}</span></div>
-          <div class="stat-row"><span class="stat-name">Teleconsult</span><span class="stat-val">${teleconsult}</span></div>
-          <div class="stat-row"><span class="stat-name">AI Upsell</span><span class="stat-val">${aiUpsell}</span></div>
+        <!-- # Inquiries -->
+        <div class="kpi-section">
+          <div class="kpi-section-big">${FMT(totalSDI)}</div>
+          <div class="kpi-section-label"># of Inquiries</div>
+        </div>
+        <!-- AOV -->
+        <div class="kpi-section">
+          <div class="kpi-section-big gold">${orderCount>0?PHP(aov):'—'}</div>
+          <div class="kpi-section-label">AOV</div>
         </div>
       </div>
 
-      <div class="table-wrap">
+      <!-- RIGHT: stats -->
+      <div class="kpi-stats">
+        <div class="stat-item"><span class="stat-item-name">Unattended</span><span class="stat-item-val s-red">${unattended}</span></div>
+        <div class="stat-item"><span class="stat-item-name">CBR</span><span class="stat-item-val s-red">${cbr}</span></div>
+        <div class="stat-item"><span class="stat-item-name">CVC</span><span class="stat-item-val s-blue">${cvc}</span></div>
+        <div class="stat-spacer"></div>
+        <div class="stat-item"><span class="stat-item-name">Auto Order</span><span class="stat-item-val s-dark">${autoOrder}</span></div>
+        <div class="stat-item"><span class="stat-item-name">FSA Spiels</span><span class="stat-item-val s-green">${fsaSpiel}</span></div>
+        <div class="stat-item"><span class="stat-item-name">Teleconsult</span><span class="stat-item-val s-purple">${teleconsult}</span></div>
+        <div class="stat-spacer"></div>
+        <div class="stat-item"><span class="stat-item-name">AI Upsell</span><span class="stat-item-val s-purple">${aiUpsell}</span></div>
+      </div>
+    </div>
+
+    <!-- ORDER TABLE (collapsible) -->
+    <div class="order-section">
+      <div class="order-toggle" onclick="toggleTable('${cardId}')">
+        <span class="order-toggle-label">Orders</span>
+        <span class="order-toggle-count">${orderCount}</span>
+        <span class="order-toggle-arrow" id="${cardId}_arrow">▼</span>
+      </div>
+      <div class="table-wrap" id="${cardId}_table">
         <table>
-          <thead>
-            <tr>
-              <th>Page</th><th>CX Name</th><th>Amount</th><th>Remarks</th>
-              <th>Upsells</th><th>Type of Inq.</th><th>Remarks for Order</th><th>Status</th>
-            </tr>
-          </thead>
-          <tbody>${orderTableRows}</tbody>
+          <thead><tr>
+            <th>Page</th><th>CX Name</th><th>Amount</th><th>Remarks</th>
+            <th>Upsells</th><th>Type of Inq.</th><th>Remarks for Order</th><th>Status</th>
+          </tr></thead>
+          <tbody>${orderRows}</tbody>
         </table>
       </div>
-
-      ${pageSummaryCards ? `<div class="page-summary-section">
-        <div class="page-summary-title">Per-Page Summary</div>
-        <div class="page-summary-grid">${pageSummaryCards}</div>
-      </div>` : ''}
     </div>
+
+    ${pageSummaryCards?`<div class="page-summary-section">
+      <div class="page-summary-title">Per-Page Summary</div>
+      <div class="page-summary-grid">${pageSummaryCards}</div>
+    </div>`:''}
   </div>`;
 }
 
+function toggleTable(id) {
+  const tbl = document.getElementById(id+'_table');
+  const arr = document.getElementById(id+'_arrow');
+  const open = tbl.classList.toggle('open');
+  arr.classList.toggle('open', open);
+}
+
 document.addEventListener('keydown', e => {
-  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') loadReport();
+  if ((e.ctrlKey||e.metaKey) && e.key==='Enter') loadReport();
 });
 </script>
 </body>
