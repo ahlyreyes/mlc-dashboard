@@ -131,8 +131,8 @@ const MLC_MAINFILE_CSV_URL = process.env.MLC_MAINFILE_CSV_URL || 'https://docs.g
 
 const PANCAKE_TOKEN = process.env.PANCAKE_TOKEN || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpbmZvIjp7Im9zIjoxLCJjbGllbnRfaXAiOiI2NC4yMjQuOTcuMTU0IiwiYnJvd3NlciI6MSwiZGV2aWNlX3R5cGUiOjN9LCJuYW1lIjoiQ2xhcmljZSBEYWxvbmRvbmFuIiwiZXhwIjoxNzgyMzA1MTQzLCJhcHBsaWNhdGlvbiI6MSwidWlkIjoiMWNjYjM3YTgtZjQ4NS00ZjdiLWJiMWQtZjhjNTQ0Nzg4NWM2Iiwic2Vzc2lvbl9pZCI6ImQ3MDM5OWFhLTIxYTMtNDRmZi05ZmI5LWVmMDBjNzI3YmE2YSIsImlhdCI6MTc3NDUyOTE0MywiZmJfaWQiOiIxMjIxMTI2MzIwNDg5OTY4NTUiLCJsb2dpbl9zZXNzaW9uIjpudWxsLCJmYl9uYW1lIjoiQ2xhcmljZSBEYWxvbmRvbmFuIn0.FUzLeVPKVMDqbruljozSc93SBsX76gj0HMfeiv4kpAA';
 
-// Clear Sight FSA definitions — update seller names if they differ in the CSV
-const CS_FSA_LIST = ['John Hovey Cabatic', 'Lex Dela Cruz'];
+// Clear Sight main FSAs — shown first in the report; other sellers appear after
+const CS_FSA_PRIORITY = ['John Hovey Cabatic', 'Lex Dela Cruz'];
 
 // Map from Facebook Page name (lowercase) in POS CSV → Pancake page ID
 const POS_PAGE_ID_MAP = {
@@ -863,8 +863,7 @@ app.get('/api/aov-cvr', requireAuth, async (req, res) => {
 
     for (const row of rows) {
       const sellerRaw = (row['assigning seller'] || '').trim();
-      const isFSA = CS_FSA_LIST.some(fsa => normCxName(sellerRaw) === normCxName(fsa));
-      if (!isFSA) continue;
+      if (!sellerRaw) continue;
 
       const productName = (row['product name'] || '').toLowerCase();
       const pageName    = (row['facebook page'] || '').toLowerCase();
@@ -893,12 +892,11 @@ app.get('/api/aov-cvr', requireAuth, async (req, res) => {
       const pageShortName  = pageId ? (PANCAKE_PAGE_META[pageId]?.short || posPageName) : posPageName;
       if (pageId) pageIdsNeeded.add(pageId);
 
-      const fsaName = CS_FSA_LIST.find(fsa => normCxName(sellerRaw) === normCxName(fsa)) || sellerRaw;
       const amount  = parseFloat((row['unit price'] || '0').replace(/,/g, '')) || 0;
       const status  = (row['status'] || '').trim();
       const cxName  = (row['customer'] || '').trim();
 
-      orders.push({ date: dateStr, fsa: fsaName, cxName, posPageName, pageId, pageShortName,
+      orders.push({ date: dateStr, fsa: sellerRaw, cxName, posPageName, pageId, pageShortName,
         amount, status, remarks: [], upsells: 'W/O UPSELL', typeOfInq: 'SDI', remarksForOrder: '' });
     }
 
@@ -949,7 +947,7 @@ app.get('/api/aov-cvr', requireAuth, async (req, res) => {
       else if (convTagNames.includes('AUTO ORDER'))      order.remarksForOrder = 'AUTO ORDER';
     }
 
-    res.json({ from: fromDate, to: toDate, orders, pageInquiries });
+    res.json({ from: fromDate, to: toDate, orders, pageInquiries, fsaPriority: CS_FSA_PRIORITY });
   } catch(e) {
     console.error('aov-cvr error:', e.message);
     res.status(500).json({ error: e.message });

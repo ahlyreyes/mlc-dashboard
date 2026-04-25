@@ -186,29 +186,39 @@ function statusBadge(s) {
 }
 
 function renderReport(data) {
-  const { from, to, orders, pageInquiries } = data;
+  const { from, to, orders, pageInquiries, fsaPriority = [] } = data;
   const dateLabel = from === to ? from : `${from} – ${to}`;
 
-  // Group by FSA
+  // Group by seller
   const fsaGroups = {};
   for (const o of orders) {
     if (!fsaGroups[o.fsa]) fsaGroups[o.fsa] = [];
     fsaGroups[o.fsa].push(o);
   }
 
-  // If no orders at all, show a note per FSA but still render cards
-  const fsaNames = ['John Hovey Cabatic', 'Lex Dela Cruz'];
-  for (const f of fsaNames) if (!fsaGroups[f]) fsaGroups[f] = [];
+  // Priority sellers first, then others sorted by total sales desc
+  const prioritySet = new Set(fsaPriority);
+  const otherSellers = Object.keys(fsaGroups)
+    .filter(s => !prioritySet.has(s))
+    .sort((a, b) => fsaGroups[b].reduce((s,o)=>s+o.amount,0) - fsaGroups[a].reduce((s,o)=>s+o.amount,0));
+  const allSellers = [...fsaPriority.filter(s => fsaGroups[s]), ...otherSellers];
 
   const totalSDI = Object.values(pageInquiries).reduce((s, p) => s + p.sdi, 0);
 
-  let html = '';
-  for (const fsaName of fsaNames) {
-    const fsaOrders = fsaGroups[fsaName] || [];
-    html += renderFSACard(fsaName, fsaOrders, dateLabel, pageInquiries, totalSDI);
+  // Grand total bar
+  const grandTotal = orders.reduce((s, o) => s + o.amount, 0);
+  const grandOrders = orders.length;
+  let html = `<div style="background:#1E3A8A;color:#fff;border-radius:14px;padding:14px 24px;margin-bottom:20px;display:flex;gap:32px;align-items:center;flex-wrap:wrap;">
+    <div style="font-size:0.72rem;font-weight:700;opacity:0.7;text-transform:uppercase;letter-spacing:0.5px;">Clear Sight Total</div>
+    <div style="font-size:1.3rem;font-weight:700;">${PHP(grandTotal)}</div>
+    <div style="font-size:0.85rem;opacity:0.8;">${grandOrders} orders &nbsp;·&nbsp; ${dateLabel}</div>
+  </div>`;
+
+  for (const fsaName of allSellers) {
+    html += renderFSACard(fsaName, fsaGroups[fsaName] || [], dateLabel, pageInquiries, totalSDI);
   }
 
-  document.getElementById('reportRoot').innerHTML = html || '<div class="state-msg">No data.</div>';
+  document.getElementById('reportRoot').innerHTML = html || '<div class="state-msg">No data found for this date range.</div>';
 }
 
 function renderFSACard(fsaName, orders, dateLabel, pageInquiries, totalSDI) {
