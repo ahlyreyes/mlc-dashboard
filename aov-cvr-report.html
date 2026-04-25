@@ -192,6 +192,7 @@ const FMT = n => Number(n||0).toLocaleString('en-PH',{minimumFractionDigits:0,ma
   const t = new Date().toISOString().split('T')[0];
   document.getElementById('fromDate').value = t;
   document.getElementById('toDate').value   = t;
+  loadReport();
 })();
 
 async function loadReport() {
@@ -403,9 +404,9 @@ function renderFSACard(fsaName, orders, dateLabel, pageInquiries, totalSDI) {
       <div class="order-toggle" onclick="toggleTable('${cardId}')">
         <span class="order-toggle-label">Orders</span>
         <span class="order-toggle-count">${orderCount}</span>
-        <span class="order-toggle-arrow" id="${cardId}_arrow">▼</span>
+        <span class="order-toggle-arrow open" id="${cardId}_arrow">▼</span>
       </div>
-      <div class="table-wrap" id="${cardId}_table">
+      <div class="table-wrap open" id="${cardId}_table">
         <table>
           <thead><tr>
             <th>Page</th><th>CX Name</th><th>Amount</th><th>Remarks</th>
