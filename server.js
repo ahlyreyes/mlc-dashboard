@@ -126,6 +126,99 @@ const PANCAKE_CSV_URLS = [
   process.env.PANCAKE_CSV_URL_APRIL || 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSWfevqFhSyLoIFwvwFFdgFY3NzyhTOu6nbW3_2CfhI460Etz60TPWH2yA1TkVfG2y439O43BOvXHb4/pub?gid=0&single=true&output=csv'
 ];
 
+const PANCAKE_TOKEN = process.env.PANCAKE_TOKEN || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpbmZvIjp7Im9zIjoxLCJjbGllbnRfaXAiOiI2NC4yMjQuOTcuMTU0IiwiYnJvd3NlciI6MSwiZGV2aWNlX3R5cGUiOjN9LCJuYW1lIjoiQ2xhcmljZSBEYWxvbmRvbmFuIiwiZXhwIjoxNzgyMzA1MTQzLCJhcHBsaWNhdGlvbiI6MSwidWlkIjoiMWNjYjM3YTgtZjQ4NS00ZjdiLWJiMWQtZjhjNTQ0Nzg4NWM2Iiwic2Vzc2lvbl9pZCI6ImQ3MDM5OWFhLTIxYTMtNDRmZi05ZmI5LWVmMDBjNzI3YmE2YSIsImlhdCI6MTc3NDUyOTE0MywiZmJfaWQiOiIxMjIxMTI2MzIwNDg5OTY4NTUiLCJsb2dpbl9zZXNzaW9uIjpudWxsLCJmYl9uYW1lIjoiQ2xhcmljZSBEYWxvbmRvbmFuIn0.FUzLeVPKVMDqbruljozSc93SBsX76gj0HMfeiv4kpAA';
+
+// Clear Sight FSA definitions — update seller names if they differ in the CSV
+const CS_FSA_LIST = ['John Hovey Cabatic', 'Lex Dela Cruz'];
+
+// Map from Facebook Page name (lowercase) in POS CSV → Pancake page ID
+const POS_PAGE_ID_MAP = {
+  'clear sight optical care':   '183224001550935',
+  'clear sight essentials':     '105504325986879',
+  'clear sight hub':            '343948545460634',
+  'clear vision solution':      '803157239549242',
+  'clear sight eye drops':      '562290783624265',
+  'clear sight eye drops ph':   '562290783624265',
+  'clear sight eye relief':     '937162626137875',
+  'clear sight eye relief ph':  '937162626137875',
+  'eyecare hub':                '731295746741259',
+  'clear sight cataract relief':'778772685314844',
+  'clear sight cataract care':  '309583448901656',
+  'clear sight - eye care':     '541578155698224',
+  'clearsight mnl':             '132190129971044',
+  'clear eye sight ph':         '298354383369379',
+};
+
+const PANCAKE_PAGE_META = {
+  '183224001550935': { short: 'CS OPTICAL CARE' },
+  '105504325986879': { short: 'CS ESSENTIALS' },
+  '343948545460634': { short: 'CS HUB' },
+  '803157239549242': { short: 'CLEAR VISION' },
+  '562290783624265': { short: 'CS EYE DROPS' },
+  '937162626137875': { short: 'CS EYE RELIEF' },
+  '731295746741259': { short: 'EYECARE HUB' },
+  '778772685314844': { short: 'CS CATARACT' },
+  '309583448901656': { short: 'CS CATARACT CARE' },
+  '541578155698224': { short: 'CS EYE CARE' },
+  '132190129971044': { short: 'CLEARSIGHT MNL' },
+  '298354383369379': { short: 'CLEAR EYE SIGHT' },
+};
+
+const pancakeConvCache = new Map();
+const TTL_PANCAKE_CONV = 5 * 60 * 1000;
+
+function normCxName(n) {
+  return (n || '').toLowerCase().trim().replace(/\s+/g, ' ');
+}
+
+async function fetchPancakeConvs(pageId, fromDate, toDate) {
+  const cacheKey = `conv_${pageId}_${fromDate}_${toDate}`;
+  const cached = cacheGet(pancakeConvCache, cacheKey, TTL_PANCAKE_CONV);
+  if (cached) return cached;
+
+  const lookbackDate = new Date(fromDate);
+  lookbackDate.setDate(lookbackDate.getDate() - 90);
+  const inserted_from = lookbackDate.toISOString().split('T')[0];
+
+  const allConvs = [];
+  let page = 1;
+  while (true) {
+    const url = `https://pancake.biz/api/v1/pages/${pageId}/conversations` +
+      `?inserted_from=${inserted_from}&inserted_to=${toDate}` +
+      `&limit=500&page=${page}&access_token=${PANCAKE_TOKEN}`;
+    try {
+      const res = await fetchJson(url);
+      const convs = Array.isArray(res) ? res : (res.conversations || res.data || []);
+      allConvs.push(...convs);
+      if (convs.length < 500) break;
+      page++;
+      if (page > 20) break;
+    } catch(e) {
+      console.warn(`Pancake conv fetch error ${pageId}: ${e.message}`);
+      break;
+    }
+  }
+
+  cacheSet(pancakeConvCache, cacheKey, allConvs);
+  return allConvs;
+}
+
+async function fetchPancakeTagDefs(pageId) {
+  const cacheKey = `tagdefs_${pageId}`;
+  const cached = cacheGet(pancakeConvCache, cacheKey, 30 * 60 * 1000);
+  if (cached) return cached;
+  try {
+    const res = await fetchJson(`https://pancake.biz/api/v1/pages/${pageId}/settings?access_token=${PANCAKE_TOKEN}`);
+    const tags = (res.settings && res.settings.tags) ? res.settings.tags : [];
+    const map = {};
+    for (const t of tags) { map[t.id] = (t.text || '').toUpperCase().trim(); }
+    cacheSet(pancakeConvCache, cacheKey, map);
+    return map;
+  } catch(e) {
+    return {};
+  }
+}
+
 const AD_ACCOUNTS = [
   // --- CLEAR SIGHT --- Token 1
   { id: 'act_553848412391460',  name: 'Iniwan Lang Pala', currency: 'PHP', product: 'CLEAR SIGHT', token: META_TOKEN_1 },
@@ -502,7 +595,7 @@ app.get('/logout', (req, res) => { req.logout(() => res.redirect('/login')); });
 app.get('/api/me', requireAuth, (req, res) => res.json(req.user));
 
 app.get('/api/flush-cache', requireAuth, (req, res) => {
-  pancakeCache.clear(); metaInsightsCache.clear(); budgetCache.clear(); activeAdsCache.clear();
+  pancakeCache.clear(); metaInsightsCache.clear(); budgetCache.clear(); activeAdsCache.clear(); pancakeConvCache.clear();
   console.log('🗑️ All caches flushed by', req.user.email);
   res.json({ ok: true, message: 'All caches cleared — next load will fetch fresh data' });
 });
@@ -747,6 +840,116 @@ app.get('/api/ndap', requireAuth, async (req, res) => {
     const result = { dates, campaigns: activeCampaigns, clearSightByDate };
     res.json(result);
   } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/aov-cvr', requireAuth, async (req, res) => {
+  try {
+    const fromDate = req.query.from || new Date().toISOString().split('T')[0];
+    const toDate   = req.query.to   || fromDate;
+
+    // Step 1 — Fetch POS orders from CSV
+    const allCsvs = await Promise.all(PANCAKE_CSV_URLS.map(u => fetchRaw(u)));
+    const rows = allCsvs.flatMap(csv => parseCSV(csv));
+
+    const fromDt = new Date(fromDate + 'T00:00:00Z');
+    const toDt   = new Date(toDate   + 'T23:59:59Z');
+
+    const orders = [];
+    const pageIdsNeeded = new Set();
+
+    for (const row of rows) {
+      const sellerRaw = (row['assigning seller'] || '').trim();
+      const isFSA = CS_FSA_LIST.some(fsa => normCxName(sellerRaw) === normCxName(fsa));
+      if (!isFSA) continue;
+
+      const productName = (row['product name'] || '').toLowerCase();
+      const pageName    = (row['facebook page'] || '').toLowerCase();
+      const isClearSight = productName.includes('clear sight') ||
+                           productName.includes('clear vision') ||
+                           pageName.includes('clear sight') ||
+                           pageName.includes('clear vision') ||
+                           pageName.includes('eyecare hub');
+      if (!isClearSight) continue;
+
+      const dateRaw = row['sales date'] || '';
+      if (!dateRaw) continue;
+      let dateStr;
+      try {
+        const d = new Date(dateRaw);
+        if (isNaN(d.getTime())) continue;
+        dateStr = d.toISOString().split('T')[0];
+      } catch(e) { continue; }
+
+      const orderDt = new Date(dateStr + 'T00:00:00Z');
+      if (orderDt < fromDt || orderDt > toDt) continue;
+
+      const posPageName    = (row['facebook page'] || '').trim();
+      const pageKey        = normCxName(posPageName);
+      const pageId         = POS_PAGE_ID_MAP[pageKey] || null;
+      const pageShortName  = pageId ? (PANCAKE_PAGE_META[pageId]?.short || posPageName) : posPageName;
+      if (pageId) pageIdsNeeded.add(pageId);
+
+      const fsaName = CS_FSA_LIST.find(fsa => normCxName(sellerRaw) === normCxName(fsa)) || sellerRaw;
+      const amount  = parseFloat((row['unit price'] || '0').replace(/,/g, '')) || 0;
+      const status  = (row['status'] || '').trim();
+      const cxName  = (row['customer'] || '').trim();
+
+      orders.push({ date: dateStr, fsa: fsaName, cxName, posPageName, pageId, pageShortName,
+        amount, status, remarks: [], upsells: 'W/O UPSELL', typeOfInq: 'SDI', remarksForOrder: '' });
+    }
+
+    // Step 2-4 — Fetch Pancake conversations + tag defs for needed pages
+    const pageIdList = [...pageIdsNeeded];
+    const [convResults, tagResults] = await Promise.all([
+      Promise.all(pageIdList.map(async pid => ({ pid, convs: await fetchPancakeConvs(pid, fromDate, toDate) }))),
+      Promise.all(pageIdList.map(async pid => ({ pid, tagDefs: await fetchPancakeTagDefs(pid) }))),
+    ]);
+
+    const convLookup   = {}; // pid → { normName → { conv, isInRange, tagDefs } }
+    const tagDefsMap   = {}; // pid → { tagId → tagName }
+    const pageInquiries = {}; // pid → { shortName, sdi }
+
+    for (const { pid, tagDefs } of tagResults) tagDefsMap[pid] = tagDefs;
+
+    for (const { pid, convs } of convResults) {
+      convLookup[pid] = {};
+      const tagDefs = tagDefsMap[pid] || {};
+      let sdiCount = 0;
+      for (const conv of convs) {
+        const convDate = (conv.inserted_at || '').split('T')[0];
+        const isInRange = convDate >= fromDate && convDate <= toDate;
+        if (isInRange) sdiCount++;
+        const cxName = (conv.from && conv.from.name) || (conv.customers && conv.customers[0] && conv.customers[0].name) || '';
+        const key = normCxName(cxName);
+        if (key && !convLookup[pid][key]) {
+          convLookup[pid][key] = { conv, isInRange, tagDefs };
+        }
+      }
+      pageInquiries[pid] = { shortName: PANCAKE_PAGE_META[pid]?.short || pid, sdi: sdiCount };
+    }
+
+    // Step 5 — Enrich orders with Pancake tag data
+    const REMARK_TAGS     = ['CALLED', 'UNATTENDED', 'CBR', 'CVC'];
+    for (const order of orders) {
+      if (!order.pageId) continue;
+      const match = (convLookup[order.pageId] || {})[normCxName(order.cxName)];
+      if (!match) continue;
+      const { conv, isInRange, tagDefs } = match;
+      order.typeOfInq = isInRange ? 'SDI' : 'FUI';
+      const convTagNames = (conv.tags || []).map(id => tagDefs[id] || '').filter(Boolean);
+      order.remarks = convTagNames.filter(t => REMARK_TAGS.includes(t));
+      if (convTagNames.includes('AI UPSELL'))       order.upsells = 'AI UPSELL';
+      else if (convTagNames.includes('FSA UPSELL')) order.upsells = 'FSA UPSELL';
+      if (convTagNames.includes('FSA SPIELS'))           order.remarksForOrder = 'FSA SPIELS';
+      else if (convTagNames.includes('TELECONSULT'))     order.remarksForOrder = 'TELECONSULT';
+      else if (convTagNames.includes('AUTO ORDER'))      order.remarksForOrder = 'AUTO ORDER';
+    }
+
+    res.json({ from: fromDate, to: toDate, orders, pageInquiries });
+  } catch(e) {
+    console.error('aov-cvr error:', e.message);
     res.status(500).json({ error: e.message });
   }
 });
