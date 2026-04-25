@@ -134,6 +134,22 @@ const PANCAKE_TOKEN = process.env.PANCAKE_TOKEN || 'eyJhbGciOiJIUzI1NiIsInR5cCI6
 // Clear Sight main FSAs — shown first in the report; other sellers appear after
 const CS_FSA_PRIORITY = ['John Hovey Cabatic', 'Lex Dela Cruz'];
 
+// All active Clear Sight Pancake page IDs — always fetch conversations from these for SDI count
+const CS_ALL_PAGE_IDS = [
+  '183224001550935', // CS OPTICAL CARE
+  '105504325986879', // CS ESSENTIALS
+  '343948545460634', // CS HUB
+  '803157239549242', // CLEAR VISION
+  '562290783624265', // CS EYE DROPS
+  '937162626137875', // CS EYE RELIEF
+  '731295746741259', // EYECARE HUB
+  '778772685314844', // CS CATARACT
+  '309583448901656', // CS CATARACT CARE
+  '541578155698224', // CS EYE CARE
+  '132190129971044', // CLEARSIGHT MNL
+  '298354383369379', // CLEAR EYE SIGHT
+];
+
 // Map from Facebook Page name (lowercase) in POS CSV → Pancake page ID
 const POS_PAGE_ID_MAP = {
   'clear sight optical care':   '183224001550935',
@@ -900,8 +916,9 @@ app.get('/api/aov-cvr', requireAuth, async (req, res) => {
         amount, status, remarks: [], upsells: 'W/O UPSELL', typeOfInq: 'SDI', remarksForOrder: '' });
     }
 
-    // Step 2-4 — Fetch Pancake conversations + tag defs for needed pages
-    const pageIdList = [...pageIdsNeeded];
+    // Step 2-4 — Fetch Pancake conversations + tag defs for ALL CS pages (for accurate SDI count)
+    // plus any additional pages found in orders
+    const pageIdList = [...new Set([...CS_ALL_PAGE_IDS, ...pageIdsNeeded])];
     const [convResults, tagResults] = await Promise.all([
       Promise.all(pageIdList.map(async pid => ({ pid, convs: await fetchPancakeConvs(pid, fromDate, toDate) }))),
       Promise.all(pageIdList.map(async pid => ({ pid, tagDefs: await fetchPancakeTagDefs(pid) }))),
