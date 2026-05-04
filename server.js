@@ -127,7 +127,11 @@ const PANCAKE_CSV_URLS = [
 ];
 
 // MLC mainfile — source for AOV & CVR FSA report (John Hovey Cabatic, Lex Dela Cruz)
-const MLC_MAINFILE_CSV_URL = process.env.MLC_MAINFILE_CSV_URL || 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRTziENAURT5p8ix0v0FOizV9a_i-p4Igeovw21jv09aqbJbqvsjKMEftGVfG8Dm0rmVvcKUv0MQkul/pub?output=csv';
+// Monthly MLC mainfile CSVs — add a new URL each month
+const MLC_MAINFILE_CSV_URLS = [
+  'https://docs.google.com/spreadsheets/d/e/2PACX-1vRTziENAURT5p8ix0v0FOizV9a_i-p4Igeovw21jv09aqbJbqvsjKMEftGVfG8Dm0rmVvcKUv0MQkul/pub?output=csv', // April 2026
+  'https://docs.google.com/spreadsheets/d/e/2PACX-1vQKR8ZYu_ov1xrnk99ronJjmnnMMJqJ9orMR5LJDLUT35K4CzUYKW84ryywFg-K9rTQayZbEIY5PrBr/pub?output=csv',   // May 2026
+];
 
 const PANCAKE_TOKEN = process.env.PANCAKE_TOKEN || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpbmZvIjp7Im9zIjoxLCJjbGllbnRfaXAiOiI2NC4yMjQuOTcuMTU0IiwiYnJvd3NlciI6MSwiZGV2aWNlX3R5cGUiOjN9LCJuYW1lIjoiQ2xhcmljZSBEYWxvbmRvbmFuIiwiZXhwIjoxNzgyMzA1MTQzLCJhcHBsaWNhdGlvbiI6MSwidWlkIjoiMWNjYjM3YTgtZjQ4NS00ZjdiLWJiMWQtZjhjNTQ0Nzg4NWM2Iiwic2Vzc2lvbl9pZCI6ImQ3MDM5OWFhLTIxYTMtNDRmZi05ZmI5LWVmMDBjNzI3YmE2YSIsImlhdCI6MTc3NDUyOTE0MywiZmJfaWQiOiIxMjIxMTI2MzIwNDg5OTY4NTUiLCJsb2dpbl9zZXNzaW9uIjpudWxsLCJmYl9uYW1lIjoiQ2xhcmljZSBEYWxvbmRvbmFuIn0.FUzLeVPKVMDqbruljozSc93SBsX76gj0HMfeiv4kpAA';
 
@@ -868,8 +872,9 @@ app.get('/api/aov-cvr', requireAuth, async (req, res) => {
     const fromDate = req.query.from || new Date().toISOString().split('T')[0];
     const toDate   = req.query.to   || fromDate;
 
-    // Step 1 — Fetch POS orders from MLC mainfile
-    const rows = parseCSV(await fetchRaw(MLC_MAINFILE_CSV_URL));
+    // Step 1 — Fetch POS orders from all monthly MLC mainfiles and combine
+    const csvChunks = await Promise.all(MLC_MAINFILE_CSV_URLS.map(url => fetchRaw(url)));
+    const rows = csvChunks.flatMap(csv => parseCSV(csv));
 
     const fromDt = new Date(fromDate + 'T00:00:00Z');
     const toDt   = new Date(toDate   + 'T23:59:59Z');
