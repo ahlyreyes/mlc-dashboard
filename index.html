@@ -628,6 +628,28 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
   border-top-color: #BFDBFE;
 }
 
+/* ── DAY CARD COLOR VARIANTS (product tabs) ── */
+.day-card.dc-today     { border: 2px solid #D97706; background: #fffbeb; }
+.day-card.dc-today     .day-card-header { background: #fef3c7; color: #92400e; border-bottom-color: #fde68a; }
+.day-card.dc-today     .day-card-footer { background: #fef3c7; border-top-color: #fde68a; }
+.day-card.dc-scaled    { border: 1.5px solid #16a34a; background: #f0fdf4; }
+.day-card.dc-scaled    .day-card-header { background: #dcfce7; color: #15803d; border-bottom-color: #bbf7d0; }
+.day-card.dc-scaled    .day-card-footer { background: #dcfce7; border-top-color: #bbf7d0; }
+.day-card.dc-monitoring{ border: 1.5px solid #3b82f6; background: #eff6ff; }
+.day-card.dc-monitoring .day-card-header{ background: #dbeafe; color: #1d4ed8; border-bottom-color: #bfdbfe; }
+.day-card.dc-monitoring .day-card-footer{ background: #dbeafe; border-top-color: #bfdbfe; }
+.day-card.dc-killed    { border: 1.5px solid #dc2626; background: #fef2f2; }
+.day-card.dc-killed    .day-card-header { background: #fee2e2; color: #991b1b; border-bottom-color: #fecaca; }
+.day-card.dc-killed    .day-card-footer { background: #fee2e2; border-top-color: #fecaca; }
+.day-card.dc-scaledown { border: 1.5px solid #d97706; background: #fffbeb; }
+.day-card.dc-scaledown .day-card-header { background: #fef3c7; color: #92400e; border-bottom-color: #fde68a; }
+.day-card.dc-scaledown .day-card-footer { background: #fef3c7; border-top-color: #fde68a; }
+
+.day-card-ap-label { font-size: 9px; font-weight: 700; color: var(--muted2); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 3px; }
+.day-card-ap-val   { font-size: 11px; font-weight: 600; color: var(--text); margin-bottom: 5px; line-height: 1.4; }
+.btn-log-sm { font-size: 10px; font-weight: 600; padding: 3px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); cursor: pointer; font-family: inherit; transition: all 0.15s; }
+.btn-log-sm:hover { border-color: #2563EB; color: #1d4ed8; background: #eff6ff; }
+
 /* ── CHECKLIST ── */
 .checklist-wrap {
   background: var(--card);
@@ -1351,7 +1373,7 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
       <option value="KILLED">KILLED — stopped campaign</option>
       <option value="SCALE DOWN">SCALED DOWN — reduced budget</option>
       <option value="MONITORING">MONITORING — will check tomorrow</option>
-      <option value="SKIPPED">SKIPPED — no action taken</option>
+      <option value="STAY">STAY — no action taken</option>
     </select>
     <label>New Budget (if scaled/down)</label>
     <input type="number" id="modalBudget" placeholder="e.g. 4160" />
@@ -1425,6 +1447,8 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
 <script>
 let currentActionData = null;
 let actionLogs = {};
+let currentProductTab = null;
+let lastProductData   = {}; // tab → { campaigns, dates } for re-render without refetch
 let currentUser = null;
 let allCreatives = {};
 let currentCreativeKey = '';
@@ -1486,11 +1510,18 @@ async function submitAction() {
   if (data.success) {
     if (!actionLogs[currentActionData.campaignKey]) actionLogs[currentActionData.campaignKey] = [];
     actionLogs[currentActionData.campaignKey].unshift({
-      action_taken: action, new_budget: budget||null,
+      action_taken: action, new_budget: budget ? parseFloat(budget) : null, notes,
       done_by_name: currentUser.name, date: currentActionData.date,
       created_at: new Date().toLocaleString('en-PH')
     });
-    closeModal(); loadData();
+    closeModal();
+    // Re-render current product tab without full page reload
+    if (currentProductTab && lastProductData[currentProductTab]) {
+      const { campaigns, dates } = lastProductData[currentProductTab];
+      renderProductCampaigns(campaigns, dates, currentProductTab, PRODUCT_TAB_NAMES[currentProductTab]);
+    } else {
+      loadData();
+    }
   }
 }
 
@@ -1655,6 +1686,28 @@ function actionForDay(campaign, dates, targetDateIdx) {
   if (consecutiveBad === totalActiveDays) return { text:'KILL', cls:'ab-kill' };
   if (consecutiveBad > 0) return { text:'OBSERVE', cls:'ab-observe' };
   return { text:'STAY', cls:'ab-stay' };
+}
+
+function getEffectiveBudget(c, dates, dayIndex) {
+  let budget = c.budget;
+  for (let i = 0; i < dayIndex; i++) {
+    const logs = (actionLogs[c.campaignId] || []).filter(l => l.date === dates[i] && l.action_taken === 'SCALED' && l.new_budget);
+    if (logs.length > 0) budget = parseFloat(logs[0].new_budget);
+  }
+  return budget;
+}
+
+function dayCardClass(isLatest, dayLog) {
+  if (isLatest) return 'dc-today';
+  if (!dayLog) return '';
+  switch (dayLog.action_taken) {
+    case 'SCALED':     return 'dc-scaled';
+    case 'KILLED':     return 'dc-killed';
+    case 'SCALE DOWN': return 'dc-scaledown';
+    case 'MONITORING':
+    case 'STAY':       return 'dc-monitoring';
+    default:           return '';
+  }
 }
 
 function dayLabel(ds) {
@@ -1836,29 +1889,52 @@ function renderGroupDayCards(groupData, dates) {
   }).join('');
 }
 
-// ── DAY CARDS: PRODUCT SUBPAGE (action badge in header, declared budget shown) ──
-function renderDayCardsProduct(c, dates) {
-  const isSingleDay = dates.length === 1;
+// ── DAY CARDS: PRODUCT SUBPAGE (action plan footer, gross sales, color-coded) ──
+function renderDayCardsProduct(c, dates, isMultiAd) {
   return dates.map((d, i) => {
-    const dd = c.dates[d];
+    const dd       = c.dates[d];
     const isLatest = i === dates.length - 1;
-    const roas = dd ? dd.roas : 0; const spend = dd ? dd.spend : 0;
-    const cvr  = dd && dd.messagesStarted > 0 ? (dd.orders / dd.messagesStarted * 100) : 0;
-    const aov  = dd && dd.orders > 0 ? dd.grossSales / dd.orders : 0;
-    const rCls = roasColorClass(roas, spend);
-    return `<div class="day-card${isLatest?' latest':''}">
+    const roas  = dd ? dd.roas  : 0;
+    const spend = dd ? dd.spend : 0;
+    const cvr   = dd && dd.messagesStarted > 0 ? (dd.orders / dd.messagesStarted * 100) : 0;
+    const aov   = dd && dd.orders > 0 ? dd.grossSales / dd.orders : 0;
+    const rCls  = roasColorClass(roas, spend);
+
+    const dayLogs = (actionLogs[c.campaignId] || []).filter(l => l.date === d);
+    const dayLog  = dayLogs[0] || null;
+    const dcCls   = dayCardClass(isLatest, dayLog);
+    const budget  = getEffectiveBudget(c, dates, i);
+    const ap      = actionForDay(c, dates, i);
+
+    const safeId   = (c.campaignId  || '').replace(/'/g, "\\'");
+    const safeName = (c.campaignName|| c.adName || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    const safeAcct = (c.accountName || '').replace(/'/g, "\\'");
+
+    return `<div class="day-card${dcCls ? ' ' + dcCls : ''}">
       <div class="day-card-header">
         <span>${dayLabel(d)}</span>${roasBadge(roas, spend)}
       </div>
       <div class="day-card-body">
         <div class="day-row"><span class="day-row-label">ROAS</span><span class="day-row-val ${rCls}">${spend>0?FMT2(roas):'—'}</span></div>
+        <div class="day-row"><span class="day-row-label">Gross Sales</span><span class="day-row-val" style="color:#2563eb;font-weight:700">${dd&&dd.grossSales>0?PHP(dd.grossSales):'—'}</span></div>
         <div class="day-row"><span class="day-row-label">CVR</span><span class="day-row-val">${dd&&dd.messagesStarted>0?cvr.toFixed(1)+'%':'—'}</span></div>
         <div class="day-row"><span class="day-row-label">AOV</span><span class="day-row-val">${dd&&dd.orders>0?PHP(aov):'—'}</span></div>
         <div class="day-row"><span class="day-row-label">CPM</span><span class="day-row-val">${spend>0?PHP(dd.cpm):'—'}</span></div>
-        <div class="day-row"><span class="day-row-label">Declared Budget</span><span class="day-row-val">${PHP(c.budget)}</span></div>
+        ${!isMultiAd?`<div class="day-row"><span class="day-row-label">Declared Budget</span><span class="day-row-val">${PHP(budget)}</span></div>`:''}
+        <div class="day-row"><span class="day-row-label">Ad Spend</span><span class="day-row-val">${spend>0?PHP(spend):'—'}</span></div>
         <div class="day-row"><span class="day-row-label">Inquiries</span><span class="day-row-val">${dd&&dd.messagesStarted>0?NUM(dd.messagesStarted):'—'}</span></div>
         <div class="day-row"><span class="day-row-label">Orders</span><span class="day-row-val">${dd?dd.orders:'—'}</span></div>
         <div class="day-row"><span class="day-row-label">Delivery Rate</span><span class="day-row-val">${dd&&dd.delRate!=null?dd.delRate.toFixed(1)+'%':'—'}</span></div>
+      </div>
+      <div class="day-card-footer">
+        <div class="day-card-ap-label">Action Plan</div>
+        ${dayLog
+          ? `<div class="day-card-ap-val">${dayLog.action_taken}${dayLog.done_by_name?' · '+dayLog.done_by_name:''}${dayLog.notes?' · '+dayLog.notes:''}</div>`
+          : `<div class="day-card-ap-val" style="color:var(--muted2);font-weight:400">${ap.text||'—'}</div>`
+        }
+        <button class="btn-log-sm" onclick="openActionModal('${safeId}','${safeName}','${safeAcct}','${ap.text}','${d}')">
+          ${dayLog ? 'Update' : 'Log Action'}
+        </button>
       </div>
     </div>`;
   }).join('');
@@ -1912,7 +1988,7 @@ function renderAdCardNdap(c, dates, showCampaign) {
 }
 
 // ── AD CARD: PRODUCT SUBPAGE (two-column, camera icon, action badge in day header) ──
-function renderAdCardProduct(c, dates) {
+function renderAdCardProduct(c, dates, isMultiAd) {
   const loggedList  = (actionLogs[c.campaignId]||[]).filter(l=>dates.includes(l.date)).slice(0,1);
   const roasCls     = roasColorClass(c.totalRoas||0, c.totalSpend||0);
   const hasCreative = (allCreatives[c.adId]||[]).length > 0;
@@ -1947,16 +2023,19 @@ function renderAdCardProduct(c, dates) {
       </div>
     </div>
     <div class="camp-day-wrap">
-      <div class="day-cards-row">${renderDayCardsProduct(c, dates)}</div>
+      <div class="day-cards-row">${renderDayCardsProduct(c, dates, isMultiAd)}</div>
     </div>
   </div>`;
 }
 
 // ── BUILD CAMPAIGN GROUPS HTML — each ad rendered individually to match manual NDAP format ──
 function renderCampaignGroups(camps, dates, isProduct) {
-  return camps.map(c =>
-    isProduct ? renderAdCardProduct(c, dates) : renderAdCardNdap(c, dates, true)
-  ).join('');
+  const campCounts = {};
+  for (const c of camps) campCounts[c.campaignId] = (campCounts[c.campaignId] || 0) + 1;
+  return camps.map(c => {
+    const isMultiAd = campCounts[c.campaignId] > 1;
+    return isProduct ? renderAdCardProduct(c, dates, isMultiAd) : renderAdCardNdap(c, dates, true);
+  }).join('');
 }
 
 // kept for reference but no longer used in main NDAP view
@@ -2145,6 +2224,13 @@ function switchTab(tab, el) {
   } else {
     const sub = document.querySelector(`.nav-subitem[data-tab="${tab}"]`);
     if (sub) sub.classList.add('active');
+  }
+  // Auto-set 3-day range when opening Clear Sight
+  if (tab === 'clearsight') {
+    const _t = new Date(), _f = new Date();
+    _f.setDate(_f.getDate() - 2);
+    document.getElementById('toDate').value   = _t.toISOString().split('T')[0];
+    document.getElementById('fromDate').value = _f.toISOString().split('T')[0];
   }
   if (tab === 'ceo')       loadCEO();
   if (tab === 'ndap')      loadData();
@@ -2501,11 +2587,12 @@ async function loadBrandTab(brand) {
 }
 
 async function loadProductTab(tabName) {
-  const products = PRODUCT_TABS[tabName];
+  currentProductTab = tabName;
+  const products    = PRODUCT_TABS[tabName];
   const displayName = PRODUCT_TAB_NAMES[tabName];
   const endDate = document.getElementById('toDate').value;
-  const _fv2 = document.getElementById('fromDate').value;
-  const days = (_fv2 && endDate) ? Math.max(1, Math.round((new Date(endDate)-new Date(_fv2))/86400000)+1) : 1;
+  const _fv2    = document.getElementById('fromDate').value;
+  const days    = (_fv2 && endDate) ? Math.max(1, Math.round((new Date(endDate)-new Date(_fv2))/86400000)+1) : 1;
   document.getElementById(`loading-${tabName}`).style.display = 'block';
   document.getElementById(`tableContainer-${tabName}`).innerHTML = '';
   document.getElementById(`kpiGrid-${tabName}`).style.display = 'none';
@@ -2514,6 +2601,7 @@ async function loadProductTab(tabName) {
     const data = await r.json();
     if (data.error) throw new Error(data.error);
     const campaigns = data.campaigns.filter(c => products.includes((c.product||'').toUpperCase()));
+    lastProductData[tabName] = { campaigns, dates: data.dates };
     renderBrandKPIs(campaigns, tabName, data.clearSightByDate, data.dates);
     renderProductCampaigns(campaigns, data.dates, tabName, displayName);
   } catch(e) {
