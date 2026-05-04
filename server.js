@@ -123,7 +123,8 @@ const requireAuth = (req, res, next) => {
 };
 const PANCAKE_CSV_URLS = [
   process.env.PANCAKE_CSV_URL || 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRRmBJlKTC1iFdU5mcZ8sQlWkHuxAtYxezNnAO1ggj1wKh1_ki045CTbDw6aV2FvVL5tBV42gMHilio/pub?gid=0&single=true&output=csv',
-  process.env.PANCAKE_CSV_URL_APRIL || 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSWfevqFhSyLoIFwvwFFdgFY3NzyhTOu6nbW3_2CfhI460Etz60TPWH2yA1TkVfG2y439O43BOvXHb4/pub?gid=0&single=true&output=csv'
+  process.env.PANCAKE_CSV_URL_APRIL || 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSWfevqFhSyLoIFwvwFFdgFY3NzyhTOu6nbW3_2CfhI460Etz60TPWH2yA1TkVfG2y439O43BOvXHb4/pub?gid=0&single=true&output=csv',
+  'https://docs.google.com/spreadsheets/d/e/2PACX-1vQKR8ZYu_ov1xrnk99ronJjmnnMMJqJ9orMR5LJDLUT35K4CzUYKW84ryywFg-K9rTQayZbEIY5PrBr/pub?output=csv', // May 2026
 ];
 
 // MLC mainfile — source for AOV & CVR FSA report (John Hovey Cabatic, Lex Dela Cruz)
