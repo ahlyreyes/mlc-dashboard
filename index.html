@@ -590,7 +590,11 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
   height: 16px;
   border-radius: 5px;
   flex-shrink: 0;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.15s;
 }
+.roas-badge:hover { opacity: 0.75; transform: scale(1.1); }
 .rb-scale { background: #2563EB; }
 .rb-stay  { background: #111827; }
 .rb-kill  { background: #F97316; }
@@ -1843,10 +1847,14 @@ function buildGroupData(ads, dates) {
 
 // ── DAY CARDS: NDAP / BRAND TAB — bath pack layout (color-coded, action plan footer) ──
 function roasBadge(roas, spend) {
-  if (!spend) return '';
+  if (!spend) return '<span class="roas-badge" style="background:#E2E8F0;cursor:default"></span>';
   if (roas >= 3.0)  return '<span class="roas-badge rb-scale"></span>';
   if (roas >= 2.70) return '<span class="roas-badge rb-stay"></span>';
   return '<span class="roas-badge rb-kill"></span>';
+}
+function roasBadgeBtn(roas, spend, safeId, safeName, safeAcct, apText, d) {
+  const cls = !spend ? 'rb-stay' : roas >= 3.0 ? 'rb-scale' : roas >= 2.70 ? 'rb-stay' : 'rb-kill';
+  return `<button class="roas-badge ${cls}" onclick="openActionModal('${safeId}','${safeName}','${safeAcct}','${apText}','${d}')" title="Log action for ${d}"></button>`;
 }
 
 function renderDayCardsNdap(c, dates) {
@@ -1870,7 +1878,7 @@ function renderDayCardsNdap(c, dates) {
     const safeAcct = (c.accountName || '').replace(/'/g, "\\'");
 
     return `<div class="day-card${dcCls ? ' ' + dcCls : ''}">
-      <div class="day-card-header"><span>${dayLabel(d)}</span>${roasBadge(roas, spend)}</div>
+      <div class="day-card-header"><span>${dayLabel(d)}</span>${roasBadgeBtn(roas, spend, safeId, safeName, safeAcct, ap.text, d)}</div>
       <div class="day-card-body">
         <div class="day-row"><span class="day-row-label">ROAS</span><span class="day-row-val ${rCls}">${spend>0?FMT2(roas):'—'}</span></div>
         <div class="day-row"><span class="day-row-label">Gross Sales</span><span class="day-row-val" style="color:#2563eb;font-weight:700">${dd&&dd.grossSales>0?PHP(dd.grossSales):'—'}</span></div>
@@ -1885,13 +1893,7 @@ function renderDayCardsNdap(c, dates) {
       </div>
       <div class="day-card-footer">
         <div class="day-card-ap-label">Action Plan</div>
-        ${dayLog
-          ? `<div class="day-card-ap-val">${dayLog.action_taken}${dayLog.done_by_name?' · '+dayLog.done_by_name:''}${dayLog.notes?' · '+dayLog.notes:''}</div>`
-          : `<div class="day-card-ap-val" style="color:var(--muted2);font-weight:400">${ap.text||'—'}</div>`
-        }
-        <button class="btn-log-sm" onclick="openActionModal('${safeId}','${safeName}','${safeAcct}','${ap.text}','${d}')">
-          ${dayLog ? 'Update' : 'Log Action'}
-        </button>
+        ${dayLog ? `<div class="day-card-ap-val">${dayLog.action_taken}${dayLog.done_by_name?' · '+dayLog.done_by_name:''}${dayLog.notes?' · '+dayLog.notes:''}</div>` : ''}
       </div>
     </div>`;
   }).join('');
@@ -1945,7 +1947,7 @@ function renderDayCardsProduct(c, dates, isMultiAd) {
 
     return `<div class="day-card${dcCls ? ' ' + dcCls : ''}">
       <div class="day-card-header">
-        <span>${dayLabel(d)}</span>${roasBadge(roas, spend)}
+        <span>${dayLabel(d)}</span>${roasBadgeBtn(roas, spend, safeId, safeName, safeAcct, ap.text, d)}
       </div>
       <div class="day-card-body">
         <div class="day-row"><span class="day-row-label">ROAS</span><span class="day-row-val ${rCls}">${spend>0?FMT2(roas):'—'}</span></div>
@@ -1961,13 +1963,7 @@ function renderDayCardsProduct(c, dates, isMultiAd) {
       </div>
       <div class="day-card-footer">
         <div class="day-card-ap-label">Action Plan</div>
-        ${dayLog
-          ? `<div class="day-card-ap-val">${dayLog.action_taken}${dayLog.done_by_name?' · '+dayLog.done_by_name:''}${dayLog.notes?' · '+dayLog.notes:''}</div>`
-          : `<div class="day-card-ap-val" style="color:var(--muted2);font-weight:400">${ap.text||'—'}</div>`
-        }
-        <button class="btn-log-sm" onclick="openActionModal('${safeId}','${safeName}','${safeAcct}','${ap.text}','${d}')">
-          ${dayLog ? 'Update' : 'Log Action'}
-        </button>
+        ${dayLog ? `<div class="day-card-ap-val">${dayLog.action_taken}${dayLog.done_by_name?' · '+dayLog.done_by_name:''}${dayLog.notes?' · '+dayLog.notes:''}</div>` : ''}
       </div>
     </div>`;
   }).join('');
