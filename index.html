@@ -1449,6 +1449,7 @@ let currentActionData = null;
 let actionLogs = {};
 let currentProductTab = null;
 let lastProductData   = {}; // tab → { campaigns, dates } for re-render without refetch
+let lastNdapData      = null; // full NDAP response for re-render without refetch
 let currentUser = null;
 let allCreatives = {};
 let currentCreativeKey = '';
@@ -1515,10 +1516,12 @@ async function submitAction() {
       created_at: new Date().toLocaleString('en-PH')
     });
     closeModal();
-    // Re-render current product tab without full page reload
+    // Re-render current tab without full page reload
     if (currentProductTab && lastProductData[currentProductTab]) {
       const { campaigns, dates } = lastProductData[currentProductTab];
       renderProductCampaigns(campaigns, dates, currentProductTab, PRODUCT_TAB_NAMES[currentProductTab]);
+    } else if (lastNdapData) {
+      render(lastNdapData);
     } else {
       loadData();
     }
@@ -1655,10 +1658,13 @@ async function check3PMAlert() {
   } catch(e) {}
 }
 
-// ── DATE INIT ──
-const _today = new Date().toISOString().split('T')[0];
+// ── DATE INIT — default 3 days (today-2 → today) ──
+const _todayD  = new Date();
+const _fromD   = new Date(); _fromD.setDate(_fromD.getDate() - 2);
+const _today   = _todayD.toISOString().split('T')[0];
+const _from3   = _fromD.toISOString().split('T')[0];
 document.getElementById('toDate').value   = _today;
-document.getElementById('fromDate').value = _today;
+document.getElementById('fromDate').value = _from3;
 // CEO is default tab — hide ndap controls on load
 document.querySelectorAll('.ndap-ctrl').forEach(c => { c.style.display = 'none'; });
 
@@ -1733,6 +1739,8 @@ async function loadData() {
     const r = await fetch(`/api/ndap?endDate=${endDate}&days=${days}`);
     const data = await r.json();
     if (data.error) throw new Error(data.error);
+    lastNdapData = data;
+    currentProductTab = null;
     renderKPIs(data);
     render(data);
     document.getElementById('lastUpdated').textContent = 'Updated ' + new Date().toLocaleTimeString('en-PH');
@@ -1833,7 +1841,7 @@ function buildGroupData(ads, dates) {
   return grouped;
 }
 
-// ── DAY CARDS: NDAP / BRAND TAB (no action badge, no declared budget) ──
+// ── DAY CARDS: NDAP / BRAND TAB — bath pack layout (color-coded, action plan footer) ──
 function roasBadge(roas, spend) {
   if (!spend) return '';
   if (roas >= 3.0)  return '<span class="roas-badge rb-scale"></span>';
@@ -1843,22 +1851,47 @@ function roasBadge(roas, spend) {
 
 function renderDayCardsNdap(c, dates) {
   return dates.map((d, i) => {
-    const dd = c.dates[d];
+    const dd       = c.dates[d];
     const isLatest = i === dates.length - 1;
-    const roas = dd ? dd.roas : 0; const spend = dd ? dd.spend : 0;
-    const cvr  = dd && dd.messagesStarted > 0 ? (dd.orders / dd.messagesStarted * 100) : 0;
-    const aov  = dd && dd.orders > 0 ? dd.grossSales / dd.orders : 0;
-    const rCls = roasColorClass(roas, spend);
-    return `<div class="day-card${isLatest?' latest':''}">
+    const roas  = dd ? dd.roas  : 0;
+    const spend = dd ? dd.spend : 0;
+    const cvr   = dd && dd.messagesStarted > 0 ? (dd.orders / dd.messagesStarted * 100) : 0;
+    const aov   = dd && dd.orders > 0 ? dd.grossSales / dd.orders : 0;
+    const rCls  = roasColorClass(roas, spend);
+
+    const dayLogs = (actionLogs[c.campaignId] || []).filter(l => l.date === d);
+    const dayLog  = dayLogs[0] || null;
+    const dcCls   = dayCardClass(isLatest, dayLog);
+    const budget  = getEffectiveBudget(c, dates, i);
+    const ap      = actionForDay(c, dates, i);
+
+    const safeId   = (c.campaignId  || '').replace(/'/g, "\\'");
+    const safeName = (c.campaignName|| c.adName || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    const safeAcct = (c.accountName || '').replace(/'/g, "\\'");
+
+    return `<div class="day-card${dcCls ? ' ' + dcCls : ''}">
       <div class="day-card-header"><span>${dayLabel(d)}</span>${roasBadge(roas, spend)}</div>
       <div class="day-card-body">
         <div class="day-row"><span class="day-row-label">ROAS</span><span class="day-row-val ${rCls}">${spend>0?FMT2(roas):'—'}</span></div>
+        <div class="day-row"><span class="day-row-label">Gross Sales</span><span class="day-row-val" style="color:#2563eb;font-weight:700">${dd&&dd.grossSales>0?PHP(dd.grossSales):'—'}</span></div>
         <div class="day-row"><span class="day-row-label">CVR</span><span class="day-row-val">${dd&&dd.messagesStarted>0?cvr.toFixed(1)+'%':'—'}</span></div>
         <div class="day-row"><span class="day-row-label">AOV</span><span class="day-row-val">${dd&&dd.orders>0?PHP(aov):'—'}</span></div>
         <div class="day-row"><span class="day-row-label">CPM</span><span class="day-row-val">${spend>0?PHP(dd.cpm):'—'}</span></div>
+        <div class="day-row"><span class="day-row-label">Declared Budget</span><span class="day-row-val">${PHP(budget)}</span></div>
+        <div class="day-row"><span class="day-row-label">Ad Spend</span><span class="day-row-val">${spend>0?PHP(spend):'—'}</span></div>
         <div class="day-row"><span class="day-row-label">Inquiries</span><span class="day-row-val">${dd&&dd.messagesStarted>0?NUM(dd.messagesStarted):'—'}</span></div>
         <div class="day-row"><span class="day-row-label">Orders</span><span class="day-row-val">${dd?dd.orders:'—'}</span></div>
         <div class="day-row"><span class="day-row-label">Delivery Rate</span><span class="day-row-val">${dd&&dd.delRate!=null?dd.delRate.toFixed(1)+'%':'—'}</span></div>
+      </div>
+      <div class="day-card-footer">
+        <div class="day-card-ap-label">Action Plan</div>
+        ${dayLog
+          ? `<div class="day-card-ap-val">${dayLog.action_taken}${dayLog.done_by_name?' · '+dayLog.done_by_name:''}${dayLog.notes?' · '+dayLog.notes:''}</div>`
+          : `<div class="day-card-ap-val" style="color:var(--muted2);font-weight:400">${ap.text||'—'}</div>`
+        }
+        <button class="btn-log-sm" onclick="openActionModal('${safeId}','${safeName}','${safeAcct}','${ap.text}','${d}')">
+          ${dayLog ? 'Update' : 'Log Action'}
+        </button>
       </div>
     </div>`;
   }).join('');
