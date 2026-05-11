@@ -719,15 +719,24 @@ app.get('/',                  requireAuth, (_req, res) => res.sendFile(path.join
 
 app.get('/api/ndap', requireAuth, async (req, res) => {
   try {
-    const endDate = req.query.endDate || new Date().toISOString().split('T')[0];
+    const fromDate = req.query.from || null;
+    const toDate = req.query.to || req.query.endDate || new Date().toISOString().split('T')[0];
     const days = parseInt(req.query.days || 3);
 
     const dates = [];
-    for (let i = days - 1; i >= 0; i--) {
-      const parts = endDate.split('-').map(Number);
-      const d = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
-      d.setUTCDate(d.getUTCDate() - i);
-      dates.push(d.toISOString().split('T')[0]);
+    if (fromDate) {
+      const start = new Date(fromDate + 'T00:00:00Z');
+      const end = new Date(toDate + 'T00:00:00Z');
+      for (let d = new Date(start); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {
+        dates.push(d.toISOString().split('T')[0]);
+      }
+    } else {
+      for (let i = days - 1; i >= 0; i--) {
+        const parts = toDate.split('-').map(Number);
+        const d = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
+        d.setUTCDate(d.getUTCDate() - i);
+        dates.push(d.toISOString().split('T')[0]);
+      }
     }
 
     const [pancakeData, budgetMap, activeAdsList] = await Promise.all([

@@ -1727,20 +1727,24 @@ function dayLabel(ds) {
   return `${M[d.getMonth()]} ${d.getDate()} · ${D[d.getDay()]}`;
 }
 
+function buildNdapUrl(fromDate, toDate) {
+  const params = new URLSearchParams();
+  if (fromDate) params.set('from', fromDate);
+  if (toDate) params.set('to', toDate);
+  return `/api/ndap?${params.toString()}`;
+}
+
 async function loadData() {
   const fromDate = document.getElementById('fromDate').value;
   const toDate   = document.getElementById('toDate').value;
   if (!fromDate || !toDate) { alert('Select a From and To date.'); return; }
-  const from = new Date(fromDate), to = new Date(toDate);
-  const days = Math.max(1, Math.round((to - from) / 86400000) + 1);
-  const endDate = toDate;
   const btn = document.getElementById('refreshBtn');
   btn.disabled = true; btn.textContent = 'Loading...';
   document.getElementById('loading').style.display = 'block';
   document.getElementById('tableContainer').innerHTML = '';
   document.getElementById('kpiGrid').style.display = 'none';
   try {
-    const r = await fetch(`/api/ndap?endDate=${endDate}&days=${days}`);
+    const r = await fetch(buildNdapUrl(fromDate, toDate));
     const data = await r.json();
     if (data.error) throw new Error(data.error);
     lastNdapData = data;
@@ -2597,12 +2601,11 @@ async function loadBrandTab(brand) {
   const products  = brand === 'NATURALS' ? NATURALS_PRODUCTS : EYECARE_PRODUCTS;
   const endDate = document.getElementById('toDate').value;
   const _fv = document.getElementById('fromDate').value;
-  const days = (_fv && endDate) ? Math.max(1, Math.round((new Date(endDate)-new Date(_fv))/86400000)+1) : 1;
   document.getElementById(`loading-${prefix}`).style.display = 'block';
   document.getElementById(`tableContainer-${prefix}`).innerHTML = '';
   document.getElementById(`kpiGrid-${prefix}`).style.display = 'none';
   try {
-    const r    = await fetch(`/api/ndap?endDate=${endDate}&days=${days}`);
+    const r    = await fetch(buildNdapUrl(_fv, endDate));
     const data = await r.json();
     if (data.error) throw new Error(data.error);
     const filtered = { ...data, campaigns: data.campaigns.filter(c => products.includes((c.product||'').toUpperCase())) };
@@ -2621,12 +2624,11 @@ async function loadProductTab(tabName) {
   const displayName = PRODUCT_TAB_NAMES[tabName];
   const endDate = document.getElementById('toDate').value;
   const _fv2    = document.getElementById('fromDate').value;
-  const days    = (_fv2 && endDate) ? Math.max(1, Math.round((new Date(endDate)-new Date(_fv2))/86400000)+1) : 1;
   document.getElementById(`loading-${tabName}`).style.display = 'block';
   document.getElementById(`tableContainer-${tabName}`).innerHTML = '';
   document.getElementById(`kpiGrid-${tabName}`).style.display = 'none';
   try {
-    const r    = await fetch(`/api/ndap?endDate=${endDate}&days=${days}`);
+    const r    = await fetch(buildNdapUrl(_fv2, endDate));
     const data = await r.json();
     if (data.error) throw new Error(data.error);
     const campaigns = data.campaigns.filter(c => products.includes((c.product||'').toUpperCase()));
@@ -2716,7 +2718,7 @@ async function loadAnalytics() {
   destroyCharts();
 
   try {
-    const r = await fetch(`/api/ndap?endDate=${end}&days=${diffDays}`);
+    const r = await fetch(buildNdapUrl(start, end));
     const ct = r.headers.get('content-type') || '';
     if (!ct.includes('json')) throw new Error('Session expired. Please reload the page and log in again.');
     const data = await r.json();
