@@ -1014,7 +1014,8 @@ app.get('/api/aov-cvr', requireAuth, async (req, res) => {
       if (orderPhone && lookup.byPhone[orderPhone]) {
         const conv = lookup.byPhone[orderPhone];
         if (conv.has_phone !== false) {
-          const convDate = (conv.inserted_at || '').split('T')[0];
+          // Use creation date — inserted_at or created_at; avoid updated_at (changes per message)
+          const convDate = (conv.inserted_at || conv.created_at || '').split('T')[0];
           if (convDate === order.date) order.typeOfInq = 'SDI';
           // else different day → FUI (already default)
           matchedConv = conv;
