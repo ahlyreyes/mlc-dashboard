@@ -195,6 +195,28 @@ function normCxName(n) {
   return (n || '').toLowerCase().trim().replace(/\s+/g, ' ');
 }
 
+// Normalize phone to last 10 digits for comparison
+function normPhone(p) {
+  if (!p) return '';
+  return (p + '').replace(/\D/g, '').slice(-10);
+}
+
+// Extract phone from a Pancake conversation object
+function getConvPhone(conv) {
+  const customers = conv.customers || [];
+  for (const cu of customers) {
+    if (cu && cu.phone) return cu.phone;
+  }
+  if (conv.from && conv.from.phone) return conv.from.phone;
+  return null;
+}
+
+// Extract display name from a Pancake conversation object
+function getConvName(conv) {
+  return (conv.from && conv.from.name) ||
+         (conv.customers && conv.customers[0] && conv.customers[0].name) || '';
+}
+
 async function fetchPancakeConvs(pageId, fromDate, toDate) {
   const cacheKey = `conv_${pageId}_${fromDate}_${toDate}`;
   const cached = cacheGet(pancakeConvCache, cacheKey, TTL_PANCAKE_CONV);
@@ -923,12 +945,13 @@ app.get('/api/aov-cvr', requireAuth, async (req, res) => {
       const pageShortName  = pageId ? (PANCAKE_PAGE_META[pageId]?.short || posPageName) : posPageName;
       if (pageId) pageIdsNeeded.add(pageId);
 
-      const amount  = parseFloat((row['unit price'] || '0').replace(/,/g, '')) || 0;
-      const status  = (row['status'] || '').trim();
-      const cxName  = (row['customer'] || '').trim();
+      const amount        = parseFloat((row['unit price'] || '0').replace(/,/g, '')) || 0;
+      const status        = (row['status'] || '').trim();
+      const cxName        = (row['customer'] || '').trim();
+      const contactNumber = (row['contact number'] || '').trim();
 
-      orders.push({ date: dateStr, fsa: sellerRaw, cxName, posPageName, pageId, pageShortName,
-        amount, status, remarks: [], upsells: 'W/O UPSELL', typeOfInq: 'SDI', remarksForOrder: '' });
+      orders.push({ date: dateStr, fsa: sellerRaw, cxName, contactNumber, posPageName, pageId, pageShortName,
+        amount, status, remarks: [], upsells: 'W/O UPSELL', typeOfInq: 'FUI', remarksForOrder: '' });
     }
 
     // Step 2-4 — Fetch Pancake conversations + tag defs for ALL CS pages (for accurate SDI count)
@@ -939,48 +962,76 @@ app.get('/api/aov-cvr', requireAuth, async (req, res) => {
       Promise.all(pageIdList.map(async pid => ({ pid, tagDefs: await fetchPancakeTagDefs(pid) }))),
     ]);
 
-    const convLookup   = {}; // pid → { normName → { conv, isInRange, tagDefs } }
-    const tagDefsMap   = {}; // pid → { tagId → tagName }
+    // pid → { byPhone: { normPhone → conv }, byName: { normName → conv } }
+    const convLookup    = {};
+    const tagDefsMap    = {}; // pid → { tagId → tagName }
     const pageInquiries = {}; // pid → { shortName, sdi }
 
     for (const { pid, tagDefs } of tagResults) tagDefsMap[pid] = tagDefs;
 
     for (const { pid, convs } of convResults) {
-      convLookup[pid] = {};
-      const tagDefs = tagDefsMap[pid] || {};
+      convLookup[pid] = { byPhone: {}, byName: {} };
       let sdiCount = 0;
       for (const conv of convs) {
-        // Pancake API filters by updated_at (last activity), not inserted_at.
-        // Use updated_at for the inquiry count; inserted_at for SDI/FUI per-order tagging.
+        // Count inquiries by updated_at (Pancake filters by last-activity date)
         const updatedDate = (conv.updated_at || conv.inserted_at || '').split('T')[0];
-        const isActiveToday = updatedDate >= fromDate && updatedDate <= toDate;
-        if (isActiveToday) sdiCount++;
-        const convDate = (conv.inserted_at || '').split('T')[0];
-        const isInRange = convDate >= fromDate && convDate <= toDate;
-        const cxName = (conv.from && conv.from.name) || (conv.customers && conv.customers[0] && conv.customers[0].name) || '';
-        const key = normCxName(cxName);
-        if (key && !convLookup[pid][key]) {
-          convLookup[pid][key] = { conv, isInRange, tagDefs };
+        if (updatedDate >= fromDate && updatedDate <= toDate) sdiCount++;
+
+        // Phone index (first conv per phone wins)
+        const phone = normPhone(getConvPhone(conv));
+        if (phone && !convLookup[pid].byPhone[phone]) {
+          convLookup[pid].byPhone[phone] = conv;
+        }
+
+        // Name index (first conv per name wins)
+        const name = normCxName(getConvName(conv));
+        if (name && !convLookup[pid].byName[name]) {
+          convLookup[pid].byName[name] = conv;
         }
       }
       pageInquiries[pid] = { shortName: PANCAKE_PAGE_META[pid]?.short || pid, sdi: sdiCount };
     }
 
-    // Step 5 — Enrich orders with Pancake tag data
-    const REMARK_TAGS     = ['CALLED', 'UNATTENDED', 'CBR', 'CVC'];
+    // Step 5 — Enrich orders: correct SDI/FUI classification + Pancake tag data
+    const REMARK_TAGS = ['CALLED', 'UNATTENDED', 'CBR', 'CVC'];
     for (const order of orders) {
       if (!order.pageId) continue;
-      const match = (convLookup[order.pageId] || {})[normCxName(order.cxName)];
-      if (!match) continue;
-      const { conv, isInRange, tagDefs } = match;
-      order.typeOfInq = isInRange ? 'SDI' : 'FUI';
-      const convTagNames = (conv.tags || []).map(id => tagDefs[id] || '').filter(Boolean);
-      order.remarks = convTagNames.filter(t => REMARK_TAGS.includes(t));
-      if (convTagNames.includes('AI UPSELL'))       order.upsells = 'AI UPSELL';
-      else if (convTagNames.includes('FSA UPSELL')) order.upsells = 'FSA UPSELL';
-      if (convTagNames.includes('FSA SPIELS'))           order.remarksForOrder = 'FSA SPIELS';
-      else if (convTagNames.includes('TELECONSULT'))     order.remarksForOrder = 'TELECONSULT';
-      else if (convTagNames.includes('AUTO ORDER'))      order.remarksForOrder = 'AUTO ORDER';
+      const lookup  = convLookup[order.pageId];
+      if (!lookup) continue;
+      const tagDefs = tagDefsMap[order.pageId] || {};
+
+      let matchedConv = null;
+
+      // Step 1: Phone match (most accurate)
+      const orderPhone = normPhone(order.contactNumber);
+      if (orderPhone && lookup.byPhone[orderPhone]) {
+        const conv = lookup.byPhone[orderPhone];
+        if (conv.has_phone !== false) {
+          const convDate = (conv.inserted_at || '').split('T')[0];
+          if (convDate === order.date) order.typeOfInq = 'SDI';
+          // else different day → FUI (already default)
+          matchedConv = conv;
+        }
+        // has_phone === false → phone hidden → FUI, no match used
+      } else {
+        // Step 2: Name match fallback (always FUI)
+        const normN = normCxName(order.cxName);
+        if (normN && lookup.byName[normN]) {
+          matchedConv = lookup.byName[normN];
+          // typeOfInq stays 'FUI'
+        }
+        // Step 3: No match → FUI (already default)
+      }
+
+      if (matchedConv) {
+        const convTagNames = (matchedConv.tags || []).map(id => tagDefs[id] || '').filter(Boolean);
+        order.remarks = convTagNames.filter(t => REMARK_TAGS.includes(t));
+        if (convTagNames.includes('AI UPSELL'))       order.upsells = 'AI UPSELL';
+        else if (convTagNames.includes('FSA UPSELL')) order.upsells = 'FSA UPSELL';
+        if (convTagNames.includes('FSA SPIELS'))           order.remarksForOrder = 'FSA SPIELS';
+        else if (convTagNames.includes('TELECONSULT'))     order.remarksForOrder = 'TELECONSULT';
+        else if (convTagNames.includes('AUTO ORDER'))      order.remarksForOrder = 'AUTO ORDER';
+      }
     }
 
     res.json({ from: fromDate, to: toDate, orders, pageInquiries, fsaPriority: CS_FSA_PRIORITY });
