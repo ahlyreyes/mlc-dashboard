@@ -134,7 +134,14 @@ const MLC_MAINFILE_CSV_URLS = [
   'https://docs.google.com/spreadsheets/d/e/2PACX-1vQKR8ZYu_ov1xrnk99ronJjmnnMMJqJ9orMR5LJDLUT35K4CzUYKW84ryywFg-K9rTQayZbEIY5PrBr/pub?output=csv',   // May 2026
 ];
 
+// Per-page Pancake access tokens (page-scoped, longer-lived)
+const PANCAKE_PAGE_TOKENS = {
+  '183224001550935': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjE4MzIyNDAwMTU1MDkzNSIsInRpbWVzdGFtcCI6MTc3ODA4ODAwMH0.KT2svFupRuq_bJiHKrysIR0pLyGIKBKQ1CPLyLeiLUI', // CS OPTICAL CARE
+  '562290783624265': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjU2MjI5MDc4MzYyNDI2NSIsInRpbWVzdGFtcCI6MTc3NzIxNDY2NH0.xRs7f8JyPd_8DApwbTaV78MfYmzfskHKrcg6PkMPjJs', // CS EYE DROPS
+};
+// Fallback user-level token
 const PANCAKE_TOKEN = process.env.PANCAKE_TOKEN || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpbmZvIjp7Im9zIjoxLCJjbGllbnRfaXAiOiI2NC4yMjQuOTcuMTU0IiwiYnJvd3NlciI6MSwiZGV2aWNlX3R5cGUiOjN9LCJuYW1lIjoiQ2xhcmljZSBEYWxvbmRvbmFuIiwiZXhwIjoxNzgyMzA1MTQzLCJhcHBsaWNhdGlvbiI6MSwidWlkIjoiMWNjYjM3YTgtZjQ4NS00ZjdiLWJiMWQtZjhjNTQ0Nzg4NWM2Iiwic2Vzc2lvbl9pZCI6ImQ3MDM5OWFhLTIxYTMtNDRmZi05ZmI5LWVmMDBjNzI3YmE2YSIsImlhdCI6MTc3NDUyOTE0MywiZmJfaWQiOiIxMjIxMTI2MzIwNDg5OTY4NTUiLCJsb2dpbl9zZXNzaW9uIjpudWxsLCJmYl9uYW1lIjoiQ2xhcmljZSBEYWxvbmRvbmFuIn0.FUzLeVPKVMDqbruljozSc93SBsX76gj0HMfeiv4kpAA';
+function pageToken(pageId) { return PANCAKE_PAGE_TOKENS[pageId] || PANCAKE_TOKEN; }
 
 // Clear Sight main FSAs — shown first in the report; other sellers appear after
 const CS_FSA_PRIORITY = ['John Hovey Cabatic', 'Lex Dela Cruz'];
@@ -231,7 +238,7 @@ async function fetchPancakeConvs(pageId, fromDate, toDate) {
   while (true) {
     const url = `https://pancake.biz/api/v1/pages/${pageId}/conversations` +
       `?inserted_from=${inserted_from}&inserted_to=${toDate}` +
-      `&limit=500&page=${page}&access_token=${PANCAKE_TOKEN}`;
+      `&limit=500&page=${page}&access_token=${pageToken(pageId)}`;
     try {
       const res = await fetchJson(url);
       const convs = Array.isArray(res) ? res : (res.conversations || res.data || []);
@@ -254,7 +261,7 @@ async function fetchPancakeTagDefs(pageId) {
   const cached = cacheGet(pancakeConvCache, cacheKey, 30 * 60 * 1000);
   if (cached) return cached;
   try {
-    const res = await fetchJson(`https://pancake.biz/api/v1/pages/${pageId}/settings?access_token=${PANCAKE_TOKEN}`);
+    const res = await fetchJson(`https://pancake.biz/api/v1/pages/${pageId}/settings?access_token=${pageToken(pageId)}`);
     const tags = (res.settings && res.settings.tags) ? res.settings.tags : [];
     const map = {};
     for (const t of tags) { map[t.id] = (t.text || '').toUpperCase().trim(); }
