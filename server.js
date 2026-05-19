@@ -10,8 +10,9 @@ const app = express();
 const PORT = process.env.PORT || 8080;
 
 const META_ACCESS_TOKEN = process.env.META_ACCESS_TOKEN || '';
-const META_TOKEN_1 = process.env.META_TOKEN_1 || META_ACCESS_TOKEN;
-const META_TOKEN_2 = process.env.META_TOKEN_2 || META_ACCESS_TOKEN;
+const META_TOKEN_1     = process.env.META_TOKEN_1     || META_ACCESS_TOKEN;
+const META_TOKEN_2     = process.env.META_TOKEN_2     || META_ACCESS_TOKEN;
+const META_TOKEN_HUSSE = process.env.META_TOKEN_HUSSE || META_ACCESS_TOKEN;
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
@@ -279,6 +280,8 @@ const AD_ACCOUNTS = [
   { id: 'act_827911349880726',  name: 'Cheska Del Mundo', currency: 'PHP', product: 'CLEAR SIGHT', token: META_TOKEN_1 },
   // --- CLEAR SIGHT --- Token 2
   { id: 'act_1264536714635179', name: 'Nhur Lita',        currency: 'PHP', product: 'CLEAR SIGHT', token: META_TOKEN_2 },
+  // --- CLEAR SIGHT --- Husse
+  { id: 'act_610867214239439',  name: 'Angelica Roque',   currency: 'PHP', product: 'CLEAR SIGHT', token: META_TOKEN_HUSSE },
 ];
 
 // Currency conversion to PHP (update as needed)
