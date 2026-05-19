@@ -281,7 +281,9 @@ const AD_ACCOUNTS = [
   // --- CLEAR SIGHT --- Token 2
   { id: 'act_1264536714635179', name: 'Nhur Lita',        currency: 'PHP', product: 'CLEAR SIGHT', token: META_TOKEN_2 },
   // --- CLEAR SIGHT --- Husse
-  { id: 'act_610867214239439',  name: 'Angelica Roque',   currency: 'PHP', product: 'CLEAR SIGHT', token: META_TOKEN_HUSSE },
+  { id: 'act_610867214239439',  name: 'Angelica Roque',   currency: 'PHP', product: 'CLEAR SIGHT',  token: META_TOKEN_HUSSE },
+  // --- CARING TOUCH --- Husse
+  { id: 'act_1007714842769250', name: 'Princess',         currency: 'PHP', product: 'CARING TOUCH', token: META_TOKEN_HUSSE },
 ];
 
 // Currency conversion to PHP (update as needed)
