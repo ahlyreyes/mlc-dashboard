@@ -1669,6 +1669,20 @@ const _today   = _todayD.toISOString().split('T')[0];
 const _from3   = _fromD.toISOString().split('T')[0];
 document.getElementById('toDate').value   = _today;
 document.getElementById('fromDate').value = _from3;
+
+// Auto-refresh + close panel when either date changes (if both are set)
+function onDateChange() {
+  const f = document.getElementById('fromDate').value;
+  const t = document.getElementById('toDate').value;
+  if (!f || !t) return;
+  if (f > t) { document.getElementById('toDate').value = f; }
+  closePanels();
+  if (currentProductTab) loadProductTab(currentProductTab);
+  else loadData();
+}
+document.getElementById('fromDate').addEventListener('change', onDateChange);
+document.getElementById('toDate').addEventListener('change', onDateChange);
+
 // CEO is default tab — hide ndap controls on load
 document.querySelectorAll('.ndap-ctrl').forEach(c => { c.style.display = 'none'; });
 
