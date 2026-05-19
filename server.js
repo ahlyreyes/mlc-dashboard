@@ -366,6 +366,7 @@ async function fetchPancakeSalesByDate() {
 
     const salesByDate = {};       // keyed by adId — for per-ad NDAP matching
     const clearSightByDate = {};  // ALL Clear Sight sales incl. no-ad rows
+    const allSalesByDate   = {};  // ALL products total (Clear Sight + Haplunas + others)
 
     let skipNoDate=0, skipCancel=0, skipNonClearSight=0, countedCS=0;
 
@@ -426,17 +427,22 @@ async function fetchPancakeSalesByDate() {
       } else {
         skipNonClearSight++;
       }
+
+      // ── All-products total (incl. Haplunas, all sellers, cancelled) ──
+      if (!allSalesByDate[dateStr]) allSalesByDate[dateStr] = { sales: 0, orders: 0 };
+      allSalesByDate[dateStr].sales  += price;
+      allSalesByDate[dateStr].orders += 1;
     }
 
     console.log(`📊 Pancake parse: ${countedCS} Clear Sight rows counted, ${skipCancel} cancelled, ${skipNoDate} no-date, ${skipNonClearSight} non-CS`);
     console.log('📅 clearSightByDate totals:', Object.entries(clearSightByDate).map(([d,v])=>`${d}:₱${v.sales.toFixed(0)}(${v.orders})`).join(', '));
 
-    const result = { salesByDate, clearSightByDate };
+    const result = { salesByDate, clearSightByDate, allSalesByDate };
     cacheSet(pancakeCache, 'pancake', result);
     return result;
   } catch(e) {
     console.error('Pancake CSV error:', e.message);
-    return { salesByDate: {}, clearSightByDate: {} };
+    return { salesByDate: {}, clearSightByDate: {}, allSalesByDate: {} };
   }
 }
 
@@ -771,7 +777,7 @@ app.get('/api/ndap', requireAuth, async (req, res) => {
     const [pancakeData, budgetMap, activeAdsList] = await Promise.all([
       fetchPancakeSalesByDate(), fetchAllBudgets(), fetchAllActiveAds()
     ]);
-    const { salesByDate, clearSightByDate } = pancakeData;
+    const { salesByDate, clearSightByDate, allSalesByDate } = pancakeData;
 
     // Build adMap keyed by adId — all 14 active ads pre-seeded so none get dropped
     const adMap = {};
@@ -899,7 +905,7 @@ app.get('/api/ndap', requireAuth, async (req, res) => {
       return ia - ib;
     });
 
-    const result = { dates, campaigns: activeCampaigns, clearSightByDate };
+    const result = { dates, campaigns: activeCampaigns, clearSightByDate, allSalesByDate };
     res.json(result);
   } catch(e) {
     res.status(500).json({ error: e.message });

@@ -213,7 +213,7 @@ async function load(days) {
     if (!res.ok) throw new Error('Server error');
     const data = await res.json();
     const campaigns = data.campaigns || [];
-    const clearSightByDate = data.clearSightByDate || {};
+    const allSalesByDate = data.allSalesByDate || {};
 
     let totalSpend = 0, totalMessages = 0;
     for (const c of campaigns) {
@@ -223,10 +223,10 @@ async function load(days) {
       }
     }
 
-    // Use Clear Sight sales from Pancake filtered to the selected date range
+    // Use all-product sales (Clear Sight + Haplunas + others) for the selected date range
     let totalSales = 0, totalOrders = 0;
     for (const date of (data.dates || [])) {
-      const dateData = clearSightByDate[date];
+      const dateData = allSalesByDate[date];
       if (!dateData) continue;
       totalSales  += dateData.sales  || 0;
       totalOrders += dateData.orders || 0;
