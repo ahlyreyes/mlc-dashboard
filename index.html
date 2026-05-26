@@ -1343,6 +1343,9 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
           </div>
         </div>
 
+        <!-- Ad Spend Breakdown Table -->
+        <div id="analyticsSpendTable" style="display:none;margin-top:24px"></div>
+
         <div id="analyticsEmpty" style="display:none;text-align:center;padding:60px;color:var(--muted);font-size:13px">Select a date range and click Load.</div>
       </div>
     </div>
@@ -2733,6 +2736,7 @@ async function loadAnalytics() {
   document.getElementById('loading-analytics').style.display = 'block';
   document.getElementById('analyticsKpis').style.display = 'none';
   document.getElementById('analyticsCharts').style.display = 'none';
+  document.getElementById('analyticsSpendTable').style.display = 'none';
   document.getElementById('analyticsEmpty').style.display = 'none';
   destroyCharts();
 
@@ -2820,6 +2824,68 @@ async function loadAnalytics() {
     });
 
     document.getElementById('analyticsCharts').style.display = 'block';
+
+    // ── Ad Spend Breakdown Table: Brand → Product → Ad Account ──
+    const brandForProduct = {};
+    for (const { brand, products } of BRAND_MAP) {
+      for (const p of products) brandForProduct[p] = brand;
+    }
+    // breakdown[brand][product][accountName] = spend
+    const breakdown = {};
+    for (const c of campaigns) {
+      const prod  = (c.product || 'Other').toUpperCase();
+      const brand = brandForProduct[prod] || 'Other';
+      const acct  = c.accountName || 'Unknown';
+      if (!breakdown[brand])       breakdown[brand] = {};
+      if (!breakdown[brand][prod]) breakdown[brand][prod] = {};
+      breakdown[brand][prod][acct] = (breakdown[brand][prod][acct] || 0) + (c.totalSpend || 0);
+    }
+    let tbl = `<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:10px">Ad Spend Breakdown</div>
+<table style="width:100%;border-collapse:collapse;font-size:12px">
+  <thead>
+    <tr style="background:var(--surface2,#f1f5f9);color:var(--muted2,#64748b);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em">
+      <th style="padding:8px 12px;text-align:left;border-bottom:1px solid var(--border)">Brand</th>
+      <th style="padding:8px 12px;text-align:left;border-bottom:1px solid var(--border)">Product</th>
+      <th style="padding:8px 12px;text-align:left;border-bottom:1px solid var(--border)">Ad Account</th>
+      <th style="padding:8px 12px;text-align:right;border-bottom:1px solid var(--border)">Total Ad Spent</th>
+    </tr>
+  </thead><tbody>`;
+    let grandTotal = 0;
+    for (const [brand, prods] of Object.entries(breakdown)) {
+      let brandTotal = 0, brandFirst = true;
+      const brandRows = [];
+      for (const [prod, accts] of Object.entries(prods)) {
+        let prodTotal = 0, prodFirst = true;
+        for (const [acct, spend] of Object.entries(accts)) {
+          prodTotal += spend; grandTotal += spend;
+          brandRows.push({ brand, brandFirst, prod, prodFirst, acct, spend });
+          brandFirst = false; prodFirst = false;
+        }
+      }
+      let bFirst = true;
+      for (const row of brandRows) {
+        const brandCell = bFirst ? `<td rowspan="${brandRows.length}" style="padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:top;font-weight:600;white-space:nowrap">${row.brand}</td>` : '';
+        bFirst = false;
+        // count rows for this product
+        const prodRows = brandRows.filter(r => r.prod === row.prod);
+        const prodCell = row.prodFirst
+          ? `<td rowspan="${prodRows.length}" style="padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:top;color:var(--muted)">${row.prod}</td>`
+          : '';
+        tbl += `<tr style="border-bottom:1px solid var(--border)">
+          ${brandCell}${prodCell}
+          <td style="padding:8px 12px">${row.acct}</td>
+          <td style="padding:8px 12px;text-align:right;font-weight:600;color:var(--text)">${PHP(row.spend)}</td>
+        </tr>`;
+      }
+    }
+    tbl += `<tr style="background:var(--surface2,#f1f5f9);font-weight:700">
+      <td colspan="3" style="padding:9px 12px;text-align:right;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted2)">Grand Total</td>
+      <td style="padding:9px 12px;text-align:right;font-size:13px;color:var(--text)">${PHP(grandTotal)}</td>
+    </tr></tbody></table>`;
+    const spendTableEl = document.getElementById('analyticsSpendTable');
+    spendTableEl.innerHTML = tbl;
+    spendTableEl.style.display = 'block';
+
     document.getElementById('analyticsUpdated').textContent = 'Updated ' + new Date().toLocaleTimeString('en-PH');
   } catch(e) {
     document.getElementById('analyticsEmpty').textContent = 'Error: ' + e.message;
