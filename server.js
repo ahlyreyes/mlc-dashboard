@@ -713,6 +713,37 @@ app.get('/api/debug-pancake', requireAuth, async (req, res) => {
   res.json({ clearSightByDate: data.clearSightByDate });
 });
 
+// Debug: inspect raw pages.fm v2 response structure (1 page only)
+app.get('/api/debug-pancake-v2', requireAuth, async (req, res) => {
+  const pageId = req.query.pageId || '183224001550935';
+  const token  = PANCAKE_PAGE_TOKENS[pageId];
+  if (!token) return res.status(400).json({ error: 'No token for pageId' });
+  const date  = req.query.date || new Date().toISOString().split('T')[0];
+  const since = Math.floor(new Date(date + 'T00:00:00+08:00').getTime() / 1000);
+  const until = Math.floor(new Date(date + 'T23:59:59+08:00').getTime() / 1000);
+  const lastId = req.query.lastId || null;
+  let url = `https://pages.fm/api/public_api/v2/pages/${pageId}/conversations` +
+    `?page_access_token=${token}&type=INBOX&since=${since}&until=${until}&limit=60`;
+  if (lastId) url += `&last_conversation_id=${lastId}`;
+  try {
+    const raw = await fetchJson(url);
+    const convs = raw.conversations || raw.data || [];
+    res.json({
+      topLevelKeys: Object.keys(raw),
+      has_more: raw.has_more,
+      total: raw.total,
+      convCount: convs.length,
+      firstConvKeys: convs[0] ? Object.keys(convs[0]) : [],
+      firstConvId: convs[0]?.id,
+      firstConvAssignUsers: convs[0]?.current_assign_users,
+      lastConvId: convs[convs.length-1]?.id,
+      sampleAssignees: convs.slice(0,5).map(c=>({ id:c.id, assignUsers:c.current_assign_users })),
+    });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // Action log routes
 app.post('/api/action-log', requireAuth, async (req, res) => {
   const { campaign_key, campaign_name, ad_account, date, recommendation, action_taken, new_budget, notes } = req.body;
