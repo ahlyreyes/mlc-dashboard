@@ -167,7 +167,7 @@ async function fetchPancakeConvsV2(pageId, token, sinceTs, untilTs) {
       const res = await fetchJson(url);
       const convs = res.conversations || res.data || [];
       allConvs.push(...convs);
-      if (!res.has_more || convs.length === 0) break;
+      if (convs.length < 60) break; // partial page = last page (API has no has_more field)
       lastId = convs[convs.length - 1].id;
     } catch(e) {
       console.warn(`Pancake v2 conv fetch error ${pageId}: ${e.message}`);
