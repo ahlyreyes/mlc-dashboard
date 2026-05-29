@@ -144,6 +144,49 @@ const PANCAKE_PAGE_TOKENS = {
 const PANCAKE_TOKEN = process.env.PANCAKE_TOKEN || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpbmZvIjp7Im9zIjoxLCJjbGllbnRfaXAiOiI2NC4yMjQuOTcuMTU0IiwiYnJvd3NlciI6MSwiZGV2aWNlX3R5cGUiOjN9LCJuYW1lIjoiQ2xhcmljZSBEYWxvbmRvbmFuIiwiZXhwIjoxNzgyMzA1MTQzLCJhcHBsaWNhdGlvbiI6MSwidWlkIjoiMWNjYjM3YTgtZjQ4NS00ZjdiLWJiMWQtZjhjNTQ0Nzg4NWM2Iiwic2Vzc2lvbl9pZCI6ImQ3MDM5OWFhLTIxYTMtNDRmZi05ZmI5LWVmMDBjNzI3YmE2YSIsImlhdCI6MTc3NDUyOTE0MywiZmJfaWQiOiIxMjIxMTI2MzIwNDg5OTY4NTUiLCJsb2dpbl9zZXNzaW9uIjpudWxsLCJmYl9uYW1lIjoiQ2xhcmljZSBEYWxvbmRvbmFuIn0.FUzLeVPKVMDqbruljozSc93SBsX76gj0HMfeiv4kpAA';
 function pageToken(pageId) { return PANCAKE_PAGE_TOKENS[pageId] || PANCAKE_TOKEN; }
 
+// Pages used for per-FSA inquiry count (v2 API, both combined)
+const CS_INQUIRY_PAGES = [
+  { pageId: '183224001550935', token: PANCAKE_PAGE_TOKENS['183224001550935'] }, // CS OPTICAL CARE
+  { pageId: '562290783624265', token: PANCAKE_PAGE_TOKENS['562290783624265'] }, // CS EYE DROPS
+];
+
+// Fetch conversations via pages.fm v2 API — returns current_assign_users per conv
+async function fetchPancakeConvsV2(pageId, token, sinceTs, untilTs) {
+  const cacheKey = `conv_v2_${pageId}_${sinceTs}_${untilTs}`;
+  const cached = cacheGet(pancakeConvCache, cacheKey, TTL_PANCAKE_CONV);
+  if (cached) return cached;
+
+  const allConvs = [];
+  let lastId = null;
+  let loops = 0;
+  while (true) {
+    let url = `https://pages.fm/api/public_api/v2/pages/${pageId}/conversations` +
+      `?page_access_token=${token}&type=INBOX&since=${sinceTs}&until=${untilTs}&limit=60`;
+    if (lastId) url += `&last_conversation_id=${lastId}`;
+    try {
+      const res = await fetchJson(url);
+      const convs = res.conversations || res.data || [];
+      allConvs.push(...convs);
+      if (!res.has_more || convs.length === 0) break;
+      lastId = convs[convs.length - 1].id;
+    } catch(e) {
+      console.warn(`Pancake v2 conv fetch error ${pageId}: ${e.message}`);
+      break;
+    }
+    if (++loops >= 500) break;
+  }
+
+  cacheSet(pancakeConvCache, cacheKey, allConvs);
+  return allConvs;
+}
+
+// Fuzzy name match: true if either name is a substring of the other (lowercase, no spaces)
+function fsaNameMatch(a, b) {
+  const na = (a || '').toLowerCase().replace(/\s+/g, '');
+  const nb = (b || '').toLowerCase().replace(/\s+/g, '');
+  return na.length > 0 && nb.length > 0 && (na.includes(nb) || nb.includes(na));
+}
+
 // Clear Sight main FSAs — shown first in the report; other sellers appear after
 const CS_FSA_PRIORITY = ['John Hovey Cabatic', 'Lex Dela Cruz'];
 
@@ -1053,7 +1096,26 @@ app.get('/api/aov-cvr', requireAuth, async (req, res) => {
       }
     }
 
-    res.json({ from: fromDate, to: toDate, orders, pageInquiries, fsaPriority: CS_FSA_PRIORITY });
+    // Step 6 — Per-FSA inquiry count via pages.fm v2 API (both CS pages combined)
+    // PHT = UTC+8; convert date range to Unix timestamps
+    const sinceTs = Math.floor(new Date(fromDate + 'T00:00:00+08:00').getTime() / 1000);
+    const untilTs = Math.floor(new Date(toDate   + 'T23:59:59+08:00').getTime() / 1000);
+
+    const v2ConvArrays = await Promise.all(
+      CS_INQUIRY_PAGES.map(({ pageId, token }) => fetchPancakeConvsV2(pageId, token, sinceTs, untilTs))
+    );
+    // Count conversations per Pancake assignee name (all pages combined)
+    const fsaInquiries = {}; // pancakeName → count
+    for (const convs of v2ConvArrays) {
+      for (const conv of convs) {
+        for (const user of (conv.current_assign_users || [])) {
+          const name = (user.name || '').trim();
+          if (name) fsaInquiries[name] = (fsaInquiries[name] || 0) + 1;
+        }
+      }
+    }
+
+    res.json({ from: fromDate, to: toDate, orders, pageInquiries, fsaInquiries, fsaPriority: CS_FSA_PRIORITY });
   } catch(e) {
     console.error('aov-cvr error:', e.message);
     res.status(500).json({ error: e.message });

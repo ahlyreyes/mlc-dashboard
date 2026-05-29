@@ -306,8 +306,15 @@ function dayLabel(dateStr) {
   return `${day}, ${mon} ${d.getDate()}`;
 }
 
+// Fuzzy match: true if either name is a subset of the other (case-insensitive, no spaces)
+function fsaNameMatch(a, b) {
+  const na = (a||'').toLowerCase().replace(/\s+/g,'');
+  const nb = (b||'').toLowerCase().replace(/\s+/g,'');
+  return na.length>0 && nb.length>0 && (na.includes(nb)||nb.includes(na));
+}
+
 function renderReport(data) {
-  const { from, to, orders, pageInquiries, fsaPriority=[] } = data;
+  const { from, to, orders, pageInquiries, fsaInquiries={}, fsaPriority=[] } = data;
   const dateLabel = from===to ? dayLabel(from) : `${from} – ${to}`;
 
   // Group by seller
@@ -323,7 +330,6 @@ function renderReport(data) {
     .sort((a,b) => fsaGroups[b].reduce((s,o)=>s+o.amount,0) - fsaGroups[a].reduce((s,o)=>s+o.amount,0));
   const allSellers = [...fsaPriority.filter(s=>fsaGroups[s]), ...others];
 
-  const totalSDI = Object.values(pageInquiries).reduce((s,p)=>s+p.sdi,0);
   const grandTotal = orders.reduce((s,o)=>s+o.amount,0);
   const grandOrders = orders.length;
 
@@ -335,13 +341,16 @@ function renderReport(data) {
 
   const isSingleDay = from === to;
   for (const name of allSellers) {
-    html += renderFSACard(name, fsaGroups[name]||[], dateLabel, pageInquiries, totalSDI, isSingleDay);
+    // Find matching Pancake FSA name for inquiry count
+    const pancakeName = Object.keys(fsaInquiries).find(k => fsaNameMatch(k, name)) || null;
+    const fsaInqCount = pancakeName ? fsaInquiries[pancakeName] : 0;
+    html += renderFSACard(name, fsaGroups[name]||[], dateLabel, pageInquiries, fsaInqCount, isSingleDay);
   }
 
   document.getElementById('reportRoot').innerHTML = html || '<div class="state-msg">No data found for this date range.</div>';
 }
 
-function renderFSACard(fsaName, orders, dateLabel, pageInquiries, totalSDI, showOrders=true) {
+function renderFSACard(fsaName, orders, dateLabel, pageInquiries, fsaInqCount, showOrders=true) {
   const totalSales  = orders.reduce((s,o)=>s+o.amount,0);
   const sdiOrders   = orders.filter(o=>o.typeOfInq==='SDI');
   const fuiOrders   = orders.filter(o=>o.typeOfInq==='FUI');
@@ -353,7 +362,7 @@ function renderFSACard(fsaName, orders, dateLabel, pageInquiries, totalSDI, show
   const pickupRate  = contactedCx>0 ? calledCx/contactedCx : 0;
   const upsellCount = orders.filter(o=>o.upsells==='AI UPSELL'||o.upsells==='FSA UPSELL').length;
   const upsellRate  = orderCount>0 ? upsellCount/orderCount : 0;
-  const cvrPct      = totalSDI>0 ? sdiOrders.length/totalSDI : 0;
+  const cvrPct      = fsaInqCount>0 ? orderCount/fsaInqCount : 0;
   const aov         = orderCount>0 ? totalSales/orderCount : 0;
 
   // Stats
@@ -465,12 +474,12 @@ function renderFSACard(fsaName, orders, dateLabel, pageInquiries, totalSDI, show
         <!-- CVR -->
         <div class="kpi-section">
           <div class="cvr-bar-track"><div class="cvr-bar-fill" style="width:${cvrBarW}%"></div></div>
-          <div class="cvr-pct">${totalSDI>0?PCT(cvrPct,2):'—'}</div>
+          <div class="cvr-pct">${fsaInqCount>0?PCT(cvrPct,2):'—'}</div>
           <div class="kpi-section-label">CVR</div>
         </div>
         <!-- # Inquiries -->
         <div class="kpi-section">
-          <div class="kpi-section-big">${FMT(totalSDI)}</div>
+          <div class="kpi-section-big">${fsaInqCount>0?FMT(fsaInqCount):'—'}</div>
           <div class="kpi-section-label">No. of Inquiries</div>
         </div>
         <!-- AOV -->
