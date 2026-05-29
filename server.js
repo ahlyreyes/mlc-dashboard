@@ -1008,6 +1008,8 @@ app.get('/api/aov-cvr', requireAuth, async (req, res) => {
 
       const amount        = parseFloat((row['unit price'] || '0').replace(/,/g, '')) || 0;
       const status        = (row['status'] || '').trim();
+      if (status.toUpperCase().includes('CANCEL')) continue;
+
       const cxName        = (row['customer'] || '').trim();
       const contactNumber = (row['contact number'] || '').trim();
 
