@@ -254,6 +254,13 @@ function normPhone(p) {
   return (p + '').replace(/\D/g, '').slice(-10);
 }
 
+// Convert a UTC ISO timestamp to Philippine Time (UTC+8) date string YYYY-MM-DD
+function toPHTDateStr(isoStr) {
+  if (!isoStr) return '';
+  const pht = new Date(new Date(isoStr).getTime() + 8 * 60 * 60 * 1000);
+  return pht.toISOString().split('T')[0];
+}
+
 // Extract phone from a Pancake conversation object
 function getConvPhone(conv) {
   const customers = conv.customers || [];
@@ -1058,70 +1065,45 @@ app.get('/api/aov-cvr', requireAuth, async (req, res) => {
       Promise.all(pageIdList.map(async pid => ({ pid, tagDefs: await fetchPancakeTagDefs(pid) }))),
     ]);
 
-    // pid → { byPhone: { normPhone → conv }, byName: { normName → conv } }
-    const convLookup    = {};
+    // Build flat phone lookup: "pageId|normPhone" → conv  +  tag def map
+    const convByPhone   = {}; // "pageId|normPhone" → conv
     const tagDefsMap    = {}; // pid → { tagId → tagName }
-    const pageInquiries = {}; // pid → { shortName, sdi }
+    const pageInquiries = {}; // pid → { shortName }
 
     for (const { pid, tagDefs } of tagResults) tagDefsMap[pid] = tagDefs;
 
     for (const { pid, convs } of convResults) {
-      convLookup[pid] = { byPhone: {}, byName: {} };
-      let sdiCount = 0;
+      pageInquiries[pid] = { shortName: PANCAKE_PAGE_META[pid]?.short || pid };
       for (const conv of convs) {
-        // Count inquiries by updated_at (Pancake filters by last-activity date)
-        const updatedDate = (conv.updated_at || conv.inserted_at || '').split('T')[0];
-        if (updatedDate >= fromDate && updatedDate <= toDate) sdiCount++;
-
-        // Phone index (first conv per phone wins)
         const phone = normPhone(getConvPhone(conv));
-        if (phone && !convLookup[pid].byPhone[phone]) {
-          convLookup[pid].byPhone[phone] = conv;
-        }
-
-        // Name index (first conv per name wins)
-        const name = normCxName(getConvName(conv));
-        if (name && !convLookup[pid].byName[name]) {
-          convLookup[pid].byName[name] = conv;
-        }
+        const key   = pid + '|' + phone;
+        if (phone && !convByPhone[key]) convByPhone[key] = conv;
       }
-      pageInquiries[pid] = { shortName: PANCAKE_PAGE_META[pid]?.short || pid, sdi: sdiCount };
     }
 
-    // Step 5 — Enrich orders: correct SDI/FUI classification + Pancake tag data
+    // Step 5 — SDI/FUI classification + tag enrichment
+    // SDI = phone match found AND conv was created on toDate (PHT)
+    // FUI = phone match found but conv created on a different day
+    //       OR no phone match (hidden phone, name-only, or no match at all)
+    // NO PAGE = order has no mapped Pancake page (excluded from SDI/CVR)
     const REMARK_TAGS = ['CALLED', 'UNATTENDED', 'CBR', 'CVC'];
     for (const order of orders) {
-      if (!order.pageId) continue;
-      const lookup  = convLookup[order.pageId];
-      if (!lookup) continue;
-      const tagDefs = tagDefsMap[order.pageId] || {};
-
-      let matchedConv = null;
-
-      // Step 1: Phone match (most accurate)
-      const orderPhone = normPhone(order.contactNumber);
-      if (orderPhone && lookup.byPhone[orderPhone]) {
-        const conv = lookup.byPhone[orderPhone];
-        if (conv.has_phone !== false) {
-          // Use creation date — inserted_at or created_at; avoid updated_at (changes per message)
-          const convDate = (conv.inserted_at || conv.created_at || '').split('T')[0];
-          if (convDate === order.date) order.typeOfInq = 'SDI';
-          // else different day → FUI (already default)
-          matchedConv = conv;
-        }
-        // has_phone === false → phone hidden → FUI, no match used
-      } else {
-        // Step 2: Name match fallback (always FUI)
-        const normN = normCxName(order.cxName);
-        if (normN && lookup.byName[normN]) {
-          matchedConv = lookup.byName[normN];
-          // typeOfInq stays 'FUI'
-        }
-        // Step 3: No match → FUI (already default)
+      if (!order.pageId) {
+        order.typeOfInq = 'NO PAGE';
+        continue;
       }
 
-      if (matchedConv) {
-        const convTagNames = (matchedConv.tags || []).map(id => tagDefs[id] || '').filter(Boolean);
+      const orderPhone = normPhone(order.contactNumber);
+      const convKey    = order.pageId + '|' + orderPhone;
+      const conv       = orderPhone ? convByPhone[convKey] : null;
+      const tagDefs    = tagDefsMap[order.pageId] || {};
+
+      if (conv && conv.has_phone !== false) {
+        // Phone matched — determine SDI vs FUI by creation date in PHT vs report end date
+        const convDate = toPHTDateStr(conv.inserted_at || conv.created_at);
+        order.typeOfInq = (convDate === toDate) ? 'SDI' : 'FUI';
+
+        const convTagNames = (conv.tags || []).map(id => tagDefs[id] || '').filter(Boolean);
         order.remarks = convTagNames.filter(t => REMARK_TAGS.includes(t));
         if (convTagNames.includes('AI UPSELL'))       order.upsells = 'AI UPSELL';
         else if (convTagNames.includes('FSA UPSELL')) order.upsells = 'FSA UPSELL';
@@ -1129,6 +1111,7 @@ app.get('/api/aov-cvr', requireAuth, async (req, res) => {
         else if (convTagNames.includes('TELECONSULT'))     order.remarksForOrder = 'TELECONSULT';
         else if (convTagNames.includes('AUTO ORDER'))      order.remarksForOrder = 'AUTO ORDER';
       }
+      // else: hidden phone, no phone in CSV, or no match → FUI (already default)
     }
 
     // Step 6 — Per-FSA inquiry count via pages.fm v2 API (both CS pages combined)
