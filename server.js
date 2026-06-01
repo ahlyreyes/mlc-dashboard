@@ -126,6 +126,7 @@ const PANCAKE_CSV_URLS = [
   process.env.PANCAKE_CSV_URL || 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRRmBJlKTC1iFdU5mcZ8sQlWkHuxAtYxezNnAO1ggj1wKh1_ki045CTbDw6aV2FvVL5tBV42gMHilio/pub?gid=0&single=true&output=csv',
   process.env.PANCAKE_CSV_URL_APRIL || 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSWfevqFhSyLoIFwvwFFdgFY3NzyhTOu6nbW3_2CfhI460Etz60TPWH2yA1TkVfG2y439O43BOvXHb4/pub?gid=0&single=true&output=csv',
   'https://docs.google.com/spreadsheets/d/e/2PACX-1vQKR8ZYu_ov1xrnk99ronJjmnnMMJqJ9orMR5LJDLUT35K4CzUYKW84ryywFg-K9rTQayZbEIY5PrBr/pub?output=csv', // May 2026
+  'https://docs.google.com/spreadsheets/d/e/2PACX-1vS80NfIGrjxEXGi-KN4hxYh5GlMxlWPmxco7OchDT29n9nm_fCuyJyuL9auyXa2iAx7yBUv75aPDgs3/pub?output=csv', // June 2026
 ];
 
 // MLC mainfile — source for AOV & CVR FSA report (John Hovey Cabatic, Lex Dela Cruz)
@@ -133,6 +134,7 @@ const PANCAKE_CSV_URLS = [
 const MLC_MAINFILE_CSV_URLS = [
   'https://docs.google.com/spreadsheets/d/e/2PACX-1vRTziENAURT5p8ix0v0FOizV9a_i-p4Igeovw21jv09aqbJbqvsjKMEftGVfG8Dm0rmVvcKUv0MQkul/pub?output=csv', // April 2026
   'https://docs.google.com/spreadsheets/d/e/2PACX-1vQKR8ZYu_ov1xrnk99ronJjmnnMMJqJ9orMR5LJDLUT35K4CzUYKW84ryywFg-K9rTQayZbEIY5PrBr/pub?output=csv',   // May 2026
+  'https://docs.google.com/spreadsheets/d/e/2PACX-1vS80NfIGrjxEXGi-KN4hxYh5GlMxlWPmxco7OchDT29n9nm_fCuyJyuL9auyXa2iAx7yBUv75aPDgs3/pub?output=csv',   // June 2026
 ];
 
 // Per-page Pancake access tokens (page-scoped, longer-lived)
