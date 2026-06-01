@@ -1124,17 +1124,12 @@ app.get('/api/aov-cvr', requireAuth, async (req, res) => {
       CS_INQUIRY_PAGES.map(({ pageId, token }) => fetchPancakeConvsV2(pageId, token, sinceTs, untilTs))
     );
     // Count conversations per Pancake assignee name (all pages combined)
-    // Only count conversations CREATED within the date range (inserted_at).
-    // The v2 API since/until filters by updated_at (last activity), not creation date,
-    // so we must filter client-side to exclude old convs that just got a new message.
-    const sinceTsMs = sinceTs * 1000;
-    const untilTsMs = untilTs * 1000;
-
+    // Count all conversations assigned to each FSA that were active on the date range.
+    // The v2 API since/until already filters by last-activity date, so every conv
+    // returned was handled by someone on the target day.
     const fsaInquiries = {}; // pancakeName → count
     for (const convs of v2ConvArrays) {
       for (const conv of convs) {
-        const createdTs = conv.inserted_at ? new Date(conv.inserted_at).getTime() : 0;
-        if (createdTs < sinceTsMs || createdTs > untilTsMs) continue;
         for (const user of (conv.current_assign_users || [])) {
           const name = (user.name || '').trim();
           if (name) fsaInquiries[name] = (fsaInquiries[name] || 0) + 1;
