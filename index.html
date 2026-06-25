@@ -1681,7 +1681,7 @@ async function check3PMAlert() {
   const now   = new Date();
   const hour  = now.getHours();
   if (hour < 15) return;
-  const today = now.toISOString().split('T')[0];
+  const today = bizToday();
   const key   = 'spendAlertShown_' + today;
   if (localStorage.getItem(key)) return;
   localStorage.setItem(key, '1');
@@ -1713,13 +1713,15 @@ async function check3PMAlert() {
   } catch(e) {}
 }
 
+// ── BUSINESS "TODAY" — day rolls over at 5 AM PHT ──
+// PHT = UTC+8; a +3h shift makes UTC-midnight fall on 5 AM PHT.
+const BIZ_OFFSET_MS = 3 * 60 * 60 * 1000;
+function bizToday()        { return new Date(Date.now() + BIZ_OFFSET_MS).toISOString().split('T')[0]; }
+function bizTodayMinus(n)  { const d = new Date(Date.now() + BIZ_OFFSET_MS); d.setUTCDate(d.getUTCDate() - n); return d.toISOString().split('T')[0]; }
+
 // ── DATE INIT — default 3 days (today-2 → today) ──
-const _todayD  = new Date();
-const _fromD   = new Date(); _fromD.setDate(_fromD.getDate() - 2);
-const _today   = _todayD.toISOString().split('T')[0];
-const _from3   = _fromD.toISOString().split('T')[0];
-document.getElementById('toDate').value   = _today;
-document.getElementById('fromDate').value = _from3;
+document.getElementById('toDate').value   = bizToday();
+document.getElementById('fromDate').value = bizTodayMinus(2);
 
 // Auto-refresh + close panel when either date changes (if both are set)
 function onDateChange() {
@@ -2329,10 +2331,8 @@ function switchTab(tab, el) {
     const fromEl = document.getElementById('fromDate');
     const toEl   = document.getElementById('toDate');
     if (!fromEl.value || !toEl.value) {
-      const _t = new Date(), _f = new Date();
-      _f.setDate(_f.getDate() - 2);
-      toEl.value   = _t.toISOString().split('T')[0];
-      fromEl.value = _f.toISOString().split('T')[0];
+      toEl.value   = bizToday();
+      fromEl.value = bizTodayMinus(2);
     }
   }
   if (tab === 'ceo')       loadCEO();
@@ -2390,7 +2390,7 @@ async function loadChecklist() {
   document.getElementById('checklistLoading').style.display = 'block';
   document.getElementById('checklistContainer').innerHTML = '';
   try {
-    const endDate = document.getElementById('toDate').value || new Date().toISOString().split('T')[0];
+    const endDate = document.getElementById('toDate').value || bizToday();
     const [ndapRes, budgetRes] = await Promise.all([
       fetch(`/api/ndap?endDate=${endDate}&days=1`),
       fetch(`/api/budgets/${endDate}`)
@@ -2535,7 +2535,7 @@ let sortBy = 'default';
 
 // ── CEO SUMMARY ──
 async function loadCEO() {
-  const today = new Date().toISOString().split('T')[0];
+  const today = bizToday();
   document.getElementById('loading-ceo').style.display = 'block';
   document.getElementById('ceoKpis').style.display = 'none';
   try {

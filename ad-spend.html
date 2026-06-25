@@ -204,10 +204,13 @@ function setRangeLabel(days, endDateStr) {
   }
 }
 
+// Business "today" — day rolls over at 5 AM PHT (PHT = UTC+8; +3h shift = UTC midnight at 5 AM PHT)
+function bizToday() { return new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString().split('T')[0]; }
+
 async function load(days) {
   document.getElementById('kpiSection').innerHTML = '<div class="state-msg">Loading...</div>';
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = bizToday();
   setRangeLabel(days, today);
   try {
     const res = await fetch(`/api/ndap?endDate=${today}&days=${days}`);
