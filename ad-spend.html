@@ -237,10 +237,14 @@ async function load() {
   const days   = Math.max(1, Math.round((new Date(toDate) - new Date(fromDate)) / 86400000) + 1);
   const dayLbl = days === 1 ? 'for 1 day' : `for ${days} days`;
   try {
-    const res = await fetch(`/api/ndap?from=${fromDate}&to=${toDate}`);
+    const [res, inqRes] = await Promise.all([
+      fetch(`/api/ndap?from=${fromDate}&to=${toDate}`),
+      fetch(`/api/inquiries-hourly?from=${fromDate}&to=${toDate}`)
+    ]);
     if (!res.ok) throw new Error('Server error');
     const data = await res.json();
     if (data.error) throw new Error(data.error);
+    const inq = inqRes.ok ? await inqRes.json() : { morning: 0, evening: 0 };
     const campaigns = data.campaigns || [];
     const allSalesByDate = data.allSalesByDate || {};
 
@@ -297,6 +301,16 @@ async function load() {
           <div class="kpi-label">Total Sales</div>
           <div class="kpi-value">${fmt(totalSales)}</div>
           <div class="kpi-sub">${dayLbl}</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Inquiries · 6AM–3PM</div>
+          <div class="kpi-value">${Number(inq.morning||0).toLocaleString('en-PH')}</div>
+          <div class="kpi-sub">Morning (PHT)</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Inquiries · 3PM–12AM</div>
+          <div class="kpi-value">${Number(inq.evening||0).toLocaleString('en-PH')}</div>
+          <div class="kpi-sub">Afternoon–Evening (PHT)</div>
         </div>
       </div>
     `;

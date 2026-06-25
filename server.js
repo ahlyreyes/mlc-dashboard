@@ -1021,6 +1021,48 @@ app.get('/api/ndap', requireAuth, async (req, res) => {
   }
 });
 
+// Inquiries (messaging conversations started) split by PHT time-of-day window.
+// morning = 6 AM–3 PM, evening = 3 PM–12 AM. Uses Meta hourly breakdown
+// (advertiser time zone = Asia/Manila for these accounts).
+app.get('/api/inquiries-hourly', requireAuth, async (req, res) => {
+  try {
+    const from = req.query.from;
+    const to   = req.query.to || from;
+    if (!from) return res.status(400).json({ error: 'from required' });
+    const cacheKey = `inq_${from}_${to}`;
+    const cached = cacheGet(metaInsightsCache, cacheKey, TTL_META);
+    if (cached) return res.json(cached);
+
+    let morning = 0, evening = 0; // 6AM–3PM, 3PM–12AM
+    for (const acc of AD_ACCOUNTS) {
+      let nextUrl = `https://graph.facebook.com/v19.0/${acc.id}/insights` +
+        `?level=account&fields=actions&breakdowns=hourly_stats_aggregated_by_advertiser_time_zone` +
+        `&time_range={"since":"${from}","until":"${to}"}&limit=500&access_token=${acc.token || ''}`;
+      try {
+        while (nextUrl) {
+          const r = await fetchJson(nextUrl);
+          if (r.error) { console.warn(`⚠️ inquiries-hourly ${acc.name}: ${r.error.message}`); break; }
+          for (const row of (r.data || [])) {
+            const hourStr = row.hourly_stats_aggregated_by_advertiser_time_zone || '';
+            const hr = parseInt(hourStr.slice(0, 2));
+            const msgAct = (row.actions || []).find(a =>
+              a.action_type === 'onsite_conversion.total_messaging_connection' ||
+              a.action_type === 'onsite_conversion.messaging_conversation_started_7d'
+            );
+            const v = msgAct ? parseInt(msgAct.value) : 0;
+            if (hr >= 6 && hr < 15)       morning += v;
+            else if (hr >= 15 && hr <= 23) evening += v;
+          }
+          nextUrl = r.paging && r.paging.next ? r.paging.next : null;
+        }
+      } catch(e) { console.warn(`⚠️ inquiries-hourly fetch ${acc.name}: ${e.message}`); }
+    }
+    const result = { from, to, morning, evening, total: morning + evening };
+    cacheSet(metaInsightsCache, cacheKey, result);
+    res.json(result);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/aov-cvr', requireAuth, async (req, res) => {
   try {
     const fromDate = req.query.from || new Date().toISOString().split('T')[0];
