@@ -498,9 +498,11 @@ function renderKpis() {
         </div>
       </div>
     </div>`;
-  // sync tab + table highlight
+  // sync tab highlight
   document.querySelectorAll('.tab').forEach(el => el.classList.toggle('active', el.dataset.key === currentKey));
-  document.querySelectorAll('.breakdown-table .row-click').forEach(el => el.classList.toggle('active', el.dataset.key === currentKey));
+  // Compare table only shows for "All Products"
+  const bc = document.getElementById('breakdownCard');
+  if (bc) bc.style.display = currentKey === 'ALL' ? '' : 'none';
 }
 
 function renderTabs() {
@@ -545,7 +547,7 @@ function renderAll() {
   document.getElementById('contentSection').innerHTML = `
     <div class="product-tabs" id="productTabs"></div>
     <div id="kpiGroups"></div>
-    <div class="breakdown-card">
+    <div class="breakdown-card" id="breakdownCard">
       <div class="breakdown-title">Compare All Products</div>
       <table class="breakdown-table">
         <thead><tr>
