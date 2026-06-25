@@ -190,13 +190,14 @@ function fmtPct(n) {
   return Number(n).toFixed(1) + '%';
 }
 
-function setRangeLabel(days) {
-  const today = new Date();
-  const end = today.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
+// endDateStr is the exact date string sent to the API, so the label always matches the data.
+function setRangeLabel(days, endDateStr) {
+  const fmt = ds => new Date(ds + 'T00:00:00').toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
+  const end = fmt(endDateStr);
   if (days === 1) {
     document.getElementById('rangeLabel').textContent = 'Showing data for: ' + end;
   } else {
-    const start = new Date(today);
+    const start = new Date(endDateStr + 'T00:00:00');
     start.setDate(start.getDate() - (days - 1));
     const startStr = start.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
     document.getElementById('rangeLabel').textContent = `Showing data for: ${startStr} — ${end}`;
@@ -205,9 +206,9 @@ function setRangeLabel(days) {
 
 async function load(days) {
   document.getElementById('kpiSection').innerHTML = '<div class="state-msg">Loading...</div>';
-  setRangeLabel(days);
 
   const today = new Date().toISOString().split('T')[0];
+  setRangeLabel(days, today);
   try {
     const res = await fetch(`/api/ndap?endDate=${today}&days=${days}`);
     if (!res.ok) throw new Error('Server error');
