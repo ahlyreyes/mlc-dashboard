@@ -2080,8 +2080,6 @@ function fatigueTag(c) {
 }
 
 function renderAdCardNdap(c, dates, showCampaign) {
-  const loggedList = (actionLogs[c.campaignId]||[]).filter(l=>dates.includes(l.date)).slice(0,1);
-  const roasCls    = roasColorClass(c.totalRoas||0, c.totalSpend||0);
   return `<div class="camp-card">
     <div class="camp-card-2col">
       <div class="camp-card-2col-left">
@@ -2090,22 +2088,8 @@ function renderAdCardNdap(c, dates, showCampaign) {
           <span class="account-pill">${c.accountName}</span>
           <span class="camp-ad-id" style="margin-bottom:0">${c.adId}</span>
         </div>
-        ${loggedList.map(l=>`<span class="logged-entry">&#10003; ${l.action_taken}${l.new_budget?' →₱'+Number(l.new_budget).toLocaleString():''} · ${l.done_by_name}</span>`).join('')}
-        <div class="camp-total-roas-val ${roasCls}">${c.totalSpend>0?FMT2(c.totalRoas):'—'}</div>
         <div class="camp-budget-day">Budget/day: ${PHP(c.budget)}</div>
         ${adPacingBar(c, dates)}
-      </div>
-      <div class="camp-card-2col-right">
-        <div class="camp-r-row">
-          <div>
-            <div class="camp-r-label">Total Sales</div>
-            <div class="camp-r-sales">${PHP(c.totalSales)}</div>
-          </div>
-          <div>
-            <div class="camp-r-label">Ads Spent</div>
-            <div class="camp-r-spent">${PHP(c.totalSpend)}</div>
-          </div>
-        </div>
       </div>
     </div>
     <div class="camp-day-wrap">
@@ -2116,8 +2100,6 @@ function renderAdCardNdap(c, dates, showCampaign) {
 
 // ── AD CARD: PRODUCT SUBPAGE (two-column, camera icon, action badge in day header) ──
 function renderAdCardProduct(c, dates, isMultiAd) {
-  const loggedList  = (actionLogs[c.campaignId]||[]).filter(l=>dates.includes(l.date)).slice(0,1);
-  const roasCls     = roasColorClass(c.totalRoas||0, c.totalSpend||0);
   const hasCreative = (allCreatives[c.adId]||[]).length > 0;
   const safeAdId    = c.adId.replace(/'/g,"\\'");
   const safeAdName  = c.adName.replace(/'/g,"\\'").replace(/"/g,'&quot;');
@@ -2131,22 +2113,8 @@ function renderAdCardProduct(c, dates, isMultiAd) {
           <span class="account-pill">${c.accountName}</span>
           <span class="camp-ad-id" style="margin-bottom:0">${c.adId}</span>
         </div>
-        ${loggedList.map(l=>`<span class="logged-entry">&#10003; ${l.action_taken}${l.new_budget?' →₱'+Number(l.new_budget).toLocaleString():''} · ${l.done_by_name}</span>`).join('')}
-        <div class="camp-total-roas-val ${roasCls}">${c.totalSpend>0?FMT2(c.totalRoas):'—'}</div>
         <div class="camp-budget-day">Budget/day: ${PHP(c.budget)}</div>
         ${adPacingBar(c, dates)}
-      </div>
-      <div class="camp-card-2col-right">
-        <div class="camp-r-row">
-          <div>
-            <div class="camp-r-label">Total Sales</div>
-            <div class="camp-r-sales">${PHP(c.totalSales)}</div>
-          </div>
-          <div>
-            <div class="camp-r-label">Ads Spent</div>
-            <div class="camp-r-spent">${PHP(c.totalSpend)}</div>
-          </div>
-        </div>
       </div>
     </div>
     <div class="camp-day-wrap">
