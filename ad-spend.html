@@ -166,8 +166,85 @@ body {
   font-size: 0.72rem;
   font-weight: 500;
   color: #94A3B8;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
+
+/* Product filter pills */
+.filter-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+.pill {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1.5px solid #DBEAFE;
+  background: #fff;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #3B82F6;
+  cursor: pointer;
+  transition: all 0.15s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  font-family: 'Inter', sans-serif;
+}
+.pill:hover { background: #EFF6FF; border-color: #2563EB; }
+.pill.active {
+  background: linear-gradient(135deg, #2563EB, #3B82F6);
+  border-color: #2563EB;
+  color: #fff;
+  box-shadow: 0 3px 12px rgba(37,99,235,0.30);
+}
+
+/* Section heading */
+.section-head {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #0F172A;
+  margin: 4px 0 12px;
+  letter-spacing: -0.3px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-head .dot { width: 9px; height: 9px; border-radius: 50%; background: #2563EB; }
+
+/* Per-product breakdown table */
+.breakdown-card {
+  background: #fff;
+  border: 1px solid #E2E8F0;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+  margin-top: 8px;
+  overflow-x: auto;
+}
+.breakdown-title {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #64748B;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  margin-bottom: 14px;
+}
+.breakdown-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; min-width: 580px; }
+.breakdown-table th {
+  text-align: right;
+  padding: 9px 12px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #94A3B8;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  border-bottom: 2px solid #E2E8F0;
+}
+.breakdown-table th:first-child, .breakdown-table td:first-child { text-align: left; }
+.breakdown-table td { padding: 11px 12px; text-align: right; border-bottom: 1px solid #F1F5F9; color: #0F172A; font-weight: 600; }
+.breakdown-table tr:last-child td { border-bottom: none; }
+.breakdown-table .prod-name { font-weight: 700; }
+.breakdown-table .row-click { cursor: pointer; transition: background 0.12s; }
+.breakdown-table .row-click:hover { background: #F8FAFF; }
+.breakdown-table .row-click.active { background: #EFF6FF; }
+.breakdown-table .total-row td { border-top: 2px solid #E2E8F0; font-weight: 800; background: #F8FAFF; }
+.roas-good { color: #16a34a; }
+.roas-ok   { color: #D97706; }
+.roas-bad  { color: #dc2626; }
 </style>
 </head>
 <body>
@@ -181,7 +258,7 @@ body {
 </div>
 
 <div class="page-title">Daily Summary</div>
-<div class="page-sub">Overall performance across all active ad accounts</div>
+<div class="page-sub">Sales, spend &amp; inquiries across all products and ad accounts</div>
 
 <div class="range-bar">
   <span class="range-pick-label">From</span>
@@ -193,7 +270,7 @@ body {
 
 <div class="range-label" id="rangeLabel"></div>
 
-<div id="kpiSection">
+<div id="contentSection">
   <div class="state-msg">Loading...</div>
 </div>
 
@@ -226,16 +303,178 @@ function setRangeLabel(fromStr, toStr) {
     `Showing data for: ${range} &nbsp;·&nbsp; Updated: ${now} (PHT)`;
 }
 
+const NUM = n => Number(n || 0).toLocaleString('en-PH');
+
+// Products — labels must match server product tags (AD_ACCOUNTS / classifyNdapProduct)
+const ALL_PRODUCTS = ['CLEAR SIGHT', 'CANPRO', 'AUDICURE', 'CHICKEN VIT'];
+const PRODUCTS = [
+  { key: 'ALL',         label: 'All Products', set: ALL_PRODUCTS },
+  { key: 'CLEAR SIGHT', label: 'Clear Sight',  set: ['CLEAR SIGHT'] },
+  { key: 'CANPRO',      label: 'CanPro',        set: ['CANPRO'] },
+  { key: 'AUDICURE',    label: 'Hearing Aid',  set: ['AUDICURE'] },
+  { key: 'CHICKEN VIT', label: 'Chicken Vit',  set: ['CHICKEN VIT'] },
+];
+
+let STATE = { data: null, inq: null };
+let currentKey = 'ALL';
+
+function roasClass(roas, spend) {
+  if (!spend) return '';
+  if (roas >= 3.0) return 'roas-good';
+  if (roas >= 2.7) return 'roas-ok';
+  return 'roas-bad';
+}
+
+// Aggregate metrics for a set of product labels
+function metricsFor(set) {
+  const data = STATE.data || {}, inq = STATE.inq || {};
+  const inSet = p => set.includes((p || '').toUpperCase());
+  let spend = 0, inquiries = 0;
+  for (const c of (data.campaigns || [])) {
+    if (!inSet(c.product)) continue;
+    spend += c.totalSpend || 0;
+    for (const d of Object.values(c.dates || {})) inquiries += d.messagesStarted || 0;
+  }
+  const psbd = data.productSalesByDate || {};
+  let sales = 0, orders = 0;
+  for (const p of set) {
+    const series = psbd[p]; if (!series) continue;
+    for (const date of (data.dates || [])) {
+      const r = series[date]; if (r) { sales += r.sales || 0; orders += r.orders || 0; }
+    }
+  }
+  let morning = 0, evening = 0;
+  const bp = inq.byProduct || {};
+  for (const p of set) { if (bp[p]) { morning += bp[p].morning || 0; evening += bp[p].evening || 0; } }
+  return {
+    spend, sales, orders, inquiries, morning, evening,
+    roas: spend > 0 ? sales / spend : 0,
+    aov:  orders > 0 ? sales / orders : 0,
+    cvr:  inquiries > 0 ? orders / inquiries * 100 : 0,
+    cpm:  inquiries > 0 ? spend / inquiries : 0,
+  };
+}
+
+function renderKpis() {
+  const cfg = PRODUCTS.find(p => p.key === currentKey) || PRODUCTS[0];
+  const m = metricsFor(cfg.set);
+  document.getElementById('kpiHead').innerHTML = `<span class="dot"></span> ${cfg.label}`;
+  document.getElementById('kpiGrid').innerHTML = `
+    <div class="kpi-card highlight">
+      <div class="kpi-label">Total Sales</div>
+      <div class="kpi-value">${fmt(m.sales)}</div>
+      <div class="kpi-sub">Gross (Pancake)</div>
+    </div>
+    <div class="kpi-card highlight">
+      <div class="kpi-label">Total Spend</div>
+      <div class="kpi-value">${fmt(m.spend)}</div>
+      <div class="kpi-sub">All accounts</div>
+    </div>
+    <div class="kpi-card highlight">
+      <div class="kpi-label">ROAS</div>
+      <div class="kpi-value ${roasClass(m.roas, m.spend)}">${m.spend > 0 ? fmtRoas(m.roas) : '—'}</div>
+      <div class="kpi-sub">Revenue / peso spent</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Total Orders</div>
+      <div class="kpi-value">${NUM(m.orders)}</div>
+      <div class="kpi-sub">POS orders (Pancake)</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Avg AOV</div>
+      <div class="kpi-value">${m.orders > 0 ? fmt(m.aov) : '—'}</div>
+      <div class="kpi-sub">Average order value</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">CVR</div>
+      <div class="kpi-value">${m.inquiries > 0 ? fmtPct(m.cvr) : '—'}</div>
+      <div class="kpi-sub">Inquiries to orders</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Avg CPM</div>
+      <div class="kpi-value">${m.inquiries > 0 ? fmt(m.cpm) : '—'}</div>
+      <div class="kpi-sub">Spend / inquiry</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Inquiries · 6AM–3PM</div>
+      <div class="kpi-value">${NUM(m.morning)}</div>
+      <div class="kpi-sub">Morning (PHT)</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Inquiries · 3PM–12AM</div>
+      <div class="kpi-value">${NUM(m.evening)}</div>
+      <div class="kpi-sub">Afternoon–Evening (PHT)</div>
+    </div>`;
+  // sync pills + table highlight
+  document.querySelectorAll('.pill').forEach(el => el.classList.toggle('active', el.dataset.key === currentKey));
+  document.querySelectorAll('.breakdown-table .row-click').forEach(el => el.classList.toggle('active', el.dataset.key === currentKey));
+}
+
+function renderPills() {
+  document.getElementById('filterPills').innerHTML = PRODUCTS.map(p =>
+    `<button class="pill ${p.key === currentKey ? 'active' : ''}" data-key="${p.key}" onclick="selectProduct('${p.key}')">${p.label}</button>`
+  ).join('');
+}
+
+function renderBreakdown() {
+  let rows = '';
+  for (const p of PRODUCTS.filter(p => p.key !== 'ALL')) {
+    const m = metricsFor(p.set);
+    rows += `<tr class="row-click ${p.key === currentKey ? 'active' : ''}" data-key="${p.key}" onclick="selectProduct('${p.key}')">
+      <td class="prod-name">${p.label}</td>
+      <td>${fmt(m.spend)}</td>
+      <td>${fmt(m.sales)}</td>
+      <td>${NUM(m.orders)}</td>
+      <td class="${roasClass(m.roas, m.spend)}">${m.spend > 0 ? fmtRoas(m.roas) : '—'}</td>
+      <td>${NUM(m.inquiries)}</td>
+      <td>${m.inquiries > 0 ? fmtPct(m.cvr) : '—'}</td>
+    </tr>`;
+  }
+  const t = metricsFor(ALL_PRODUCTS);
+  rows += `<tr class="total-row">
+    <td>All Products</td>
+    <td>${fmt(t.spend)}</td>
+    <td>${fmt(t.sales)}</td>
+    <td>${NUM(t.orders)}</td>
+    <td class="${roasClass(t.roas, t.spend)}">${t.spend > 0 ? fmtRoas(t.roas) : '—'}</td>
+    <td>${NUM(t.inquiries)}</td>
+    <td>${t.inquiries > 0 ? fmtPct(t.cvr) : '—'}</td>
+  </tr>`;
+  document.getElementById('breakdownBody').innerHTML = rows;
+}
+
+function selectProduct(key) {
+  currentKey = key;
+  renderKpis();
+}
+
+function renderAll() {
+  document.getElementById('contentSection').innerHTML = `
+    <div class="filter-pills" id="filterPills"></div>
+    <div class="section-head" id="kpiHead"></div>
+    <div class="kpi-grid" id="kpiGrid"></div>
+    <div class="breakdown-card">
+      <div class="breakdown-title">Per-Product Breakdown</div>
+      <table class="breakdown-table">
+        <thead><tr>
+          <th>Product</th><th>Spend</th><th>Sales</th><th>Orders</th><th>ROAS</th><th>Inquiries</th><th>CVR</th>
+        </tr></thead>
+        <tbody id="breakdownBody"></tbody>
+      </table>
+    </div>`;
+  renderPills();
+  renderBreakdown();
+  renderKpis();
+}
+
 async function load() {
   const fromDate = document.getElementById('fromDate').value;
   const toDate   = document.getElementById('toDate').value;
   if (!fromDate || !toDate) return;
   if (fromDate > toDate) { document.getElementById('toDate').value = fromDate; return; }
 
-  document.getElementById('kpiSection').innerHTML = '<div class="state-msg">Loading...</div>';
+  document.getElementById('contentSection').innerHTML = '<div class="state-msg">Loading...</div>';
   setRangeLabel(fromDate, toDate);
-  const days   = Math.max(1, Math.round((new Date(toDate) - new Date(fromDate)) / 86400000) + 1);
-  const dayLbl = days === 1 ? 'for 1 day' : `for ${days} days`;
   try {
     const [res, inqRes] = await Promise.all([
       fetch(`/api/ndap?from=${fromDate}&to=${toDate}`),
@@ -244,78 +483,11 @@ async function load() {
     if (!res.ok) throw new Error('Server error');
     const data = await res.json();
     if (data.error) throw new Error(data.error);
-    const inq = inqRes.ok ? await inqRes.json() : { morning: 0, evening: 0 };
-    const campaigns = data.campaigns || [];
-    const allSalesByDate = data.allSalesByDate || {};
-
-    let totalSpend = 0, totalMessages = 0;
-    for (const c of campaigns) {
-      totalSpend += c.totalSpend || 0;
-      for (const d of Object.values(c.dates || {})) {
-        totalMessages += d.messagesStarted || 0;
-      }
-    }
-
-    // Use all-product sales (Clear Sight + Haplunas + others) for the selected date range
-    let totalSales = 0, totalOrders = 0;
-    for (const date of (data.dates || [])) {
-      const dateData = allSalesByDate[date];
-      if (!dateData) continue;
-      totalSales  += dateData.sales  || 0;
-      totalOrders += dateData.orders || 0;
-    }
-
-    const avgRoas = totalSpend > 0 ? totalSales / totalSpend : 0;
-    const avgAov  = totalOrders > 0 ? totalSales / totalOrders : 0;
-    const cvr     = totalMessages > 0 ? (totalOrders / totalMessages) * 100 : 0;
-    const avgCpm  = totalMessages > 0 ? totalSpend / totalMessages : 0;
-
-    document.getElementById('kpiSection').innerHTML = `
-      <div class="kpi-grid">
-        <div class="kpi-card highlight">
-          <div class="kpi-label">Avg ROAS</div>
-          <div class="kpi-value">${fmtRoas(avgRoas)}</div>
-          <div class="kpi-sub">Revenue / peso spent</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Avg AOV</div>
-          <div class="kpi-value">${fmt(avgAov)}</div>
-          <div class="kpi-sub">Average order value</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">CVR</div>
-          <div class="kpi-value">${fmtPct(cvr)}</div>
-          <div class="kpi-sub">Inquiries to orders</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Avg CPM</div>
-          <div class="kpi-value">${fmt(avgCpm)}</div>
-          <div class="kpi-sub">Spend / inquiry</div>
-        </div>
-        <div class="kpi-card highlight">
-          <div class="kpi-label">Total Spend</div>
-          <div class="kpi-value">${fmt(totalSpend)}</div>
-          <div class="kpi-sub">${dayLbl}</div>
-        </div>
-        <div class="kpi-card highlight">
-          <div class="kpi-label">Total Sales</div>
-          <div class="kpi-value">${fmt(totalSales)}</div>
-          <div class="kpi-sub">${dayLbl}</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Inquiries · 6AM–3PM</div>
-          <div class="kpi-value">${Number(inq.morning||0).toLocaleString('en-PH')}</div>
-          <div class="kpi-sub">Morning (PHT)</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Inquiries · 3PM–12AM</div>
-          <div class="kpi-value">${Number(inq.evening||0).toLocaleString('en-PH')}</div>
-          <div class="kpi-sub">Afternoon–Evening (PHT)</div>
-        </div>
-      </div>
-    `;
+    STATE.data = data;
+    STATE.inq  = inqRes.ok ? await inqRes.json() : { byProduct: {} };
+    renderAll();
   } catch(e) {
-    document.getElementById('kpiSection').innerHTML = `<div class="state-msg error-msg">Failed to load data: ${e.message}</div>`;
+    document.getElementById('contentSection').innerHTML = `<div class="state-msg error-msg">Failed to load data: ${e.message}</div>`;
   }
 }
 

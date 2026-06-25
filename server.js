@@ -1033,8 +1033,11 @@ app.get('/api/inquiries-hourly', requireAuth, async (req, res) => {
     const cached = cacheGet(metaInsightsCache, cacheKey, TTL_META);
     if (cached) return res.json(cached);
 
-    let morning = 0, evening = 0; // 6AM–3PM, 3PM–12AM
+    let morning = 0, evening = 0; // 6AM–3PM, 3PM–12AM (all products)
+    const byProduct = {};         // { 'CLEAR SIGHT': { morning, evening }, ... }
     for (const acc of AD_ACCOUNTS) {
+      const prod = acc.product || 'OTHER';
+      if (!byProduct[prod]) byProduct[prod] = { morning: 0, evening: 0 };
       let nextUrl = `https://graph.facebook.com/v19.0/${acc.id}/insights` +
         `?level=account&fields=actions&breakdowns=hourly_stats_aggregated_by_advertiser_time_zone` +
         `&time_range={"since":"${from}","until":"${to}"}&limit=500&access_token=${acc.token || ''}`;
@@ -1050,14 +1053,14 @@ app.get('/api/inquiries-hourly', requireAuth, async (req, res) => {
               a.action_type === 'onsite_conversion.messaging_conversation_started_7d'
             );
             const v = msgAct ? parseInt(msgAct.value) : 0;
-            if (hr >= 6 && hr < 15)       morning += v;
-            else if (hr >= 15 && hr <= 23) evening += v;
+            if (hr >= 6 && hr < 15)        { morning += v; byProduct[prod].morning += v; }
+            else if (hr >= 15 && hr <= 23) { evening += v; byProduct[prod].evening += v; }
           }
           nextUrl = r.paging && r.paging.next ? r.paging.next : null;
         }
       } catch(e) { console.warn(`⚠️ inquiries-hourly fetch ${acc.name}: ${e.message}`); }
     }
-    const result = { from, to, morning, evening, total: morning + evening };
+    const result = { from, to, morning, evening, total: morning + evening, byProduct };
     cacheSet(metaInsightsCache, cacheKey, result);
     res.json(result);
   } catch(e) { res.status(500).json({ error: e.message }); }
