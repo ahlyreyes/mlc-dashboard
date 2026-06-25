@@ -426,6 +426,7 @@ async function fetchPancakeSalesByDate() {
     const salesByDate = {};       // keyed by adId — for per-ad NDAP matching
     const clearSightByDate = {};  // ALL Clear Sight sales incl. no-ad rows
     const allSalesByDate   = {};  // ALL products total (Clear Sight + Haplunas + others)
+    const productSalesByDate = {};// per-NDAP-product gross POS: { 'CANPRO': { date: {sales,orders} }, ... }
 
     let skipNoDate=0, skipCancel=0, skipNonClearSight=0, countedCS=0;
 
@@ -451,8 +452,9 @@ async function fetchPancakeSalesByDate() {
 
       // Scan ALL column values — catches any column naming/casing variant
       const rowText      = Object.values(row).join(' ').toLowerCase();
-      const isClearSight = rowText.includes('clear sight');
+      const isClearSight = rowText.includes('clear sight') || rowText.includes('clearsight');
       const isHaplunas   = rowText.includes('haplunas');
+      const ndapProduct  = classifyNdapProduct(rowText); // 'CLEAR SIGHT'|'CANPRO'|'AUDICURE'|'CHICKEN VIT'|null
 
       // ── Per-ad sales (NDAP matching) — excluded sellers, cancelled, and Haplunas skipped ──
       if (!isExcludedSeller && !isCancelled && adId && !isHaplunas) {
@@ -487,6 +489,14 @@ async function fetchPancakeSalesByDate() {
         skipNonClearSight++;
       }
 
+      // ── Per-NDAP-product gross POS total (incl. no-ad rows & cancelled, to match mainfile) ──
+      if (ndapProduct) {
+        if (!productSalesByDate[ndapProduct]) productSalesByDate[ndapProduct] = {};
+        if (!productSalesByDate[ndapProduct][dateStr]) productSalesByDate[ndapProduct][dateStr] = { sales: 0, orders: 0 };
+        productSalesByDate[ndapProduct][dateStr].sales  += price;
+        productSalesByDate[ndapProduct][dateStr].orders += 1;
+      }
+
       // ── All-products total (incl. Haplunas, all sellers, cancelled) ──
       if (!allSalesByDate[dateStr]) allSalesByDate[dateStr] = { sales: 0, orders: 0 };
       allSalesByDate[dateStr].sales  += price;
@@ -496,13 +506,22 @@ async function fetchPancakeSalesByDate() {
     console.log(`📊 Pancake parse: ${countedCS} Clear Sight rows counted, ${skipCancel} cancelled, ${skipNoDate} no-date, ${skipNonClearSight} non-CS`);
     console.log('📅 clearSightByDate totals:', Object.entries(clearSightByDate).map(([d,v])=>`${d}:₱${v.sales.toFixed(0)}(${v.orders})`).join(', '));
 
-    const result = { salesByDate, clearSightByDate, allSalesByDate };
+    const result = { salesByDate, clearSightByDate, allSalesByDate, productSalesByDate };
     cacheSet(pancakeCache, 'pancake', result);
     return result;
   } catch(e) {
     console.error('Pancake CSV error:', e.message);
-    return { salesByDate: {}, clearSightByDate: {}, allSalesByDate: {} };
+    return { salesByDate: {}, clearSightByDate: {}, allSalesByDate: {}, productSalesByDate: {} };
   }
+}
+
+// Classify a POS row into an NDAP product label (must match AD_ACCOUNTS product values)
+function classifyNdapProduct(rowText) {
+  if (rowText.includes('clear sight') || rowText.includes('clearsight')) return 'CLEAR SIGHT';
+  if (rowText.includes('canpro') || rowText.includes('can pro') || rowText.includes('canro')) return 'CANPRO';
+  if (rowText.includes('hearing aid') || rowText.includes('hearingaid') || rowText.includes('audicure')) return 'AUDICURE';
+  if (rowText.includes('chicken')) return 'CHICKEN VIT';
+  return null;
 }
 
 async function fetchAccountInsights(account, date) {
@@ -867,7 +886,7 @@ app.get('/api/ndap', requireAuth, async (req, res) => {
     const [pancakeData, budgetMap, activeAdsList] = await Promise.all([
       fetchPancakeSalesByDate(), fetchAllBudgets(), fetchAllActiveAds()
     ]);
-    const { salesByDate, clearSightByDate, allSalesByDate } = pancakeData;
+    const { salesByDate, clearSightByDate, allSalesByDate, productSalesByDate } = pancakeData;
 
     // Build adMap keyed by adId — all 14 active ads pre-seeded so none get dropped
     const adMap = {};
@@ -995,7 +1014,7 @@ app.get('/api/ndap', requireAuth, async (req, res) => {
       return ia - ib;
     });
 
-    const result = { dates, campaigns: activeCampaigns, clearSightByDate, allSalesByDate };
+    const result = { dates, campaigns: activeCampaigns, clearSightByDate, allSalesByDate, productSalesByDate };
     res.json(result);
   } catch(e) {
     res.status(500).json({ error: e.message });

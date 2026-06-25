@@ -1741,6 +1741,24 @@ const PHP  = n => '₱' + Number(n||0).toLocaleString('en-PH',{minimumFractionDi
 const FMT2 = n => Number(n||0).toFixed(2);
 const NUM  = n => Number(n||0).toLocaleString('en-PH');
 
+// All NDAP product labels (must match server AD_ACCOUNTS / classifyNdapProduct)
+const ALL_NDAP_PRODUCTS = ['CLEAR SIGHT','CANPRO','AUDICURE','CHICKEN VIT'];
+
+// Gross POS sales/orders for a set of products over a date range (with + without Ad ID)
+function grossForProducts(productSalesByDate, products, dates) {
+  const psbd = productSalesByDate || {};
+  let sales = 0, orders = 0;
+  for (const p of products) {
+    const series = psbd[p];
+    if (!series) continue;
+    for (const d of dates) {
+      const r = series[d];
+      if (r) { sales += r.sales || 0; orders += r.orders || 0; }
+    }
+  }
+  return { sales, orders };
+}
+
 function actionForDay(campaign, dates, targetDateIdx) {
   const datesUpTo = dates.slice(0, targetDateIdx + 1);
   const spendDays = datesUpTo.filter(d => campaign.dates[d] && campaign.dates[d].spend > 0);
@@ -1825,17 +1843,20 @@ async function loadData() {
   }
 }
 
-function renderKPIs({ dates, campaigns }) {
-  // Combined view now spans all products — total from per-campaign (ad-attributed) sums
-  let totalSpend=0, totalSales=0, totalOrders=0, totalInquiries=0;
+function renderKPIs({ dates, campaigns, productSalesByDate }) {
+  // Combined view spans all NDAP products. Total Sales = gross POS; ROAS = gross ÷ spend.
+  let totalSpend=0, withAdSales=0, totalInquiries=0;
   for (const c of campaigns) {
     totalSpend  += c.totalSpend  || 0;
-    totalSales  += c.totalSales  || 0;
-    totalOrders += c.totalOrders || 0;
+    withAdSales += c.totalSales  || 0;
     for (const d of Object.values(c.dates)) {
       totalInquiries += d.messagesStarted || 0;
     }
   }
+  const gross    = grossForProducts(productSalesByDate, ALL_NDAP_PRODUCTS, dates);
+  const totalSales  = gross.sales;
+  const totalOrders = gross.orders;
+  const withoutAdSales = Math.max(0, totalSales - withAdSales);
   const avgRoas = totalSpend > 0 ? totalSales / totalSpend : 0;
   const aov     = totalOrders > 0 ? totalSales / totalOrders : 0;
   const cvr     = totalInquiries > 0 ? totalOrders / totalInquiries * 100 : 0;
@@ -1851,7 +1872,7 @@ function renderKPIs({ dates, campaigns }) {
   document.getElementById('kpi-spend').textContent  = PHP(totalSpend);
   document.getElementById('kpi-sales').textContent  = PHP(totalSales);
   document.getElementById('kpi-spend-sub').textContent = dayLbl;
-  document.getElementById('kpi-sales-sub').textContent = dayLbl;
+  document.getElementById('kpi-sales-sub').innerHTML   = `w/ Ad: ${PHP(withAdSales)} · w/o Ad: ${PHP(withoutAdSales)}`;
   document.getElementById('kpiGrid').style.display = 'grid';
 }
 
@@ -1956,6 +1977,8 @@ function renderDayCardsNdap(c, dates) {
         <div class="day-row"><span class="day-row-label">CVR</span><span class="day-row-val">${dd&&dd.messagesStarted>0?cvr.toFixed(1)+'%':'—'}</span></div>
         <div class="day-row"><span class="day-row-label">AOV</span><span class="day-row-val">${dd&&dd.orders>0?PHP(aov):'—'}</span></div>
         <div class="day-row"><span class="day-row-label">CPM</span><span class="day-row-val">${spend>0?PHP(dd.cpm):'—'}</span></div>
+        <div class="day-row"><span class="day-row-label">Frequency</span><span class="day-row-val">${dd&&dd.frequency>0?FMT2(dd.frequency):'—'}</span></div>
+        <div class="day-row"><span class="day-row-label">Cost/1K Impr</span><span class="day-row-val">${dd&&dd.impressions>0?PHP(dd.spend/dd.impressions*1000):'—'}</span></div>
         <div class="day-row"><span class="day-row-label">Declared Budget</span><span class="day-row-val">${PHP(budget)}</span></div>
         <div class="day-row"><span class="day-row-label">Ad Spend</span><span class="day-row-val">${spend>0?PHP(spend):'—'}</span></div>
         <div class="day-row"><span class="day-row-label">Inquiries</span><span class="day-row-val">${dd&&dd.messagesStarted>0?NUM(dd.messagesStarted):'—'}</span></div>
@@ -1986,6 +2009,8 @@ function renderGroupDayCards(groupData, dates) {
         <div class="day-row"><span class="day-row-label">CVR</span><span class="day-row-val">${dd&&dd.messagesStarted>0?cvr.toFixed(1)+'%':'—'}</span></div>
         <div class="day-row"><span class="day-row-label">AOV</span><span class="day-row-val">${dd&&dd.orders>0?PHP(aov):'—'}</span></div>
         <div class="day-row"><span class="day-row-label">CPM</span><span class="day-row-val">${spend>0?PHP(dd.cpm):'—'}</span></div>
+        <div class="day-row"><span class="day-row-label">Frequency</span><span class="day-row-val">${dd&&dd.frequency>0?FMT2(dd.frequency):'—'}</span></div>
+        <div class="day-row"><span class="day-row-label">Cost/1K Impr</span><span class="day-row-val">${dd&&dd.impressions>0?PHP(dd.spend/dd.impressions*1000):'—'}</span></div>
         <div class="day-row"><span class="day-row-label">Declared Budget</span><span class="day-row-val">${PHP(groupData.budget)}</span></div>
         <div class="day-row"><span class="day-row-label">Inquiries</span><span class="day-row-val">${dd&&dd.messagesStarted>0?NUM(dd.messagesStarted):'—'}</span></div>
         <div class="day-row"><span class="day-row-label">Orders</span><span class="day-row-val">${dd?dd.orders:'—'}</span></div>
@@ -2026,6 +2051,8 @@ function renderDayCardsProduct(c, dates, isMultiAd) {
         <div class="day-row"><span class="day-row-label">CVR</span><span class="day-row-val">${dd&&dd.messagesStarted>0?cvr.toFixed(1)+'%':'—'}</span></div>
         <div class="day-row"><span class="day-row-label">AOV</span><span class="day-row-val">${dd&&dd.orders>0?PHP(aov):'—'}</span></div>
         <div class="day-row"><span class="day-row-label">CPM</span><span class="day-row-val">${spend>0?PHP(dd.cpm):'—'}</span></div>
+        <div class="day-row"><span class="day-row-label">Frequency</span><span class="day-row-val">${dd&&dd.frequency>0?FMT2(dd.frequency):'—'}</span></div>
+        <div class="day-row"><span class="day-row-label">Cost/1K Impr</span><span class="day-row-val">${dd&&dd.impressions>0?PHP(dd.spend/dd.impressions*1000):'—'}</span></div>
         ${!isMultiAd?`<div class="day-row"><span class="day-row-label">Declared Budget</span><span class="day-row-val">${PHP(budget)}</span></div>`:''}
         <div class="day-row"><span class="day-row-label">Ad Spend</span><span class="day-row-val">${spend>0?PHP(spend):'—'}</span></div>
         <div class="day-row"><span class="day-row-label">Inquiries</span><span class="day-row-val">${dd&&dd.messagesStarted>0?NUM(dd.messagesStarted):'—'}</span></div>
@@ -2557,25 +2584,25 @@ async function loadCEO() {
   }
 }
 
-function renderCEO({ dates, campaigns }) {
+function renderCEO({ dates, campaigns, productSalesByDate }) {
   const today = dates[dates.length - 1];
   const yest  = dates.length >= 2 ? dates[dates.length - 2] : null;
 
-  // All-product overview — totals from per-campaign (ad-attributed) sums
-  let todaySpend = 0, yesterSpend = 0, todaySales = 0, yesterSales = yest ? 0 : null;
-  let todayOrders = 0, yesterOrders = yest ? 0 : null;
+  // All-product overview — Total Sales = gross POS; ad-attributed tracked for the split.
+  let todaySpend = 0, yesterSpend = 0, withAdToday = 0;
   for (const c of campaigns) {
-    todaySpend   += c.dates[today]?.spend      || 0;
-    todaySales   += c.dates[today]?.grossSales || 0;
-    todayOrders  += c.dates[today]?.orders     || 0;
-    if (yest) {
-      yesterSpend  += c.dates[yest]?.spend      || 0;
-      yesterSales  += c.dates[yest]?.grossSales || 0;
-      yesterOrders += c.dates[yest]?.orders     || 0;
-    }
+    todaySpend  += c.dates[today]?.spend      || 0;
+    withAdToday += c.dates[today]?.grossSales || 0;
+    if (yest) yesterSpend += c.dates[yest]?.spend || 0;
   }
+  const gToday = grossForProducts(productSalesByDate, ALL_NDAP_PRODUCTS, [today]);
+  const gYest  = yest ? grossForProducts(productSalesByDate, ALL_NDAP_PRODUCTS, [yest]) : null;
+  const todaySales   = gToday.sales,  todayOrders  = gToday.orders;
+  const yesterSales  = gYest ? gYest.sales  : null;
+  const yesterOrders = gYest ? gYest.orders : null;
+  const withoutAdToday = Math.max(0, todaySales - withAdToday);
   const todayRoas = todaySpend  > 0 ? todaySales  / todaySpend  : 0;
-  const yesterRoas= yesterSpend > 0 ? yesterSales / yesterSpend : 0;
+  const yesterRoas= yesterSpend > 0 && yesterSales != null ? yesterSales / yesterSpend : 0;
 
   function delta(now, prev) {
     if (prev === null || prev === 0) return '<span class="ceo-delta flat">—</span>';
@@ -2587,7 +2614,7 @@ function renderCEO({ dates, campaigns }) {
 
   document.getElementById('ceo-sales').textContent   = PHP(todaySales);
   document.getElementById('ceo-sales-breakdown').innerHTML =
-    `<span style="color:var(--muted);font-size:10px">All products · ad-attributed</span>`;
+    `<span style="color:var(--muted);font-size:10px">w/ Ad: ${PHP(withAdToday)} &nbsp;·&nbsp; w/o Ad: ${PHP(withoutAdToday)}</span>`;
   document.getElementById('ceo-spend').textContent   = PHP(todaySpend);
   document.getElementById('ceo-roas').textContent    = todaySpend > 0 ? FMT2(todayRoas) : '—';
   document.getElementById('ceo-orders').textContent  = NUM(todayOrders);
@@ -2631,23 +2658,18 @@ function renderCEO({ dates, campaigns }) {
 const NATURALS_PRODUCTS = ['CANPRO','AUDICURE','SINUXYL','SINUXYL 2','GINSENG'];
 const EYECARE_PRODUCTS  = ['CLEAR SIGHT','PTERYGIUM'];
 
-function renderBrandKPIs(campaigns, prefix, clearSightByDate, dates) {
-  let spend=0, sales=0, orders=0, inquiries=0;
+// `gross` = { sales, orders } gross POS total for this product (or null to use ad-attributed).
+function renderBrandKPIs(campaigns, prefix, gross, dates) {
+  let spend=0, withAdSales=0, adOrders=0, inquiries=0;
   for (const c of campaigns) {
-    spend  += c.totalSpend  || 0;
-    sales  += c.totalSales  || 0;
-    orders += c.totalOrders || 0;
+    spend       += c.totalSpend  || 0;
+    withAdSales += c.totalSales  || 0;
+    adOrders    += c.totalOrders || 0;
     for (const d of Object.values(c.dates)) inquiries += d.messagesStarted || 0;
   }
-  // Use clearSightByDate for orders if provided (more accurate POS total)
-  if (clearSightByDate && dates) {
-    let csOrders = 0;
-    for (const d of dates) {
-      const row = clearSightByDate[d];
-      if (row) csOrders += row.orders || 0;
-    }
-    if (csOrders > 0) orders = csOrders;
-  }
+  const sales  = gross ? gross.sales  : withAdSales;
+  const orders = gross ? gross.orders : adOrders;
+  const withoutAdSales = Math.max(0, sales - withAdSales);
   const roas = spend > 0 ? sales / spend : 0;
   const aov  = orders > 0 ? sales / orders : 0;
   const cvr  = inquiries > 0 ? orders / inquiries * 100 : 0;
@@ -2662,7 +2684,8 @@ function renderBrandKPIs(campaigns, prefix, clearSightByDate, dates) {
   document.getElementById(`kpi-${prefix}-cpm`).textContent   = PHP(cpm);
   document.getElementById(`kpi-${prefix}-aov`).textContent   = PHP(aov);
   document.getElementById(`kpi-${prefix}-spend-sub`).textContent = dayLabel;
-  document.getElementById(`kpi-${prefix}-sales-sub`).textContent = dayLabel;
+  document.getElementById(`kpi-${prefix}-sales-sub`).innerHTML   =
+    gross ? `w/ Ad: ${PHP(withAdSales)} · w/o Ad: ${PHP(withoutAdSales)}` : dayLabel;
   const ordersEl = document.getElementById(`kpi-${prefix}-orders`);
   if (ordersEl) ordersEl.textContent = NUM(orders);
   document.getElementById(`kpiGrid-${prefix}`).style.display = 'grid';
@@ -2681,7 +2704,7 @@ async function loadBrandTab(brand) {
     const data = await r.json();
     if (data.error) throw new Error(data.error);
     const filtered = { ...data, campaigns: data.campaigns.filter(c => products.includes((c.product||'').toUpperCase())) };
-    renderBrandKPIs(filtered.campaigns, prefix, data.clearSightByDate, data.dates);
+    renderBrandKPIs(filtered.campaigns, prefix, grossForProducts(data.productSalesByDate, products, data.dates), data.dates);
     renderFiltered(filtered, prefix);
   } catch(e) {
     document.getElementById(`tableContainer-${prefix}`).innerHTML = `<div class="error-msg">${e.message}</div>`;
@@ -2705,9 +2728,8 @@ async function loadProductTab(tabName) {
     if (data.error) throw new Error(data.error);
     const campaigns = data.campaigns.filter(c => products.includes((c.product||'').toUpperCase()));
     lastProductData[tabName] = { campaigns, dates: data.dates };
-    // Only Clear Sight has a full POS gross total (clearSightByDate). Other products
-    // derive orders from their own ad-attributed campaign totals.
-    renderBrandKPIs(campaigns, tabName, tabName === 'clearsight' ? data.clearSightByDate : null, data.dates);
+    // Gross POS total for this product (with + without Ad ID), from the POS export.
+    renderBrandKPIs(campaigns, tabName, grossForProducts(data.productSalesByDate, products, data.dates), data.dates);
     renderProductCampaigns(campaigns, data.dates, tabName, displayName);
   } catch(e) {
     document.getElementById(`tableContainer-${tabName}`).innerHTML = `<div class="error-msg">${e.message}</div>`;
@@ -2812,9 +2834,13 @@ async function loadAnalytics() {
         byDate[date].spend      += dd.spend           || 0;
         byDate[date].inquiries  += dd.messagesStarted  || 0;
         byDate[date].impressions+= dd.impressions      || 0;
-        byDate[date].sales      += dd.grossSales       || 0;
-        byDate[date].orders     += dd.orders           || 0;
       }
+    }
+    // Gross POS sales/orders per date (all NDAP products)
+    for (const date of data.dates) {
+      const g = grossForProducts(data.productSalesByDate, ALL_NDAP_PRODUCTS, [date]);
+      byDate[date].sales  = g.sales;
+      byDate[date].orders = g.orders;
     }
 
     // Aggregate by product
