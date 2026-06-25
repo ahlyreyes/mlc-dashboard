@@ -13,6 +13,8 @@ const META_ACCESS_TOKEN = process.env.META_ACCESS_TOKEN || '';
 const META_TOKEN_1     = process.env.META_TOKEN_1     || META_ACCESS_TOKEN;
 const META_TOKEN_2     = process.env.META_TOKEN_2     || META_ACCESS_TOKEN;
 const META_TOKEN_HUSSE = process.env.META_TOKEN_HUSSE || META_ACCESS_TOKEN;
+// Current portfolio token — covers all active ad accounts (Clear Sight, CanPro, Hearing Aid, Chicken Vitamins)
+const META_TOKEN_MAIN  = process.env.META_TOKEN_MAIN  || 'EAAamYRVUt6ABR9WKMojnjQfZCP2v3JDZBNFzdIitsBbTDquf6AZB4ZANZAaQlnBRTWdUwUfNEWmdrrdiptgm3BUnbFdEjU4w1NkTlYDRqurE4BZAXLVeRVRltRQR1jsr5yjSams2gZChVh9cnZAqdR6Oq4Cl7cLdB7nDlCLVwxLIVaLIj9a8smoU0RMMsAfYZCLmdagZDZD';
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
@@ -327,16 +329,15 @@ async function fetchPancakeTagDefs(pageId) {
 }
 
 const AD_ACCOUNTS = [
-  // --- CLEAR SIGHT --- Token 1
-  { id: 'act_553848412391460',  name: 'Iniwan Lang Pala', currency: 'PHP', product: 'CLEAR SIGHT', token: META_TOKEN_1 },
-  { id: 'act_2825452284312899', name: 'Ad Account 2',     currency: 'PHP', product: 'CLEAR SIGHT', token: META_TOKEN_1 },
-  { id: 'act_827911349880726',  name: 'Cheska Del Mundo', currency: 'PHP', product: 'CLEAR SIGHT', token: META_TOKEN_1 },
-  // --- CLEAR SIGHT --- Token 2
-  { id: 'act_1264536714635179', name: 'Nhur Lita',        currency: 'PHP', product: 'CLEAR SIGHT', token: META_TOKEN_2 },
-  // --- CLEAR SIGHT --- Husse
-  { id: 'act_610867214239439',  name: 'Angelica Roque',   currency: 'PHP', product: 'CLEAR SIGHT',  token: META_TOKEN_HUSSE },
-  // --- CARING TOUCH --- Husse
-  { id: 'act_1007714842769250', name: 'Princess',         currency: 'PHP', product: 'CARING TOUCH', token: META_TOKEN_HUSSE },
+  // --- CLEAR SIGHT (Clear Sight Optical Care) ---
+  { id: 'act_2825452284312899', name: 'Clear Sight Optical Care 1', currency: 'PHP', product: 'CLEAR SIGHT',  token: META_TOKEN_MAIN },
+  { id: 'act_1264536714635179', name: 'Clear Sight Optical Care 2', currency: 'PHP', product: 'CLEAR SIGHT',  token: META_TOKEN_MAIN },
+  // --- CANPRO ---
+  { id: 'act_1360519375937020', name: 'CanPro',                     currency: 'PHP', product: 'CANPRO',       token: META_TOKEN_MAIN },
+  // --- HEARING AID ---
+  { id: 'act_1783871125514527', name: 'Hearing Aid',               currency: 'PHP', product: 'AUDICURE',     token: META_TOKEN_MAIN },
+  // --- CHICKEN VITAMINS ---
+  { id: 'act_971532679101983',  name: 'Chicken Vitamins',          currency: 'PHP', product: 'CHICKEN VIT',  token: META_TOKEN_MAIN },
 ];
 
 // Currency conversion to PHP (update as needed)

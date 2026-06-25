@@ -1120,6 +1120,9 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
         </div>
         <div class="nav-submenu">
           <div class="nav-subitem" onclick="switchTab('clearsight', this)" data-tab="clearsight">Clear Sight</div>
+          <div class="nav-subitem" onclick="switchTab('canpro', this)" data-tab="canpro">CanPro</div>
+          <div class="nav-subitem" onclick="switchTab('audicure', this)" data-tab="audicure">Hearing Aid</div>
+          <div class="nav-subitem" onclick="switchTab('chickenvit', this)" data-tab="chickenvit">Chicken Vitamins</div>
           <div class="nav-subitem" onclick="switchTab('analytics', this)" data-tab="analytics">Data Analytics</div>
           <div class="nav-subitem" onclick="switchTab('history', this)" data-tab="history">Action History</div>
         </div>
@@ -1299,6 +1302,51 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
       </div>
       <div class="loading-wrap" id="loading-clearsight" style="display:none">Loading...</div>
       <div id="tableContainer-clearsight"></div>
+    </div></div>
+
+    <!-- CANPRO TAB -->
+    <div id="tab-canpro" class="tab-content"><div class="page-wrap">
+      <div class="kpi-grid" id="kpiGrid-canpro" style="display:none">
+        <div class="kpi-card"><div class="kpi-label">Avg ROAS</div><div class="kpi-value" id="kpi-canpro-roas">—</div><div class="kpi-sub">Revenue / peso spent</div></div>
+        <div class="kpi-card"><div class="kpi-label">Total Spend</div><div class="kpi-value" id="kpi-canpro-spend">—</div><div class="kpi-sub" id="kpi-canpro-spend-sub">All accounts</div></div>
+        <div class="kpi-card"><div class="kpi-label">Total Sales</div><div class="kpi-value" id="kpi-canpro-sales">—</div><div class="kpi-sub" id="kpi-canpro-sales-sub">Gross (Pancake)</div></div>
+        <div class="kpi-card"><div class="kpi-label">CVR</div><div class="kpi-value" id="kpi-canpro-cvr">—</div><div class="kpi-sub">Inquiries to orders</div></div>
+        <div class="kpi-card"><div class="kpi-label">Avg CPM</div><div class="kpi-value" id="kpi-canpro-cpm">—</div><div class="kpi-sub">Spend / inquiry</div></div>
+        <div class="kpi-card"><div class="kpi-label">Total Orders</div><div class="kpi-value" id="kpi-canpro-orders">—</div><div class="kpi-sub">POS orders (Pancake)</div></div>
+        <div class="kpi-card"><div class="kpi-label">Avg AOV</div><div class="kpi-value" id="kpi-canpro-aov">—</div><div class="kpi-sub">Average order value</div></div>
+      </div>
+      <div class="loading-wrap" id="loading-canpro" style="display:none">Loading...</div>
+      <div id="tableContainer-canpro"></div>
+    </div></div>
+
+    <!-- HEARING AID TAB -->
+    <div id="tab-audicure" class="tab-content"><div class="page-wrap">
+      <div class="kpi-grid" id="kpiGrid-audicure" style="display:none">
+        <div class="kpi-card"><div class="kpi-label">Avg ROAS</div><div class="kpi-value" id="kpi-audicure-roas">—</div><div class="kpi-sub">Revenue / peso spent</div></div>
+        <div class="kpi-card"><div class="kpi-label">Total Spend</div><div class="kpi-value" id="kpi-audicure-spend">—</div><div class="kpi-sub" id="kpi-audicure-spend-sub">All accounts</div></div>
+        <div class="kpi-card"><div class="kpi-label">Total Sales</div><div class="kpi-value" id="kpi-audicure-sales">—</div><div class="kpi-sub" id="kpi-audicure-sales-sub">Gross (Pancake)</div></div>
+        <div class="kpi-card"><div class="kpi-label">CVR</div><div class="kpi-value" id="kpi-audicure-cvr">—</div><div class="kpi-sub">Inquiries to orders</div></div>
+        <div class="kpi-card"><div class="kpi-label">Avg CPM</div><div class="kpi-value" id="kpi-audicure-cpm">—</div><div class="kpi-sub">Spend / inquiry</div></div>
+        <div class="kpi-card"><div class="kpi-label">Total Orders</div><div class="kpi-value" id="kpi-audicure-orders">—</div><div class="kpi-sub">POS orders (Pancake)</div></div>
+        <div class="kpi-card"><div class="kpi-label">Avg AOV</div><div class="kpi-value" id="kpi-audicure-aov">—</div><div class="kpi-sub">Average order value</div></div>
+      </div>
+      <div class="loading-wrap" id="loading-audicure" style="display:none">Loading...</div>
+      <div id="tableContainer-audicure"></div>
+    </div></div>
+
+    <!-- CHICKEN VITAMINS TAB -->
+    <div id="tab-chickenvit" class="tab-content"><div class="page-wrap">
+      <div class="kpi-grid" id="kpiGrid-chickenvit" style="display:none">
+        <div class="kpi-card"><div class="kpi-label">Avg ROAS</div><div class="kpi-value" id="kpi-chickenvit-roas">—</div><div class="kpi-sub">Revenue / peso spent</div></div>
+        <div class="kpi-card"><div class="kpi-label">Total Spend</div><div class="kpi-value" id="kpi-chickenvit-spend">—</div><div class="kpi-sub" id="kpi-chickenvit-spend-sub">All accounts</div></div>
+        <div class="kpi-card"><div class="kpi-label">Total Sales</div><div class="kpi-value" id="kpi-chickenvit-sales">—</div><div class="kpi-sub" id="kpi-chickenvit-sales-sub">Gross (Pancake)</div></div>
+        <div class="kpi-card"><div class="kpi-label">CVR</div><div class="kpi-value" id="kpi-chickenvit-cvr">—</div><div class="kpi-sub">Inquiries to orders</div></div>
+        <div class="kpi-card"><div class="kpi-label">Avg CPM</div><div class="kpi-value" id="kpi-chickenvit-cpm">—</div><div class="kpi-sub">Spend / inquiry</div></div>
+        <div class="kpi-card"><div class="kpi-label">Total Orders</div><div class="kpi-value" id="kpi-chickenvit-orders">—</div><div class="kpi-sub">POS orders (Pancake)</div></div>
+        <div class="kpi-card"><div class="kpi-label">Avg AOV</div><div class="kpi-value" id="kpi-chickenvit-aov">—</div><div class="kpi-sub">Average order value</div></div>
+      </div>
+      <div class="loading-wrap" id="loading-chickenvit" style="display:none">Loading...</div>
+      <div id="tableContainer-chickenvit"></div>
     </div></div>
 
     <!-- DATA ANALYTICS TAB -->
@@ -1777,18 +1825,16 @@ async function loadData() {
   }
 }
 
-function renderKPIs({ dates, campaigns, clearSightByDate }) {
+function renderKPIs({ dates, campaigns }) {
+  // Combined view now spans all products — total from per-campaign (ad-attributed) sums
   let totalSpend=0, totalSales=0, totalOrders=0, totalInquiries=0;
   for (const c of campaigns) {
-    totalSpend    += c.totalSpend  || 0;
+    totalSpend  += c.totalSpend  || 0;
+    totalSales  += c.totalSales  || 0;
+    totalOrders += c.totalOrders || 0;
     for (const d of Object.values(c.dates)) {
       totalInquiries += d.messagesStarted || 0;
     }
-  }
-  const csbd = clearSightByDate || {};
-  for (const date of dates) {
-    totalSales  += (csbd[date] ? csbd[date].sales  : 0);
-    totalOrders += (csbd[date] ? csbd[date].orders : 0);
   }
   const avgRoas = totalSpend > 0 ? totalSales / totalSpend : 0;
   const aov     = totalOrders > 0 ? totalSales / totalOrders : 0;
@@ -1811,17 +1857,21 @@ function renderKPIs({ dates, campaigns, clearSightByDate }) {
 
 // ── PRODUCT PILL COLORS ──
 const PRODUCT_PILLS = {
-  'SINUXYL':     { bg:'#dbeafe', color:'#1e3a8a' },
-  'SINUXYL 2':   { bg:'#dbeafe', color:'#1e3a8a' },
-  'GINSENG':     { bg:'#dcfce7', color:'#14532d' },
-  'CANPRO':      { bg:'#fef3c7', color:'#78350f' },
-  'AUDICURE':    { bg:'#fce7f3', color:'#9d174d' },
-  'CLEAR SIGHT': { bg:'#ede9fe', color:'#4c1d95' },
-  'PTERYGIUM':   { bg:'#ccfbf1', color:'#134e4a' },
+  'SINUXYL':      { bg:'#dbeafe', color:'#1e3a8a' },
+  'SINUXYL 2':    { bg:'#dbeafe', color:'#1e3a8a' },
+  'GINSENG':      { bg:'#dcfce7', color:'#14532d' },
+  'CANPRO':       { bg:'#fef3c7', color:'#78350f' },
+  'AUDICURE':     { bg:'#fce7f3', color:'#9d174d' },
+  'CLEAR SIGHT':  { bg:'#ede9fe', color:'#4c1d95' },
+  'PTERYGIUM':    { bg:'#ccfbf1', color:'#134e4a' },
+  'CHICKEN VIT':  { bg:'#d1fae5', color:'#065f46' },
 };
 
 const BRAND_MAP = [
-  { brand:'Clear Sight', bg:'#1e3a8a', products:['CLEAR SIGHT'] },
+  { brand:'Clear Sight',      bg:'#1e3a8a', products:['CLEAR SIGHT'] },
+  { brand:'CanPro',           bg:'#78350f', products:['CANPRO'] },
+  { brand:'Hearing Aid',      bg:'#9d174d', products:['AUDICURE'] },
+  { brand:'Chicken Vitamins', bg:'#065f46', products:['CHICKEN VIT'] },
 ];
 
 function roasColorClass(roas, spend) {
@@ -2247,14 +2297,16 @@ const PRODUCT_TABS = {
   'sinuxyl':    ['SINUXYL', 'SINUXYL 2'],
   'clearsight': ['CLEAR SIGHT'],
   'pterygium':  ['PTERYGIUM'],
+  'chickenvit': ['CHICKEN VIT'],
 };
 const PRODUCT_TAB_NAMES = {
-  'audicure':   'AudiCure',
+  'audicure':   'Hearing Aid',
   'canpro':     'CanPro',
   'ginseng':    'Ginseng',
   'sinuxyl':    'Sinuxyl',
   'clearsight': 'Clear Sight',
   'pterygium':  'Pterygium',
+  'chickenvit': 'Chicken Vitamins',
 };
 
 function toggleSubGroup(id) {
@@ -2269,7 +2321,8 @@ function switchTab(tab, el) {
   if (tab === 'ceo') {
     document.querySelector('.nav-item-parent[data-tab="ceo"]').classList.add('active');
   } else if (PRODUCT_TABS[tab]) {
-    const sub = document.querySelector(`.nav-subsubitem[data-tab="${tab}"]`);
+    const sub = document.querySelector(`.nav-subsubitem[data-tab="${tab}"]`) ||
+                document.querySelector(`.nav-subitem[data-tab="${tab}"]`);
     if (sub) sub.classList.add('active');
   } else {
     const sub = document.querySelector(`.nav-subitem[data-tab="${tab}"]`);
@@ -2504,26 +2557,23 @@ async function loadCEO() {
   }
 }
 
-function renderCEO({ dates, campaigns, clearSightByDate }) {
-  const csbd  = clearSightByDate || {};
+function renderCEO({ dates, campaigns }) {
   const today = dates[dates.length - 1];
   const yest  = dates.length >= 2 ? dates[dates.length - 2] : null;
 
-  const todaySales  = csbd[today]?.sales  || 0;
-  const todayOrders = csbd[today]?.orders || 0;
-  const yesterSales  = yest ? (csbd[yest]?.sales  || 0) : null;
-  const yesterOrders = yest ? (csbd[yest]?.orders || 0) : null;
-
-  let todaySpend = 0, yesterSpend = 0, salesWithAdId = 0, yesterSalesWithAdId = 0;
+  // All-product overview — totals from per-campaign (ad-attributed) sums
+  let todaySpend = 0, yesterSpend = 0, todaySales = 0, yesterSales = yest ? 0 : null;
+  let todayOrders = 0, yesterOrders = yest ? 0 : null;
   for (const c of campaigns) {
-    todaySpend       += c.dates[today]?.spend      || 0;
-    salesWithAdId    += c.dates[today]?.grossSales || 0;
+    todaySpend   += c.dates[today]?.spend      || 0;
+    todaySales   += c.dates[today]?.grossSales || 0;
+    todayOrders  += c.dates[today]?.orders     || 0;
     if (yest) {
-      yesterSpend          += c.dates[yest]?.spend      || 0;
-      yesterSalesWithAdId  += c.dates[yest]?.grossSales || 0;
+      yesterSpend  += c.dates[yest]?.spend      || 0;
+      yesterSales  += c.dates[yest]?.grossSales || 0;
+      yesterOrders += c.dates[yest]?.orders     || 0;
     }
   }
-  const salesWithoutAdId = Math.max(0, todaySales - salesWithAdId);
   const todayRoas = todaySpend  > 0 ? todaySales  / todaySpend  : 0;
   const yesterRoas= yesterSpend > 0 ? yesterSales / yesterSpend : 0;
 
@@ -2537,7 +2587,7 @@ function renderCEO({ dates, campaigns, clearSightByDate }) {
 
   document.getElementById('ceo-sales').textContent   = PHP(todaySales);
   document.getElementById('ceo-sales-breakdown').innerHTML =
-    `<span style="color:var(--muted);font-size:10px">w/ Ad: ${PHP(salesWithAdId)} &nbsp;·&nbsp; w/o Ad: ${PHP(salesWithoutAdId)}</span>`;
+    `<span style="color:var(--muted);font-size:10px">All products · ad-attributed</span>`;
   document.getElementById('ceo-spend').textContent   = PHP(todaySpend);
   document.getElementById('ceo-roas').textContent    = todaySpend > 0 ? FMT2(todayRoas) : '—';
   document.getElementById('ceo-orders').textContent  = NUM(todayOrders);
@@ -2655,7 +2705,9 @@ async function loadProductTab(tabName) {
     if (data.error) throw new Error(data.error);
     const campaigns = data.campaigns.filter(c => products.includes((c.product||'').toUpperCase()));
     lastProductData[tabName] = { campaigns, dates: data.dates };
-    renderBrandKPIs(campaigns, tabName, data.clearSightByDate, data.dates);
+    // Only Clear Sight has a full POS gross total (clearSightByDate). Other products
+    // derive orders from their own ad-attributed campaign totals.
+    renderBrandKPIs(campaigns, tabName, tabName === 'clearsight' ? data.clearSightByDate : null, data.dates);
     renderProductCampaigns(campaigns, data.dates, tabName, displayName);
   } catch(e) {
     document.getElementById(`tableContainer-${tabName}`).innerHTML = `<div class="error-msg">${e.message}</div>`;
@@ -2760,13 +2812,9 @@ async function loadAnalytics() {
         byDate[date].spend      += dd.spend           || 0;
         byDate[date].inquiries  += dd.messagesStarted  || 0;
         byDate[date].impressions+= dd.impressions      || 0;
+        byDate[date].sales      += dd.grossSales       || 0;
+        byDate[date].orders     += dd.orders           || 0;
       }
-    }
-    // Use clearSightByDate for sales/orders — accurate totals matching mainfile
-    const csbd = data.clearSightByDate || {};
-    for (const date of data.dates) {
-      byDate[date].sales  = csbd[date] ? csbd[date].sales  : 0;
-      byDate[date].orders = csbd[date] ? csbd[date].orders : 0;
     }
 
     // Aggregate by product
