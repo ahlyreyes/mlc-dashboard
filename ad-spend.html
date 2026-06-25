@@ -300,9 +300,9 @@ async function load() {
   }
 }
 
-// Date picker — default 3-day range (today-2 → today), auto-reload on change
+// Date picker — default to today (5 AM PHT rollover), auto-reload on change
 document.getElementById('toDate').value   = bizToday();
-document.getElementById('fromDate').value = bizTodayMinus(2);
+document.getElementById('fromDate').value = bizToday();
 document.getElementById('applyBtn').addEventListener('click', load);
 document.getElementById('fromDate').addEventListener('change', load);
 document.getElementById('toDate').addEventListener('change', load);
