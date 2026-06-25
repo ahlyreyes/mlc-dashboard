@@ -85,6 +85,27 @@ body {
   color: #fff;
   box-shadow: 0 3px 12px rgba(37,99,235,0.30);
 }
+.range-bar { align-items: center; }
+.range-pick-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #64748B;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.date-input {
+  padding: 7px 12px;
+  border-radius: 10px;
+  border: 1.5px solid #DBEAFE;
+  background: #fff;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #1E40AF;
+  font-family: 'Inter', sans-serif;
+  outline: none;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+.date-input:focus { border-color: #2563EB; }
 
 /* KPI grid */
 .kpi-grid {
@@ -163,10 +184,11 @@ body {
 <div class="page-sub">Overall performance across all active ad accounts</div>
 
 <div class="range-bar">
-  <button class="range-btn active" data-days="1">Today</button>
-  <button class="range-btn" data-days="3">Last 3 Days</button>
-  <button class="range-btn" data-days="7">Last 7 Days</button>
-  <button class="range-btn" data-days="30">Last Month</button>
+  <span class="range-pick-label">From</span>
+  <input type="date" id="fromDate" class="date-input">
+  <span class="range-pick-label">To</span>
+  <input type="date" id="toDate" class="date-input">
+  <button class="range-btn active" id="applyBtn">Apply</button>
 </div>
 
 <div class="range-label" id="rangeLabel"></div>
@@ -176,8 +198,6 @@ body {
 </div>
 
 <script>
-let currentDays = 1;
-
 function fmt(n) {
   return '₱' + Number(n).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
@@ -190,32 +210,32 @@ function fmtPct(n) {
   return Number(n).toFixed(1) + '%';
 }
 
-// endDateStr is the exact date string sent to the API, so the label always matches the data.
-function setRangeLabel(days, endDateStr) {
-  const fmt = ds => new Date(ds + 'T00:00:00').toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
-  const end = fmt(endDateStr);
-  if (days === 1) {
-    document.getElementById('rangeLabel').textContent = 'Showing data for: ' + end;
-  } else {
-    const start = new Date(endDateStr + 'T00:00:00');
-    start.setDate(start.getDate() - (days - 1));
-    const startStr = start.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
-    document.getElementById('rangeLabel').textContent = `Showing data for: ${startStr} — ${end}`;
-  }
+// Business "today" — day rolls over at 5 AM PHT (PHT = UTC+8; +3h shift = UTC midnight at 5 AM PHT)
+function bizToday()       { return new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString().split('T')[0]; }
+function bizTodayMinus(n) { const d = new Date(Date.now() + 3 * 60 * 60 * 1000); d.setUTCDate(d.getUTCDate() - n); return d.toISOString().split('T')[0]; }
+
+function setRangeLabel(fromStr, toStr) {
+  const f = ds => new Date(ds + 'T00:00:00').toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
+  document.getElementById('rangeLabel').textContent = fromStr === toStr
+    ? 'Showing data for: ' + f(toStr)
+    : `Showing data for: ${f(fromStr)} — ${f(toStr)}`;
 }
 
-// Business "today" — day rolls over at 5 AM PHT (PHT = UTC+8; +3h shift = UTC midnight at 5 AM PHT)
-function bizToday() { return new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString().split('T')[0]; }
+async function load() {
+  const fromDate = document.getElementById('fromDate').value;
+  const toDate   = document.getElementById('toDate').value;
+  if (!fromDate || !toDate) return;
+  if (fromDate > toDate) { document.getElementById('toDate').value = fromDate; return; }
 
-async function load(days) {
   document.getElementById('kpiSection').innerHTML = '<div class="state-msg">Loading...</div>';
-
-  const today = bizToday();
-  setRangeLabel(days, today);
+  setRangeLabel(fromDate, toDate);
+  const days   = Math.max(1, Math.round((new Date(toDate) - new Date(fromDate)) / 86400000) + 1);
+  const dayLbl = days === 1 ? 'for 1 day' : `for ${days} days`;
   try {
-    const res = await fetch(`/api/ndap?endDate=${today}&days=${days}`);
+    const res = await fetch(`/api/ndap?from=${fromDate}&to=${toDate}`);
     if (!res.ok) throw new Error('Server error');
     const data = await res.json();
+    if (data.error) throw new Error(data.error);
     const campaigns = data.campaigns || [];
     const allSalesByDate = data.allSalesByDate || {};
 
@@ -266,12 +286,12 @@ async function load(days) {
         <div class="kpi-card highlight">
           <div class="kpi-label">Total Spend</div>
           <div class="kpi-value">${fmt(totalSpend)}</div>
-          <div class="kpi-sub">for ${days === 1 ? '1 day' : days + ' days'}</div>
+          <div class="kpi-sub">${dayLbl}</div>
         </div>
         <div class="kpi-card highlight">
           <div class="kpi-label">Total Sales</div>
           <div class="kpi-value">${fmt(totalSales)}</div>
-          <div class="kpi-sub">for ${days === 1 ? '1 day' : days + ' days'}</div>
+          <div class="kpi-sub">${dayLbl}</div>
         </div>
       </div>
     `;
@@ -280,15 +300,12 @@ async function load(days) {
   }
 }
 
-// Range buttons
-document.querySelectorAll('.range-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    currentDays = parseInt(btn.dataset.days);
-    load(currentDays);
-  });
-});
+// Date picker — default 3-day range (today-2 → today), auto-reload on change
+document.getElementById('toDate').value   = bizToday();
+document.getElementById('fromDate').value = bizTodayMinus(2);
+document.getElementById('applyBtn').addEventListener('click', load);
+document.getElementById('fromDate').addEventListener('change', load);
+document.getElementById('toDate').addEventListener('change', load);
 
 // User display
 fetch('/api/me').then(r => r.json()).then(u => {
@@ -296,7 +313,7 @@ fetch('/api/me').then(r => r.json()).then(u => {
 }).catch(() => {});
 
 // Initial load
-load(1);
+load();
 </script>
 </body>
 </html>
