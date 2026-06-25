@@ -216,9 +216,14 @@ function bizTodayMinus(n) { const d = new Date(Date.now() + 3 * 60 * 60 * 1000);
 
 function setRangeLabel(fromStr, toStr) {
   const f = ds => new Date(ds + 'T00:00:00').toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
-  document.getElementById('rangeLabel').textContent = fromStr === toStr
-    ? 'Showing data for: ' + f(toStr)
-    : `Showing data for: ${f(fromStr)} — ${f(toStr)}`;
+  const range = fromStr === toStr ? f(toStr) : `${f(fromStr)} — ${f(toStr)}`;
+  const now = new Date().toLocaleString('en-PH', {
+    timeZone: 'Asia/Manila',
+    month: 'short', day: 'numeric', year: 'numeric',
+    hour: 'numeric', minute: '2-digit', hour12: true
+  });
+  document.getElementById('rangeLabel').innerHTML =
+    `Showing data for: ${range} &nbsp;·&nbsp; Updated: ${now} (PHT)`;
 }
 
 async function load() {
