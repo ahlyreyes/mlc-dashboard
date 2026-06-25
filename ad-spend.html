@@ -245,6 +245,76 @@ body {
 .roas-good { color: #16a34a; }
 .roas-ok   { color: #D97706; }
 .roas-bad  { color: #dc2626; }
+
+/* ── Restructured layout ── */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  background: #fff;
+  border: 1px solid #E2E8F0;
+  border-radius: 14px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+}
+.toolbar .range-bar { margin-bottom: 0; }
+
+/* Product selector as a segmented tab control */
+.product-tabs {
+  display: inline-flex;
+  background: #F1F5F9;
+  border-radius: 12px;
+  padding: 4px;
+  gap: 2px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+.tab {
+  padding: 8px 18px;
+  border-radius: 9px;
+  border: none;
+  background: transparent;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #64748B;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: 'Inter', sans-serif;
+}
+.tab:hover { color: #1E40AF; }
+.tab.active {
+  background: #fff;
+  color: #1D4ED8;
+  box-shadow: 0 1px 6px rgba(15,23,42,0.10);
+}
+
+/* Metric group blocks */
+.metric-group { margin-bottom: 22px; }
+.group-label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #94A3B8;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+  padding-left: 2px;
+}
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+@media (max-width: 820px) { .grid-4 { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 680px) { .grid-3 { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 460px) { .grid-4, .grid-3 { grid-template-columns: 1fr; } }
+
+/* Hero (primary) cards — bigger numbers */
+.hero-card { padding: 22px 22px; }
+.hero-card .kpi-value { font-size: 2.1rem; }
+
+/* Mini (secondary) cards — compact */
+.mini-card { padding: 16px 18px; }
+.mini-card .kpi-value { font-size: 1.5rem; }
 </style>
 </head>
 <body>
@@ -260,15 +330,16 @@ body {
 <div class="page-title">Daily Summary</div>
 <div class="page-sub">Sales, spend &amp; inquiries across all products and ad accounts</div>
 
-<div class="range-bar">
-  <span class="range-pick-label">From</span>
-  <input type="date" id="fromDate" class="date-input">
-  <span class="range-pick-label">To</span>
-  <input type="date" id="toDate" class="date-input">
-  <button class="range-btn active" id="applyBtn">Apply</button>
+<div class="toolbar">
+  <div class="range-bar">
+    <span class="range-pick-label">From</span>
+    <input type="date" id="fromDate" class="date-input">
+    <span class="range-pick-label">To</span>
+    <input type="date" id="toDate" class="date-input">
+    <button class="range-btn active" id="applyBtn">Apply</button>
+  </div>
+  <div class="range-label" id="rangeLabel" style="margin:0"></div>
 </div>
-
-<div class="range-label" id="rangeLabel"></div>
 
 <div id="contentSection">
   <div class="state-msg">Loading...</div>
@@ -358,61 +429,83 @@ function metricsFor(set) {
 function renderKpis() {
   const cfg = PRODUCTS.find(p => p.key === currentKey) || PRODUCTS[0];
   const m = metricsFor(cfg.set);
-  document.getElementById('kpiHead').innerHTML = `<span class="dot"></span> ${cfg.label}`;
-  document.getElementById('kpiGrid').innerHTML = `
-    <div class="kpi-card highlight">
-      <div class="kpi-label">Total Sales</div>
-      <div class="kpi-value">${fmt(m.sales)}</div>
-      <div class="kpi-sub">Gross (Pancake)</div>
+  const totalInq = m.morning + m.evening;
+  document.getElementById('kpiGroups').innerHTML = `
+    <div class="metric-group">
+      <div class="group-label">Revenue — ${cfg.label}</div>
+      <div class="grid-4">
+        <div class="kpi-card hero-card highlight">
+          <div class="kpi-label">Total Sales</div>
+          <div class="kpi-value">${fmt(m.sales)}</div>
+          <div class="kpi-sub">Gross (Pancake)</div>
+        </div>
+        <div class="kpi-card hero-card highlight">
+          <div class="kpi-label">Total Spend</div>
+          <div class="kpi-value">${fmt(m.spend)}</div>
+          <div class="kpi-sub">All accounts</div>
+        </div>
+        <div class="kpi-card hero-card highlight">
+          <div class="kpi-label">ROAS</div>
+          <div class="kpi-value ${roasClass(m.roas, m.spend)}">${m.spend > 0 ? fmtRoas(m.roas) : '—'}</div>
+          <div class="kpi-sub">Revenue / peso spent</div>
+        </div>
+        <div class="kpi-card hero-card highlight">
+          <div class="kpi-label">Total Orders</div>
+          <div class="kpi-value">${NUM(m.orders)}</div>
+          <div class="kpi-sub">POS orders (Pancake)</div>
+        </div>
+      </div>
     </div>
-    <div class="kpi-card highlight">
-      <div class="kpi-label">Total Spend</div>
-      <div class="kpi-value">${fmt(m.spend)}</div>
-      <div class="kpi-sub">All accounts</div>
+
+    <div class="metric-group">
+      <div class="group-label">Efficiency</div>
+      <div class="grid-3">
+        <div class="kpi-card mini-card">
+          <div class="kpi-label">Avg AOV</div>
+          <div class="kpi-value">${m.orders > 0 ? fmt(m.aov) : '—'}</div>
+          <div class="kpi-sub">Average order value</div>
+        </div>
+        <div class="kpi-card mini-card">
+          <div class="kpi-label">CVR</div>
+          <div class="kpi-value">${m.inquiries > 0 ? fmtPct(m.cvr) : '—'}</div>
+          <div class="kpi-sub">Inquiries to orders</div>
+        </div>
+        <div class="kpi-card mini-card">
+          <div class="kpi-label">Avg CPM</div>
+          <div class="kpi-value">${m.inquiries > 0 ? fmt(m.cpm) : '—'}</div>
+          <div class="kpi-sub">Spend / inquiry</div>
+        </div>
+      </div>
     </div>
-    <div class="kpi-card highlight">
-      <div class="kpi-label">ROAS</div>
-      <div class="kpi-value ${roasClass(m.roas, m.spend)}">${m.spend > 0 ? fmtRoas(m.roas) : '—'}</div>
-      <div class="kpi-sub">Revenue / peso spent</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Total Orders</div>
-      <div class="kpi-value">${NUM(m.orders)}</div>
-      <div class="kpi-sub">POS orders (Pancake)</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Avg AOV</div>
-      <div class="kpi-value">${m.orders > 0 ? fmt(m.aov) : '—'}</div>
-      <div class="kpi-sub">Average order value</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">CVR</div>
-      <div class="kpi-value">${m.inquiries > 0 ? fmtPct(m.cvr) : '—'}</div>
-      <div class="kpi-sub">Inquiries to orders</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Avg CPM</div>
-      <div class="kpi-value">${m.inquiries > 0 ? fmt(m.cpm) : '—'}</div>
-      <div class="kpi-sub">Spend / inquiry</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Inquiries · 6AM–3PM</div>
-      <div class="kpi-value">${NUM(m.morning)}</div>
-      <div class="kpi-sub">Morning (PHT)</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Inquiries · 3PM–12AM</div>
-      <div class="kpi-value">${NUM(m.evening)}</div>
-      <div class="kpi-sub">Afternoon–Evening (PHT)</div>
+
+    <div class="metric-group">
+      <div class="group-label">Inquiries (PHT)</div>
+      <div class="grid-3">
+        <div class="kpi-card mini-card">
+          <div class="kpi-label">6AM – 3PM</div>
+          <div class="kpi-value">${NUM(m.morning)}</div>
+          <div class="kpi-sub">Morning shift</div>
+        </div>
+        <div class="kpi-card mini-card">
+          <div class="kpi-label">3PM – 12AM</div>
+          <div class="kpi-value">${NUM(m.evening)}</div>
+          <div class="kpi-sub">Afternoon–evening shift</div>
+        </div>
+        <div class="kpi-card mini-card">
+          <div class="kpi-label">Total Inquiries</div>
+          <div class="kpi-value">${NUM(totalInq)}</div>
+          <div class="kpi-sub">6AM–12AM combined</div>
+        </div>
+      </div>
     </div>`;
-  // sync pills + table highlight
-  document.querySelectorAll('.pill').forEach(el => el.classList.toggle('active', el.dataset.key === currentKey));
+  // sync tab + table highlight
+  document.querySelectorAll('.tab').forEach(el => el.classList.toggle('active', el.dataset.key === currentKey));
   document.querySelectorAll('.breakdown-table .row-click').forEach(el => el.classList.toggle('active', el.dataset.key === currentKey));
 }
 
-function renderPills() {
-  document.getElementById('filterPills').innerHTML = PRODUCTS.map(p =>
-    `<button class="pill ${p.key === currentKey ? 'active' : ''}" data-key="${p.key}" onclick="selectProduct('${p.key}')">${p.label}</button>`
+function renderTabs() {
+  document.getElementById('productTabs').innerHTML = PRODUCTS.map(p =>
+    `<button class="tab ${p.key === currentKey ? 'active' : ''}" data-key="${p.key}" onclick="selectProduct('${p.key}')">${p.label}</button>`
   ).join('');
 }
 
@@ -450,11 +543,10 @@ function selectProduct(key) {
 
 function renderAll() {
   document.getElementById('contentSection').innerHTML = `
-    <div class="filter-pills" id="filterPills"></div>
-    <div class="section-head" id="kpiHead"></div>
-    <div class="kpi-grid" id="kpiGrid"></div>
+    <div class="product-tabs" id="productTabs"></div>
+    <div id="kpiGroups"></div>
     <div class="breakdown-card">
-      <div class="breakdown-title">Per-Product Breakdown</div>
+      <div class="breakdown-title">Compare All Products</div>
       <table class="breakdown-table">
         <thead><tr>
           <th>Product</th><th>Spend</th><th>Sales</th><th>Orders</th><th>ROAS</th><th>Inquiries</th><th>CVR</th>
@@ -462,7 +554,7 @@ function renderAll() {
         <tbody id="breakdownBody"></tbody>
       </table>
     </div>`;
-  renderPills();
+  renderTabs();
   renderBreakdown();
   renderKpis();
 }
