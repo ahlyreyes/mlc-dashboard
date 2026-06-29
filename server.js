@@ -13,7 +13,7 @@ const META_ACCESS_TOKEN = process.env.META_ACCESS_TOKEN || '';
 const META_TOKEN_1     = process.env.META_TOKEN_1     || META_ACCESS_TOKEN;
 const META_TOKEN_2     = process.env.META_TOKEN_2     || META_ACCESS_TOKEN;
 const META_TOKEN_HUSSE = process.env.META_TOKEN_HUSSE || META_ACCESS_TOKEN;
-// Current portfolio token — covers all active ad accounts (Clear Sight, CanPro, Hearing Aid, Chicken Vitamins)
+// Current portfolio token — covers all active ad accounts (Clear Sight, CanPro, Fixora, HearWell)
 const META_TOKEN_MAIN  = process.env.META_TOKEN_MAIN  || 'EAAamYRVUt6ABR9WKMojnjQfZCP2v3JDZBNFzdIitsBbTDquf6AZB4ZANZAaQlnBRTWdUwUfNEWmdrrdiptgm3BUnbFdEjU4w1NkTlYDRqurE4BZAXLVeRVRltRQR1jsr5yjSams2gZChVh9cnZAqdR6Oq4Cl7cLdB7nDlCLVwxLIVaLIj9a8smoU0RMMsAfYZCLmdagZDZD';
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
@@ -331,15 +331,16 @@ async function fetchPancakeTagDefs(pageId) {
 }
 
 const AD_ACCOUNTS = [
-  // --- CLEAR SIGHT (Clear Sight Optical Care) ---
-  { id: 'act_2825452284312899', name: 'Clear Sight Optical Care 1', currency: 'PHP', product: 'CLEAR SIGHT',  token: META_TOKEN_MAIN },
-  { id: 'act_1264536714635179', name: 'Clear Sight Optical Care 2', currency: 'PHP', product: 'CLEAR SIGHT',  token: META_TOKEN_MAIN },
+  // --- CLEAR SIGHT ---
+  { id: 'act_3948257548644609', name: 'CS New Page',   currency: 'PHP', product: 'CLEAR SIGHT', token: META_TOKEN_MAIN },
+  { id: 'act_2825452284312899', name: 'Clear Sight 1', currency: 'PHP', product: 'CLEAR SIGHT', token: META_TOKEN_MAIN },
+  { id: 'act_1264536714635179', name: 'Clear Sight 2', currency: 'PHP', product: 'CLEAR SIGHT', token: META_TOKEN_MAIN },
   // --- CANPRO ---
-  { id: 'act_1360519375937020', name: 'CanPro',                     currency: 'PHP', product: 'CANPRO',       token: META_TOKEN_MAIN },
-  // --- HEARING AID ---
-  { id: 'act_1783871125514527', name: 'Hearing Aid',               currency: 'PHP', product: 'AUDICURE',     token: META_TOKEN_MAIN },
-  // --- CHICKEN VITAMINS ---
-  { id: 'act_971532679101983',  name: 'Chicken Vitamins',          currency: 'PHP', product: 'CHICKEN VIT',  token: META_TOKEN_MAIN },
+  { id: 'act_1360519375937020', name: 'CanPro',        currency: 'PHP', product: 'CANPRO',      token: META_TOKEN_MAIN },
+  // --- FIXORA (hearing aid) ---
+  { id: 'act_1783871125514527', name: 'Fixora',        currency: 'PHP', product: 'FIXORA',      token: META_TOKEN_MAIN },
+  // --- HEARWELL ---
+  { id: 'act_971532679101983',  name: 'HearWell PH',   currency: 'PHP', product: 'HEARWELL',    token: META_TOKEN_MAIN },
 ];
 
 // Currency conversion to PHP (update as needed)
@@ -456,7 +457,7 @@ async function fetchPancakeSalesByDate() {
       const rowText      = Object.values(row).join(' ').toLowerCase();
       const isClearSight = rowText.includes('clear sight') || rowText.includes('clearsight');
       const isHaplunas   = rowText.includes('haplunas');
-      const ndapProduct  = classifyNdapProduct(rowText); // 'CLEAR SIGHT'|'CANPRO'|'AUDICURE'|'CHICKEN VIT'|null
+      const ndapProduct  = classifyNdapProduct(rowText); // 'CLEAR SIGHT'|'CANPRO'|'FIXORA'|'HEARWELL'|null
 
       // ── Per-ad sales (NDAP matching) — excluded sellers, cancelled, and Haplunas skipped ──
       if (!isExcludedSeller && !isCancelled && adId && !isHaplunas) {
@@ -521,8 +522,10 @@ async function fetchPancakeSalesByDate() {
 function classifyNdapProduct(rowText) {
   if (rowText.includes('clear sight') || rowText.includes('clearsight')) return 'CLEAR SIGHT';
   if (rowText.includes('canpro') || rowText.includes('can pro') || rowText.includes('canro')) return 'CANPRO';
-  if (rowText.includes('hearing aid') || rowText.includes('hearingaid') || rowText.includes('audicure')) return 'AUDICURE';
-  if (rowText.includes('chicken')) return 'CHICKEN VIT';
+  if (rowText.includes('fixora')) return 'FIXORA';
+  if (rowText.includes('hearwell') || rowText.includes('hear well')) return 'HEARWELL';
+  // Legacy: older POS rows labelled "Hearing Aid" belong to the Fixora hearing-aid product
+  if (rowText.includes('hearing aid') || rowText.includes('hearingaid') || rowText.includes('audicure')) return 'FIXORA';
   return null;
 }
 

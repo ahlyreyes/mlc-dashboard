@@ -377,13 +377,13 @@ function setRangeLabel(fromStr, toStr) {
 const NUM = n => Number(n || 0).toLocaleString('en-PH');
 
 // Products — labels must match server product tags (AD_ACCOUNTS / classifyNdapProduct)
-const ALL_PRODUCTS = ['CLEAR SIGHT', 'CANPRO', 'AUDICURE', 'CHICKEN VIT'];
+const ALL_PRODUCTS = ['CLEAR SIGHT', 'CANPRO', 'FIXORA', 'HEARWELL'];
 const PRODUCTS = [
   { key: 'ALL',         label: 'All Products', set: ALL_PRODUCTS },
   { key: 'CLEAR SIGHT', label: 'Clear Sight',  set: ['CLEAR SIGHT'] },
   { key: 'CANPRO',      label: 'CanPro',        set: ['CANPRO'] },
-  { key: 'AUDICURE',    label: 'Hearing Aid',  set: ['AUDICURE'] },
-  { key: 'CHICKEN VIT', label: 'Chicken Vit',  set: ['CHICKEN VIT'] },
+  { key: 'FIXORA',      label: 'Fixora',        set: ['FIXORA'] },
+  { key: 'HEARWELL',    label: 'HearWell',      set: ['HEARWELL'] },
 ];
 
 let STATE = { data: null, inq: null };

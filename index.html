@@ -1121,8 +1121,8 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
         <div class="nav-submenu">
           <div class="nav-subitem" onclick="switchTab('clearsight', this)" data-tab="clearsight">Clear Sight</div>
           <div class="nav-subitem" onclick="switchTab('canpro', this)" data-tab="canpro">CanPro</div>
-          <div class="nav-subitem" onclick="switchTab('audicure', this)" data-tab="audicure">Hearing Aid</div>
-          <div class="nav-subitem" onclick="switchTab('chickenvit', this)" data-tab="chickenvit">Chicken Vitamins</div>
+          <div class="nav-subitem" onclick="switchTab('audicure', this)" data-tab="audicure">Fixora</div>
+          <div class="nav-subitem" onclick="switchTab('chickenvit', this)" data-tab="chickenvit">HearWell</div>
           <div class="nav-subitem" onclick="switchTab('analytics', this)" data-tab="analytics">Data Analytics</div>
           <div class="nav-subitem" onclick="switchTab('history', this)" data-tab="history">Action History</div>
         </div>
@@ -1319,7 +1319,7 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
       <div id="tableContainer-canpro"></div>
     </div></div>
 
-    <!-- HEARING AID TAB -->
+    <!-- FIXORA TAB (id kept as audicure) -->
     <div id="tab-audicure" class="tab-content"><div class="page-wrap">
       <div class="kpi-grid" id="kpiGrid-audicure" style="display:none">
         <div class="kpi-card"><div class="kpi-label">Avg ROAS</div><div class="kpi-value" id="kpi-audicure-roas">—</div><div class="kpi-sub">Revenue / peso spent</div></div>
@@ -1334,7 +1334,7 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
       <div id="tableContainer-audicure"></div>
     </div></div>
 
-    <!-- CHICKEN VITAMINS TAB -->
+    <!-- HEARWELL TAB (id kept as chickenvit) -->
     <div id="tab-chickenvit" class="tab-content"><div class="page-wrap">
       <div class="kpi-grid" id="kpiGrid-chickenvit" style="display:none">
         <div class="kpi-card"><div class="kpi-label">Avg ROAS</div><div class="kpi-value" id="kpi-chickenvit-roas">—</div><div class="kpi-sub">Revenue / peso spent</div></div>
@@ -1744,7 +1744,7 @@ const FMT2 = n => Number(n||0).toFixed(2);
 const NUM  = n => Number(n||0).toLocaleString('en-PH');
 
 // All NDAP product labels (must match server AD_ACCOUNTS / classifyNdapProduct)
-const ALL_NDAP_PRODUCTS = ['CLEAR SIGHT','CANPRO','AUDICURE','CHICKEN VIT'];
+const ALL_NDAP_PRODUCTS = ['CLEAR SIGHT','CANPRO','FIXORA','HEARWELL'];
 
 // Gross POS sales/orders for a set of products over a date range (with + without Ad ID)
 function grossForProducts(productSalesByDate, products, dates) {
@@ -1887,14 +1887,15 @@ const PRODUCT_PILLS = {
   'AUDICURE':     { bg:'#fce7f3', color:'#9d174d' },
   'CLEAR SIGHT':  { bg:'#ede9fe', color:'#4c1d95' },
   'PTERYGIUM':    { bg:'#ccfbf1', color:'#134e4a' },
-  'CHICKEN VIT':  { bg:'#d1fae5', color:'#065f46' },
+  'FIXORA':       { bg:'#fce7f3', color:'#9d174d' },
+  'HEARWELL':     { bg:'#d1fae5', color:'#065f46' },
 };
 
 const BRAND_MAP = [
-  { brand:'Clear Sight',      bg:'#1e3a8a', products:['CLEAR SIGHT'] },
-  { brand:'CanPro',           bg:'#78350f', products:['CANPRO'] },
-  { brand:'Hearing Aid',      bg:'#9d174d', products:['AUDICURE'] },
-  { brand:'Chicken Vitamins', bg:'#065f46', products:['CHICKEN VIT'] },
+  { brand:'Clear Sight', bg:'#1e3a8a', products:['CLEAR SIGHT'] },
+  { brand:'CanPro',      bg:'#78350f', products:['CANPRO'] },
+  { brand:'Fixora',      bg:'#9d174d', products:['FIXORA'] },
+  { brand:'HearWell',    bg:'#065f46', products:['HEARWELL'] },
 ];
 
 function roasColorClass(roas, spend) {
@@ -2287,23 +2288,25 @@ function toggleNdapMenu() {
   document.getElementById('ndapGroup').classList.toggle('open');
 }
 
+// NOTE: tab keys 'audicure'/'chickenvit' are kept as internal element IDs only;
+// they now map to the Fixora and HearWell products respectively.
 const PRODUCT_TABS = {
-  'audicure':   ['AUDICURE'],
+  'audicure':   ['FIXORA'],
   'canpro':     ['CANPRO'],
   'ginseng':    ['GINSENG'],
   'sinuxyl':    ['SINUXYL', 'SINUXYL 2'],
   'clearsight': ['CLEAR SIGHT'],
   'pterygium':  ['PTERYGIUM'],
-  'chickenvit': ['CHICKEN VIT'],
+  'chickenvit': ['HEARWELL'],
 };
 const PRODUCT_TAB_NAMES = {
-  'audicure':   'Hearing Aid',
+  'audicure':   'Fixora',
   'canpro':     'CanPro',
   'ginseng':    'Ginseng',
   'sinuxyl':    'Sinuxyl',
   'clearsight': 'Clear Sight',
   'pterygium':  'Pterygium',
-  'chickenvit': 'Chicken Vitamins',
+  'chickenvit': 'HearWell',
 };
 
 function toggleSubGroup(id) {
@@ -2623,7 +2626,7 @@ function renderCEO({ dates, campaigns, productSalesByDate }) {
 }
 
 // ── BRAND-FILTERED TABS ──
-const NATURALS_PRODUCTS = ['CANPRO','AUDICURE','SINUXYL','SINUXYL 2','GINSENG'];
+const NATURALS_PRODUCTS = ['CANPRO','FIXORA','HEARWELL','SINUXYL','SINUXYL 2','GINSENG'];
 const EYECARE_PRODUCTS  = ['CLEAR SIGHT','PTERYGIUM'];
 
 // `gross` = { sales, orders } gross POS total for this product (or null to use ad-attributed).
