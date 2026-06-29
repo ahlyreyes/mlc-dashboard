@@ -337,8 +337,8 @@ const AD_ACCOUNTS = [
   { id: 'act_1264536714635179', name: 'Clear Sight 2', currency: 'PHP', product: 'CLEAR SIGHT', token: META_TOKEN_MAIN },
   // --- CANPRO ---
   { id: 'act_1360519375937020', name: 'CanPro',        currency: 'PHP', product: 'CANPRO',      token: META_TOKEN_MAIN },
-  // --- FIXORA (hearing aid) ---
-  { id: 'act_1783871125514527', name: 'Fixora',        currency: 'PHP', product: 'FIXORA',      token: META_TOKEN_MAIN },
+  // --- FIXORA (displayed as "Hearing Aid") ---
+  { id: 'act_1783871125514527', name: 'Hearing Aid',   currency: 'PHP', product: 'FIXORA',      token: META_TOKEN_MAIN },
   // --- HEARWELL ---
   { id: 'act_971532679101983',  name: 'HearWell PH',   currency: 'PHP', product: 'HEARWELL',    token: META_TOKEN_MAIN },
 ];
