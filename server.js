@@ -710,8 +710,8 @@ function cacheSet(map, key, data) {
 
 // Public assets
 app.get('/logo.svg', (_req, res) => res.sendFile(path.join(__dirname, 'logo.svg')));
-app.get('/favicon.svg', (_req, res) => res.sendFile(path.join(__dirname, 'favicon.svg')));
-app.get('/favicon.ico', (_req, res) => res.sendFile(path.join(__dirname, 'favicon.svg')));
+app.get('/mlc-logo.png', (_req, res) => res.sendFile(path.join(__dirname, 'mlc-logo.png')));
+app.get('/favicon.ico', (_req, res) => res.sendFile(path.join(__dirname, 'mlc-logo.png')));
 
 // Auth routes
 app.get('/login', (req, res) => res.sendFile(path.join(__dirname, 'login.html')));
