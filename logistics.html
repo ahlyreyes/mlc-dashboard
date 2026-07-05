@@ -8,28 +8,41 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: 'Inter', sans-serif; background: #EEF2FF; min-height: 100vh; padding: 24px 20px; }
+body { font-family: 'Inter', sans-serif; background: #EEF2FF; min-height: 100vh; }
 
-.app-header {
-  background: linear-gradient(90deg, #1D4ED8 0%, #2563EB 60%, #3B82F6 100%);
-  color: #fff; padding: 0 22px; height: 54px; display: flex; align-items: center;
-  justify-content: space-between; border-radius: 16px; margin-bottom: 22px;
-  box-shadow: 0 4px 20px rgba(37,99,235,0.25);
-}
-.header-logo { font-size: 1.05rem; font-weight: 800; letter-spacing: -0.5px; }
-.header-logo span { opacity: 0.65; font-weight: 500; font-size: 0.8rem; margin-left: 8px; }
+.app { display: flex; min-height: 100vh; }
+
+/* Sidebar */
+.sidebar { width: 210px; min-width: 210px; background: #fff; border-right: 1px solid #E2E8F0;
+  display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; }
+.sidebar-brand { padding: 18px 18px 16px; border-bottom: 1px solid #E2E8F0; background: linear-gradient(135deg, #1D4ED8, #3B82F6); }
+.sidebar-brand .bn { font-size: 15px; font-weight: 800; color: #fff; letter-spacing: -0.4px; }
+.sidebar-brand .bs { font-size: 10px; color: rgba(255,255,255,0.7); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; margin-top: 3px; }
+.sidebar-nav { flex: 1; padding: 12px 10px; display: flex; flex-direction: column; gap: 3px; }
+.nav-item { display: flex; align-items: center; gap: 9px; padding: 9px 12px; border-radius: 9px; cursor: pointer;
+  font-size: 13px; font-weight: 600; color: #64748B; transition: all 0.15s; user-select: none; }
+.nav-item:hover { background: #EFF6FF; color: #0F172A; }
+.nav-item.active { background: #DBEAFE; color: #1E40AF; }
+.nav-item .dot { width: 7px; height: 7px; border-radius: 50%; background: #CBD5E1; flex-shrink: 0; }
+.nav-item.active .dot { background: #2563EB; }
+.sidebar-foot { padding: 12px 16px; border-top: 1px solid #E2E8F0; }
+.foot-link { font-size: 12px; color: #64748B; text-decoration: none; font-weight: 600; }
+.foot-link:hover { color: #1D4ED8; }
+
+/* Main */
+.main { flex: 1; min-width: 0; padding: 24px 24px 40px; }
+.app-header { background: linear-gradient(90deg, #1D4ED8 0%, #2563EB 60%, #3B82F6 100%);
+  color: #fff; padding: 0 22px; height: 54px; display: flex; align-items: center; justify-content: space-between;
+  border-radius: 16px; margin-bottom: 22px; box-shadow: 0 4px 20px rgba(37,99,235,0.25); }
+.header-title { font-size: 1.05rem; font-weight: 800; }
 .header-right { display: flex; align-items: center; gap: 12px; }
-.header-user { font-size: 0.75rem; opacity: 0.8; font-weight: 500; }
-.back-link { font-size: 0.75rem; font-weight: 600; color: #fff; text-decoration: none; opacity: 0.85;
-  padding: 5px 12px; border: 1px solid rgba(255,255,255,0.35); border-radius: 8px; transition: all 0.15s; }
-.back-link:hover { opacity: 1; background: rgba(255,255,255,0.15); }
+.header-user { font-size: 0.75rem; opacity: 0.85; font-weight: 500; }
 
 .page-title { font-size: 1.3rem; font-weight: 800; color: #0F172A; margin-bottom: 4px; letter-spacing: -0.5px; }
 .page-sub { font-size: 0.78rem; color: #64748B; margin-bottom: 20px; }
 
 .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
-  background: #fff; border: 1px solid #E2E8F0; border-radius: 14px; padding: 12px 16px; margin-bottom: 16px;
-  box-shadow: 0 1px 6px rgba(0,0,0,0.04); }
+  background: #fff; border: 1px solid #E2E8F0; border-radius: 14px; padding: 12px 16px; margin-bottom: 16px; box-shadow: 0 1px 6px rgba(0,0,0,0.04); }
 .range-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .range-pick-label { font-size: 0.72rem; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; }
 .date-input { padding: 7px 12px; border-radius: 10px; border: 1.5px solid #DBEAFE; background: #fff;
@@ -41,16 +54,14 @@ body { font-family: 'Inter', sans-serif; background: #EEF2FF; min-height: 100vh;
 
 .metric-group { margin-bottom: 22px; }
 .group-label { font-size: 0.68rem; font-weight: 800; color: #94A3B8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; padding-left: 2px; }
-.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
 .grid-auto { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 14px; }
 .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
 .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; max-width: 60%; }
-@media (max-width: 820px) { .grid-4 { grid-template-columns: 1fr 1fr; } .grid-2 { max-width: 100%; } }
+@media (max-width: 820px) { .grid-2 { max-width: 100%; } }
 @media (max-width: 680px) { .grid-3 { grid-template-columns: 1fr 1fr; } }
-@media (max-width: 460px) { .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; } }
+@media (max-width: 460px) { .grid-3, .grid-2 { grid-template-columns: 1fr; } }
 
-.card { background: #fff; border: 1px solid #E2E8F0; border-radius: 16px; padding: 18px 20px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.05); transition: box-shadow 0.2s, transform 0.2s; }
+.card { background: #fff; border: 1px solid #E2E8F0; border-radius: 16px; padding: 18px 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.05); transition: box-shadow 0.2s, transform 0.2s; }
 .card:hover { box-shadow: 0 6px 24px rgba(37,99,235,0.10); transform: translateY(-2px); }
 .card.hl { border-left: 4px solid #2563EB; background: linear-gradient(135deg, #ffffff 0%, #F0F7FF 100%); }
 .card.good { border-left: 4px solid #16a34a; }
@@ -61,74 +72,108 @@ body { font-family: 'Inter', sans-serif; background: #EEF2FF; min-height: 100vh;
 .v-good { color: #16a34a; } .v-ok { color: #D97706; } .v-bad { color: #dc2626; }
 
 .tbl-card { background: #fff; border: 1px solid #E2E8F0; border-radius: 16px; padding: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.05); margin-bottom: 18px; overflow-x: auto; }
-.tbl-title { font-size: 0.72rem; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 14px; }
+.tbl-title { font-size: 0.72rem; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; }
 table { width: 100%; border-collapse: collapse; font-size: 0.82rem; min-width: 620px; }
 th { text-align: right; padding: 9px 12px; font-size: 0.62rem; font-weight: 700; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.6px; border-bottom: 2px solid #E2E8F0; }
 th:first-child, td:first-child { text-align: left; }
 td { padding: 11px 12px; text-align: right; border-bottom: 1px solid #F1F5F9; color: #0F172A; font-weight: 600; }
 tr:last-child td { border-bottom: none; }
 .name-cell { font-weight: 700; }
-.total-row td { border-top: 2px solid #E2E8F0; font-weight: 800; background: #F8FAFF; }
 .bar-wrap { display: inline-block; width: 54px; height: 6px; background: #E2E8F0; border-radius: 3px; overflow: hidden; vertical-align: middle; margin-left: 6px; }
 .bar-fill { height: 100%; border-radius: 3px; }
+.risk-row td { background: #FEF2F2; }
+.pill { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; }
+.pill-risk { background: #FEE2E2; color: #991B1B; }
+.pill-warn { background: #FEF3C7; color: #92400E; }
+.pill-ok { background: #DCFCE7; color: #166534; }
 .state-msg { text-align: center; padding: 48px; color: #94A3B8; font-size: 0.85rem; }
 .error-msg { color: #EF4444; }
+.view { display: none; }
+.view.active { display: block; }
 </style>
 </head>
 <body>
+<div class="app">
 
-<div class="app-header">
-  <div class="header-logo">MLC<span>Logistics</span></div>
-  <div class="header-right">
-    <span class="header-user" id="headerUser"></span>
-    <a href="/home" class="back-link">← Home</a>
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="bn">MLC Logistics</div>
+      <div class="bs">Delivery Ops</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-item active" data-view="overview" onclick="switchView('overview')"><span class="dot"></span> Overview</div>
+      <div class="nav-item" data-view="ofd" onclick="switchView('ofd')"><span class="dot"></span> Out for Delivery</div>
+    </nav>
+    <div class="sidebar-foot"><a href="/home" class="foot-link">← Back to Home</a></div>
+  </aside>
+
+  <div class="main">
+    <div class="app-header">
+      <div class="header-title" id="headerTitle">Overview</div>
+      <div class="header-right"><span class="header-user" id="headerUser"></span></div>
+    </div>
+
+    <!-- OVERVIEW VIEW -->
+    <div id="view-overview" class="view active">
+      <div class="page-title">Delivery &amp; Returns</div>
+      <div class="page-sub">Delivery &amp; return (RTS) performance — protect revenue from failed deliveries</div>
+      <div class="toolbar">
+        <div class="range-bar">
+          <span class="range-pick-label">From</span>
+          <input type="date" id="fromDate" class="date-input">
+          <span class="range-pick-label">To</span>
+          <input type="date" id="toDate" class="date-input">
+          <button class="btn" id="applyBtn">Apply</button>
+        </div>
+        <div class="range-label" id="rangeLabel"></div>
+      </div>
+      <div id="content"><div class="state-msg">Loading...</div></div>
+    </div>
+
+    <!-- OUT FOR DELIVERY VIEW -->
+    <div id="view-ofd" class="view">
+      <div class="page-title">Out for Delivery</div>
+      <div class="page-sub">Real-time watchlist ng parcels na nasa daan — tawagan agad ang at-risk bago mag-RTS</div>
+      <div class="toolbar">
+        <div class="range-label" id="ofdUpdated">Live from Pancake POS</div>
+        <button class="btn" onclick="loadOFD()">↻ Refresh</button>
+      </div>
+      <div id="ofdContent"><div class="state-msg">Loading...</div></div>
+    </div>
   </div>
 </div>
-
-<div class="page-title">Logistics</div>
-<div class="page-sub">Delivery &amp; return (RTS) performance — protect revenue from failed deliveries</div>
-
-<div class="toolbar">
-  <div class="range-bar">
-    <span class="range-pick-label">From</span>
-    <input type="date" id="fromDate" class="date-input">
-    <span class="range-pick-label">To</span>
-    <input type="date" id="toDate" class="date-input">
-    <button class="btn" id="applyBtn">Apply</button>
-  </div>
-  <div class="range-label" id="rangeLabel"></div>
-</div>
-
-<div id="content"><div class="state-msg">Loading...</div></div>
 
 <script>
 const PHP = n => '₱' + Number(n||0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const NUM = n => Number(n||0).toLocaleString('en-PH');
 const PCT = n => (n==null ? '—' : Number(n).toFixed(1) + '%');
 
-// Business "today" — rolls over at 5 AM PHT
 function bizToday() { return new Date(Date.now() + 3*60*60*1000).toISOString().split('T')[0]; }
 function monthStart() { const d = new Date(Date.now() + 3*60*60*1000); d.setUTCDate(1); return d.toISOString().split('T')[0]; }
-
-// Delivery rate: green ≥90, orange ≥75, else red
 function delClass(r) { if (r==null) return ''; if (r>=90) return 'v-good'; if (r>=75) return 'v-ok'; return 'v-bad'; }
-// RTS rate: green <10, orange <20, else red (high = bad)
 function rtsClass(r) { if (r==null) return ''; if (r<10) return 'v-good'; if (r<20) return 'v-ok'; return 'v-bad'; }
 
+// ── Sidebar view switching ──
+let ofdLoaded = false;
+function switchView(v) {
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.view === v));
+  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+  document.getElementById('view-' + v).classList.add('active');
+  document.getElementById('headerTitle').textContent = v === 'ofd' ? 'Out for Delivery' : 'Overview';
+  if (v === 'ofd' && !ofdLoaded) loadOFD();
+}
+
+// ══════════ OVERVIEW ══════════
 function setRangeLabel(f, t) {
   const fmt = ds => new Date(ds+'T00:00:00').toLocaleDateString('en-PH', { month:'short', day:'numeric', year:'numeric' });
   const range = f===t ? fmt(t) : `${fmt(f)} — ${fmt(t)}`;
   const now = new Date().toLocaleString('en-PH', { timeZone:'Asia/Manila', month:'short', day:'numeric', hour:'numeric', minute:'2-digit', hour12:true });
   document.getElementById('rangeLabel').innerHTML = `Showing: ${range} &nbsp;·&nbsp; Updated: ${now} (PHT)`;
 }
-
-function bar(pct, color) {
-  const w = Math.max(0, Math.min(100, pct||0));
-  return `<span class="bar-wrap"><span class="bar-fill" style="width:${w}%;background:${color}"></span></span>`;
-}
+function bar(pct, color) { const w = Math.max(0, Math.min(100, pct||0)); return `<span class="bar-wrap"><span class="bar-fill" style="width:${w}%;background:${color}"></span></span>`; }
 
 function breakdownTable(title, rows) {
-  let body = rows.map(r => `<tr>
+  const body = rows.map(r => `<tr>
     <td class="name-cell">${r.name}</td>
     <td>${NUM(r.delivered)}</td>
     <td>${NUM(r.returned)}</td>
@@ -137,17 +182,59 @@ function breakdownTable(title, rows) {
     <td>${PHP(r.deliveredValue)}</td>
     <td class="v-bad">${PHP(r.returnedValue)}</td>
   </tr>`).join('');
-  return `<div class="tbl-card">
-    <div class="tbl-title">${title}</div>
-    <table>
-      <thead><tr>
-        <th>${title.includes('Product')?'Product':'Region'}</th>
-        <th>Delivered</th><th>RTS</th><th>Delivery Rate</th><th>RTS Rate</th>
-        <th>Net Revenue</th><th>Lost to RTS</th>
-      </tr></thead>
-      <tbody>${body || '<tr><td colspan="7" style="text-align:center;color:#94A3B8">No data</td></tr>'}</tbody>
-    </table>
+  return `<div class="tbl-card"><div class="tbl-title">${title}</div>
+    <table><thead><tr><th>${title.includes('Product')?'Product':'Region'}</th>
+      <th>Delivered</th><th>RTS</th><th>Delivery Rate</th><th>RTS Rate</th><th>Net Revenue</th><th>Lost to RTS</th></tr></thead>
+    <tbody>${body || '<tr><td colspan="7" style="text-align:center;color:#94A3B8">No data</td></tr>'}</tbody></table></div>`;
+}
+
+function renderLiveStatus(ds) {
+  if (!ds || ds.error) return '';
+  return `<div class="metric-group">
+    <div class="group-label">🚚 Live Delivery Status — from Pancake POS (orders in range)</div>
+    <div class="grid-auto">
+      <div class="card"><div class="k-label">To Ship</div><div class="k-value">${NUM(ds.toShip)}</div><div class="k-sub">New / packing / waiting</div></div>
+      <div class="card hl"><div class="k-label">Out for Delivery</div><div class="k-value">${NUM(ds.outForDelivery)}</div><div class="k-sub">On the way now</div></div>
+      <div class="card good"><div class="k-label">Delivered</div><div class="k-value v-good">${NUM(ds.delivered)}</div><div class="k-sub">Received by customer</div></div>
+      <div class="card bad"><div class="k-label">RTS</div><div class="k-value v-bad">${NUM(ds.rts)}</div><div class="k-sub">Returning + returned</div></div>
+      <div class="card"><div class="k-label">Cancelled</div><div class="k-value">${NUM(ds.cancelled)}</div><div class="k-sub">Canceled / removed</div></div>
+    </div>
   </div>`;
+}
+
+function renderOrderView(d) {
+  const t = d.totals;
+  const totalOrders = t.delivered + t.returned + t.shipped;
+  const pctTot = a => totalOrders > 0 ? (a / totalOrders * 100).toFixed(1) + '%' : '—';
+  return `
+    <div class="metric-group">
+      <div class="group-label">Order Outcomes — over total orders</div>
+      <div class="grid-auto">
+        <div class="card hl"><div class="k-label">Total Orders</div><div class="k-value">${NUM(totalOrders)}</div><div class="k-sub">Delivered + RTS + in-transit</div></div>
+        <div class="card good"><div class="k-label">Delivered</div><div class="k-value v-good">${NUM(t.delivered)}</div><div class="k-sub"><b>${pctTot(t.delivered)}</b> of total orders</div></div>
+        <div class="card bad"><div class="k-label">RTS (Returned)</div><div class="k-value v-bad">${NUM(t.returned)}</div><div class="k-sub"><b>${pctTot(t.returned)}</b> of total orders</div></div>
+        <div class="card"><div class="k-label">In Transit</div><div class="k-value">${NUM(t.shipped)}</div><div class="k-sub"><b>${pctTot(t.shipped)}</b> still on the way</div></div>
+        <div class="card"><div class="k-label">Cancelled</div><div class="k-value">${NUM(t.cancelled)}</div><div class="k-sub">Not counted in total</div></div>
+      </div>
+    </div>
+    <div class="metric-group">
+      <div class="group-label">Delivery Quality — of completed orders (excludes in-transit)</div>
+      <div class="grid-2">
+        <div class="card hl"><div class="k-label">Delivery Rate</div><div class="k-value ${delClass(t.deliveryRate)}">${PCT(t.deliveryRate)}</div><div class="k-sub">Delivered ÷ (Delivered + RTS)</div></div>
+        <div class="card"><div class="k-label">RTS Rate</div><div class="k-value ${rtsClass(t.rtsRate)}">${PCT(t.rtsRate)}</div><div class="k-sub">Returned ÷ (Delivered + RTS)</div></div>
+      </div>
+    </div>
+    <div class="metric-group">
+      <div class="group-label">Revenue Impact</div>
+      <div class="grid-3">
+        <div class="card hl"><div class="k-label">Gross Revenue</div><div class="k-value">${PHP(t.grossValue)}</div><div class="k-sub">Delivered + RTS + in-transit</div></div>
+        <div class="card good"><div class="k-label">Delivered (Net)</div><div class="k-value v-good">${PHP(t.deliveredValue)}</div><div class="k-sub">Actual realized revenue</div></div>
+        <div class="card bad"><div class="k-label">Lost to RTS</div><div class="k-value v-bad">${PHP(t.returnedValue)}</div><div class="k-sub">Revenue lost to returns</div></div>
+      </div>
+    </div>
+    ${breakdownTable('RTS &amp; Delivery by Product', d.byProduct)}
+    ${breakdownTable('RTS &amp; Delivery by Region', d.byRegion)}
+  `;
 }
 
 async function load() {
@@ -172,72 +259,65 @@ async function load() {
   }
 }
 
-// LIVE delivery status from Pancake POS (real-time order statuses)
-function renderLiveStatus(ds) {
-  if (!ds || ds.error) return '';
-  return `<div class="metric-group">
-    <div class="group-label">🚚 Live Delivery Status — from Pancake POS (orders in range)</div>
-    <div class="grid-auto">
-      <div class="card"><div class="k-label">To Ship</div><div class="k-value">${NUM(ds.toShip)}</div><div class="k-sub">New / packing / waiting</div></div>
-      <div class="card hl"><div class="k-label">Out for Delivery</div><div class="k-value">${NUM(ds.outForDelivery)}</div><div class="k-sub">On the way now</div></div>
-      <div class="card good"><div class="k-label">Delivered</div><div class="k-value v-good">${NUM(ds.delivered)}</div><div class="k-sub">Received by customer</div></div>
-      <div class="card bad"><div class="k-label">RTS</div><div class="k-value v-bad">${NUM(ds.rts)}</div><div class="k-sub">Returning + returned</div></div>
-      <div class="card"><div class="k-label">Cancelled</div><div class="k-value">${NUM(ds.cancelled)}</div><div class="k-sub">Canceled / removed</div></div>
-    </div>
-  </div>`;
+// ══════════ OUT FOR DELIVERY ══════════
+function riskPill(o) {
+  if (o.partnerStatus === 'undeliverable') return '<span class="pill pill-risk">Undeliverable</span>';
+  if ((o.days || 0) >= 7) return '<span class="pill pill-risk">Stuck '+o.days+'d</span>';
+  if (o.attempts >= 2) return '<span class="pill pill-warn">'+o.attempts+' attempts</span>';
+  return '<span class="pill pill-ok">On the way</span>';
+}
+function isRisk(o) { return o.partnerStatus === 'undeliverable' || o.attempts >= 2 || (o.days || 0) >= 7; }
+
+async function loadOFD() {
+  ofdLoaded = true;
+  document.getElementById('ofdContent').innerHTML = '<div class="state-msg">Loading live orders from Pancake POS...</div>';
+  try {
+    const res = await fetch('/api/out-for-delivery');
+    if (!res.ok) throw new Error('Server error');
+    const d = await res.json();
+    if (d.error) throw new Error(d.error);
+    const now = new Date().toLocaleString('en-PH', { timeZone:'Asia/Manila', hour:'numeric', minute:'2-digit', hour12:true });
+    document.getElementById('ofdUpdated').innerHTML = `Live from Pancake POS &nbsp;·&nbsp; Updated ${now} (PHT)`;
+
+    const rows = (d.orders || []).map(o => `<tr class="${isRisk(o) ? 'risk-row' : ''}">
+      <td class="name-cell">${o.name}${o.phone ? `<br><span style="font-weight:500;color:#64748B;font-size:0.72rem">${o.phone}</span>` : ''}</td>
+      <td style="text-align:left">${riskPill(o)}</td>
+      <td>${o.courier}</td>
+      <td>${o.days==null ? '—' : o.days + 'd'}</td>
+      <td>${o.attempts || 0}</td>
+      <td style="text-align:left">${o.region}</td>
+      <td class="v-bad">${PHP(o.cod)}</td>
+      <td style="text-align:left;font-family:monospace;font-size:0.72rem">${o.tracking || '—'}</td>
+    </tr>`).join('');
+
+    document.getElementById('ofdContent').innerHTML = `
+      <div class="metric-group">
+        <div class="grid-3">
+          <div class="card bad"><div class="k-label">Total COD at Risk</div><div class="k-value v-bad">${PHP(d.totalCod)}</div><div class="k-sub">Money still to collect on the road</div></div>
+          <div class="card hl"><div class="k-label">Out for Delivery</div><div class="k-value">${NUM(d.count)}</div><div class="k-sub">Parcels currently on the way</div></div>
+          <div class="card"><div class="k-label">At Risk</div><div class="k-value v-bad">${NUM(d.atRisk)}</div><div class="k-sub">Undeliverable · 2+ attempts · 7+ days</div></div>
+        </div>
+      </div>
+      <div class="tbl-card">
+        <div class="tbl-title"><span>On-the-Way Watchlist — most at-risk first</span><span style="font-weight:600;text-transform:none;letter-spacing:0">${NUM(d.count)} orders</span></div>
+        <table><thead><tr>
+          <th>Customer</th><th style="text-align:left">Status</th><th>Courier</th><th>Days</th><th>Attempts</th>
+          <th style="text-align:left">Region</th><th>COD</th><th style="text-align:left">Tracking</th>
+        </tr></thead>
+        <tbody>${rows || '<tr><td colspan="8" style="text-align:center;color:#94A3B8">Walang orders na out for delivery ngayon 🎉</td></tr>'}</tbody></table>
+      </div>`;
+  } catch(e) {
+    document.getElementById('ofdContent').innerHTML = `<div class="state-msg error-msg">Failed to load: ${e.message}</div>`;
+  }
 }
 
-// ORDER DATE mode — full cohort analysis (delivered / RTS / in-transit over total)
-function renderOrderView(d) {
-  const t = d.totals;
-  const totalOrders = t.delivered + t.returned + t.shipped; // fulfillable; cancelled shown separately
-  const pctTot = a => totalOrders > 0 ? (a / totalOrders * 100).toFixed(1) + '%' : '—';
-  return `
-    <div class="metric-group">
-      <div class="group-label">Order Outcomes — over total orders</div>
-      <div class="grid-auto">
-        <div class="card hl"><div class="k-label">Total Orders</div><div class="k-value">${NUM(totalOrders)}</div><div class="k-sub">Delivered + RTS + in-transit</div></div>
-        <div class="card good"><div class="k-label">Delivered</div><div class="k-value v-good">${NUM(t.delivered)}</div><div class="k-sub"><b>${pctTot(t.delivered)}</b> of total orders</div></div>
-        <div class="card bad"><div class="k-label">RTS (Returned)</div><div class="k-value v-bad">${NUM(t.returned)}</div><div class="k-sub"><b>${pctTot(t.returned)}</b> of total orders</div></div>
-        <div class="card"><div class="k-label">In Transit</div><div class="k-value">${NUM(t.shipped)}</div><div class="k-sub"><b>${pctTot(t.shipped)}</b> still on the way</div></div>
-        <div class="card"><div class="k-label">Cancelled</div><div class="k-value">${NUM(t.cancelled)}</div><div class="k-sub">Not counted in total</div></div>
-      </div>
-    </div>
-
-    <div class="metric-group">
-      <div class="group-label">Delivery Quality — of completed orders (excludes in-transit)</div>
-      <div class="grid-2">
-        <div class="card hl"><div class="k-label">Delivery Rate</div><div class="k-value ${delClass(t.deliveryRate)}">${PCT(t.deliveryRate)}</div><div class="k-sub">Delivered ÷ (Delivered + RTS)</div></div>
-        <div class="card"><div class="k-label">RTS Rate</div><div class="k-value ${rtsClass(t.rtsRate)}">${PCT(t.rtsRate)}</div><div class="k-sub">Returned ÷ (Delivered + RTS)</div></div>
-      </div>
-    </div>
-
-    <div class="metric-group">
-      <div class="group-label">Revenue Impact</div>
-      <div class="grid-3">
-        <div class="card hl"><div class="k-label">Gross Revenue</div><div class="k-value">${PHP(t.grossValue)}</div><div class="k-sub">Delivered + RTS + in-transit</div></div>
-        <div class="card good"><div class="k-label">Delivered (Net)</div><div class="k-value v-good">${PHP(t.deliveredValue)}</div><div class="k-sub">Actual realized revenue</div></div>
-        <div class="card bad"><div class="k-label">Lost to RTS</div><div class="k-value v-bad">${PHP(t.returnedValue)}</div><div class="k-sub">Revenue lost to returns</div></div>
-      </div>
-    </div>
-
-    ${breakdownTable('RTS &amp; Delivery by Product', d.byProduct)}
-    ${breakdownTable('RTS &amp; Delivery by Region', d.byRegion)}
-  `;
-}
-
-
-// Default: month-to-date
+// Init
 document.getElementById('fromDate').value = monthStart();
 document.getElementById('toDate').value   = bizToday();
 document.getElementById('applyBtn').addEventListener('click', load);
 document.getElementById('fromDate').addEventListener('change', load);
 document.getElementById('toDate').addEventListener('change', load);
-
-fetch('/api/me').then(r => r.json()).then(u => {
-  document.getElementById('headerUser').textContent = u.name || u.email || '';
-}).catch(() => {});
-
+fetch('/api/me').then(r => r.json()).then(u => { document.getElementById('headerUser').textContent = u.name || u.email || ''; }).catch(() => {});
 load();
 </script>
 </body>

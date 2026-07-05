@@ -1199,6 +1199,66 @@ app.get('/api/delivery-status', requireAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ── OUT-FOR-DELIVERY WATCHLIST — live list of parcels currently on the way + COD at risk ──
+async function fetchOutForDelivery() {
+  const cached = cacheGet(deliveryStatusCache, 'ofd', 5 * 60 * 1000);
+  if (cached) return cached;
+
+  const all = [];
+  let page = 1, totalPages = 1;
+  while (page <= totalPages && page <= 30) {
+    const url = `https://pos.pages.fm/api/v1/shops/${PANCAKE_POS_SHOP}/orders` +
+      `?api_key=${PANCAKE_POS_KEY}&page_size=100&page_number=${page}&status=2`;
+    const res = await fetchJson(url);
+    if (res.error || res.success === false) break;
+    totalPages = res.total_pages || 1;
+    const data = res.data || [];
+    all.push(...data);
+    if (data.length < 100) break;
+    page++;
+  }
+
+  const now = Date.now();
+  const orders = all.map(o => {
+    const p = o.partner || {};
+    const addr = o.shipping_address || {};
+    const sentRaw = o.time_send_partner || p.picked_up_at || p.first_delivery_at || o.inserted_at;
+    const sentMs = sentRaw ? new Date(sentRaw).getTime() : null;
+    const days = sentMs ? Math.max(0, Math.floor((now - sentMs) / 86400000)) : null;
+    return {
+      id:            o.system_id || o.id,
+      name:          o.bill_full_name || (o.customer && o.customer.name) || '—',
+      phone:         o.bill_phone_number || (o.customer && o.customer.phone_number) || '',
+      courier:       p.partner_name || '—',
+      partnerStatus: p.partner_status || '',
+      cod:           Number(o.money_to_collect || o.cod || 0),
+      attempts:      p.count_of_delivery || 0,
+      days,
+      region:        addr.province_name || addr.province || addr.state || '—',
+      tracking:      p.extend_code || '',
+    };
+  });
+  // Most at-risk first: undeliverable, then more attempts, then longer on the way
+  orders.sort((a, b) =>
+    (Number(b.partnerStatus === 'undeliverable') - Number(a.partnerStatus === 'undeliverable')) ||
+    (b.attempts - a.attempts) || ((b.days || 0) - (a.days || 0)));
+
+  const result = {
+    count: orders.length,
+    totalCod: orders.reduce((s, o) => s + o.cod, 0),
+    atRisk: orders.filter(o => o.partnerStatus === 'undeliverable' || o.attempts >= 2 || (o.days || 0) >= 7).length,
+    orders,
+  };
+  cacheSet(deliveryStatusCache, 'ofd', result);
+  return result;
+}
+
+app.get('/api/out-for-delivery', requireAuth, async (_req, res) => {
+  try {
+    res.json(await fetchOutForDelivery());
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/aov-cvr', requireAuth, async (req, res) => {
   try {
     const fromDate = req.query.from || new Date().toISOString().split('T')[0];
