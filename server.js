@@ -16,6 +16,10 @@ const META_TOKEN_HUSSE = process.env.META_TOKEN_HUSSE || META_ACCESS_TOKEN;
 // Current portfolio token — covers all active ad accounts (Clear Sight, CanPro, Fixora, HearWell)
 const META_TOKEN_MAIN  = process.env.META_TOKEN_MAIN  || 'EAAamYRVUt6ABR9WKMojnjQfZCP2v3JDZBNFzdIitsBbTDquf6AZB4ZANZAaQlnBRTWdUwUfNEWmdrrdiptgm3BUnbFdEjU4w1NkTlYDRqurE4BZAXLVeRVRltRQR1jsr5yjSams2gZChVh9cnZAqdR6Oq4Cl7cLdB7nDlCLVwxLIVaLIj9a8smoU0RMMsAfYZCLmdagZDZD';
 
+// Pancake POS API — live order / delivery status (recommend moving key to Railway env: PANCAKE_POS_KEY)
+const PANCAKE_POS_KEY  = process.env.PANCAKE_POS_KEY  || '6b4ac6c4828f499a9c763c9ca2d5fa6b';
+const PANCAKE_POS_SHOP = process.env.PANCAKE_POS_SHOP || '1174160958';
+
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
 const BASE_URL = process.env.BASE_URL || 'https://sellershub-fsd.com';
@@ -1153,6 +1157,45 @@ app.get('/api/logistics', requireAuth, async (req, res) => {
     const to    = req.query.to   || from;
     const basis = req.query.basis === 'delivery' ? 'delivery' : 'order';
     res.json(await fetchLogistics(from, to, basis));
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── LIVE DELIVERY STATUS from Pancake POS API (real-time order statuses) ──
+// Pancake status codes: 0 new · 1 submitted · 2 shipped · 3 delivered · 4 returning
+//                       5 returned · 6 canceled · 7 removed · 8 packing · 11 waiting
+const deliveryStatusCache = new Map();
+async function fetchDeliveryStatus(fromDate, toDate) {
+  const key = `dlv_${fromDate}_${toDate}`;
+  const cached = cacheGet(deliveryStatusCache, key, 5 * 60 * 1000);
+  if (cached) return cached;
+
+  const since = Math.floor(new Date(fromDate + 'T00:00:00+08:00').getTime() / 1000);
+  const until = Math.floor(new Date(toDate   + 'T23:59:59+08:00').getTime() / 1000);
+  const url = `https://pos.pages.fm/api/v1/shops/${PANCAKE_POS_SHOP}/orders` +
+    `?api_key=${PANCAKE_POS_KEY}&page_size=1&startDateTime=${since}&endDateTime=${until}`;
+  const res = await fetchJson(url);
+  const buckets = (((res.aggs || {}).status) || {}).buckets || [];
+  const cnt = {}; for (const b of buckets) cnt[String(b.key)] = b.doc_count;
+  const g = k => cnt[String(k)] || 0;
+
+  const result = {
+    from: fromDate, to: toDate,
+    total:          res.total_entries || 0,
+    toShip:         g(0) + g(1) + g(8) + g(11), // new / submitted / packing / waiting
+    outForDelivery: g(2),                        // shipped — on the way
+    delivered:      g(3),
+    rts:            g(4) + g(5),                  // returning + returned
+    cancelled:      g(6) + g(7),                  // canceled + removed
+  };
+  cacheSet(deliveryStatusCache, key, result);
+  return result;
+}
+
+app.get('/api/delivery-status', requireAuth, async (req, res) => {
+  try {
+    const from = req.query.from || new Date().toISOString().split('T')[0];
+    const to   = req.query.to   || from;
+    res.json(await fetchDeliveryStatus(from, to));
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 

@@ -189,15 +189,34 @@ async function load() {
   document.getElementById('basisNote').textContent = BASIS_NOTE[currentBasis];
   setRangeLabel(from, to);
   try {
-    const res = await fetch(`/api/logistics?from=${from}&to=${to}&basis=${currentBasis}`);
+    const [res, dsRes] = await Promise.all([
+      fetch(`/api/logistics?from=${from}&to=${to}&basis=${currentBasis}`),
+      fetch(`/api/delivery-status?from=${from}&to=${to}`)
+    ]);
     if (!res.ok) throw new Error('Server error');
     const d = await res.json();
     if (d.error) throw new Error(d.error);
-    if (currentBasis === 'delivery') renderDeliveryView(d);
-    else renderOrderView(d);
+    const ds = dsRes.ok ? await dsRes.json() : null;
+    const view = currentBasis === 'delivery' ? renderDeliveryView(d) : renderOrderView(d);
+    document.getElementById('content').innerHTML = renderLiveStatus(ds) + view;
   } catch(e) {
     document.getElementById('content').innerHTML = `<div class="state-msg error-msg">Failed to load: ${e.message}</div>`;
   }
+}
+
+// LIVE delivery status from Pancake POS (real-time order statuses)
+function renderLiveStatus(ds) {
+  if (!ds || ds.error) return '';
+  return `<div class="metric-group">
+    <div class="group-label">🚚 Live Delivery Status — from Pancake POS (orders in range)</div>
+    <div class="grid-auto">
+      <div class="card"><div class="k-label">To Ship</div><div class="k-value">${NUM(ds.toShip)}</div><div class="k-sub">New / packing / waiting</div></div>
+      <div class="card hl"><div class="k-label">Out for Delivery</div><div class="k-value">${NUM(ds.outForDelivery)}</div><div class="k-sub">On the way now</div></div>
+      <div class="card good"><div class="k-label">Delivered</div><div class="k-value v-good">${NUM(ds.delivered)}</div><div class="k-sub">Received by customer</div></div>
+      <div class="card bad"><div class="k-label">RTS</div><div class="k-value v-bad">${NUM(ds.rts)}</div><div class="k-sub">Returning + returned</div></div>
+      <div class="card"><div class="k-label">Cancelled</div><div class="k-value">${NUM(ds.cancelled)}</div><div class="k-sub">Canceled / removed</div></div>
+    </div>
+  </div>`;
 }
 
 // ORDER DATE mode — full cohort analysis (delivered / RTS / in-transit over total)
@@ -205,7 +224,7 @@ function renderOrderView(d) {
   const t = d.totals;
   const totalOrders = t.delivered + t.returned + t.shipped; // fulfillable; cancelled shown separately
   const pctTot = a => totalOrders > 0 ? (a / totalOrders * 100).toFixed(1) + '%' : '—';
-  document.getElementById('content').innerHTML = `
+  return `
     <div class="metric-group">
       <div class="group-label">Order Outcomes — over total orders</div>
       <div class="grid-auto">
@@ -255,7 +274,7 @@ function deliveredTable(title, rows, totalDel) {
 
 function renderDeliveryView(d) {
   const t = d.totals;
-  document.getElementById('content').innerHTML = `
+  return `
     <div class="metric-group">
       <div class="group-label">Delivery Activity — units delivered in this range</div>
       <div class="grid-3">
