@@ -193,47 +193,84 @@ async function load() {
     if (!res.ok) throw new Error('Server error');
     const d = await res.json();
     if (d.error) throw new Error(d.error);
-    const t = d.totals;
-
-    // Total orders (fulfillable = delivered + RTS + in-transit; cancelled shown separately)
-    const totalOrders = t.delivered + t.returned + t.shipped;
-    const pctTot = a => totalOrders > 0 ? (a / totalOrders * 100).toFixed(1) + '%' : '—';
-
-    document.getElementById('content').innerHTML = `
-      <div class="metric-group">
-        <div class="group-label">Order Outcomes — over total orders</div>
-        <div class="grid-auto">
-          <div class="card hl"><div class="k-label">Total Orders</div><div class="k-value">${NUM(totalOrders)}</div><div class="k-sub">Delivered + RTS + in-transit</div></div>
-          <div class="card good"><div class="k-label">Delivered</div><div class="k-value v-good">${NUM(t.delivered)}</div><div class="k-sub"><b>${pctTot(t.delivered)}</b> of total orders</div></div>
-          <div class="card bad"><div class="k-label">RTS (Returned)</div><div class="k-value v-bad">${NUM(t.returned)}</div><div class="k-sub"><b>${pctTot(t.returned)}</b> of total orders</div></div>
-          <div class="card"><div class="k-label">In Transit</div><div class="k-value">${NUM(t.shipped)}</div><div class="k-sub"><b>${pctTot(t.shipped)}</b> still on the way</div></div>
-          <div class="card"><div class="k-label">Cancelled</div><div class="k-value">${NUM(t.cancelled)}</div><div class="k-sub">Not counted in total</div></div>
-        </div>
-      </div>
-
-      <div class="metric-group">
-        <div class="group-label">Delivery Quality — of completed orders (excludes in-transit)</div>
-        <div class="grid-2">
-          <div class="card hl"><div class="k-label">Delivery Rate</div><div class="k-value ${delClass(t.deliveryRate)}">${PCT(t.deliveryRate)}</div><div class="k-sub">Delivered ÷ (Delivered + RTS)</div></div>
-          <div class="card"><div class="k-label">RTS Rate</div><div class="k-value ${rtsClass(t.rtsRate)}">${PCT(t.rtsRate)}</div><div class="k-sub">Returned ÷ (Delivered + RTS)</div></div>
-        </div>
-      </div>
-
-      <div class="metric-group">
-        <div class="group-label">Revenue Impact</div>
-        <div class="grid-3">
-          <div class="card hl"><div class="k-label">Gross Revenue</div><div class="k-value">${PHP(t.grossValue)}</div><div class="k-sub">Delivered + RTS + in-transit</div></div>
-          <div class="card good"><div class="k-label">Delivered (Net)</div><div class="k-value v-good">${PHP(t.deliveredValue)}</div><div class="k-sub">Actual realized revenue</div></div>
-          <div class="card bad"><div class="k-label">Lost to RTS</div><div class="k-value v-bad">${PHP(t.returnedValue)}</div><div class="k-sub">Revenue lost to returns</div></div>
-        </div>
-      </div>
-
-      ${breakdownTable('RTS &amp; Delivery by Product', d.byProduct)}
-      ${breakdownTable('RTS &amp; Delivery by Region', d.byRegion)}
-    `;
+    if (currentBasis === 'delivery') renderDeliveryView(d);
+    else renderOrderView(d);
   } catch(e) {
     document.getElementById('content').innerHTML = `<div class="state-msg error-msg">Failed to load: ${e.message}</div>`;
   }
+}
+
+// ORDER DATE mode — full cohort analysis (delivered / RTS / in-transit over total)
+function renderOrderView(d) {
+  const t = d.totals;
+  const totalOrders = t.delivered + t.returned + t.shipped; // fulfillable; cancelled shown separately
+  const pctTot = a => totalOrders > 0 ? (a / totalOrders * 100).toFixed(1) + '%' : '—';
+  document.getElementById('content').innerHTML = `
+    <div class="metric-group">
+      <div class="group-label">Order Outcomes — over total orders</div>
+      <div class="grid-auto">
+        <div class="card hl"><div class="k-label">Total Orders</div><div class="k-value">${NUM(totalOrders)}</div><div class="k-sub">Delivered + RTS + in-transit</div></div>
+        <div class="card good"><div class="k-label">Delivered</div><div class="k-value v-good">${NUM(t.delivered)}</div><div class="k-sub"><b>${pctTot(t.delivered)}</b> of total orders</div></div>
+        <div class="card bad"><div class="k-label">RTS (Returned)</div><div class="k-value v-bad">${NUM(t.returned)}</div><div class="k-sub"><b>${pctTot(t.returned)}</b> of total orders</div></div>
+        <div class="card"><div class="k-label">In Transit</div><div class="k-value">${NUM(t.shipped)}</div><div class="k-sub"><b>${pctTot(t.shipped)}</b> still on the way</div></div>
+        <div class="card"><div class="k-label">Cancelled</div><div class="k-value">${NUM(t.cancelled)}</div><div class="k-sub">Not counted in total</div></div>
+      </div>
+    </div>
+
+    <div class="metric-group">
+      <div class="group-label">Delivery Quality — of completed orders (excludes in-transit)</div>
+      <div class="grid-2">
+        <div class="card hl"><div class="k-label">Delivery Rate</div><div class="k-value ${delClass(t.deliveryRate)}">${PCT(t.deliveryRate)}</div><div class="k-sub">Delivered ÷ (Delivered + RTS)</div></div>
+        <div class="card"><div class="k-label">RTS Rate</div><div class="k-value ${rtsClass(t.rtsRate)}">${PCT(t.rtsRate)}</div><div class="k-sub">Returned ÷ (Delivered + RTS)</div></div>
+      </div>
+    </div>
+
+    <div class="metric-group">
+      <div class="group-label">Revenue Impact</div>
+      <div class="grid-3">
+        <div class="card hl"><div class="k-label">Gross Revenue</div><div class="k-value">${PHP(t.grossValue)}</div><div class="k-sub">Delivered + RTS + in-transit</div></div>
+        <div class="card good"><div class="k-label">Delivered (Net)</div><div class="k-value v-good">${PHP(t.deliveredValue)}</div><div class="k-sub">Actual realized revenue</div></div>
+        <div class="card bad"><div class="k-label">Lost to RTS</div><div class="k-value v-bad">${PHP(t.returnedValue)}</div><div class="k-sub">Revenue lost to returns</div></div>
+      </div>
+    </div>
+
+    ${breakdownTable('RTS &amp; Delivery by Product', d.byProduct)}
+    ${breakdownTable('RTS &amp; Delivery by Region', d.byRegion)}
+  `;
+}
+
+// DELIVERY DATE mode — delivered throughput only (RTS has no date in the sheet)
+function deliveredTable(title, rows, totalDel) {
+  const label = title.includes('Product') ? 'Product' : 'Region';
+  const body = rows.filter(r => r.delivered > 0).sort((a,b) => b.delivered - a.delivered).map(r => `<tr>
+    <td class="name-cell">${r.name}</td>
+    <td>${NUM(r.delivered)}</td>
+    <td>${totalDel > 0 ? (r.delivered / totalDel * 100).toFixed(1) + '%' : '—'}</td>
+    <td>${PHP(r.deliveredValue)}</td>
+  </tr>`).join('');
+  return `<div class="tbl-card"><div class="tbl-title">${title}</div>
+    <table><thead><tr><th>${label}</th><th>Delivered</th><th>Share</th><th>Realized Revenue</th></tr></thead>
+    <tbody>${body || '<tr><td colspan="4" style="text-align:center;color:#94A3B8">No data</td></tr>'}</tbody></table></div>`;
+}
+
+function renderDeliveryView(d) {
+  const t = d.totals;
+  document.getElementById('content').innerHTML = `
+    <div class="metric-group">
+      <div class="group-label">Delivery Activity — units delivered in this range</div>
+      <div class="grid-3">
+        <div class="card good"><div class="k-label">Delivered</div><div class="k-value v-good">${NUM(t.delivered)}</div><div class="k-sub">Units actually delivered</div></div>
+        <div class="card hl"><div class="k-label">Realized Revenue</div><div class="k-value">${PHP(t.deliveredValue)}</div><div class="k-sub">From delivered units</div></div>
+        <div class="card"><div class="k-label">Avg / Order</div><div class="k-value">${t.delivered > 0 ? PHP(t.deliveredValue / t.delivered) : '—'}</div><div class="k-sub">Delivered AOV</div></div>
+      </div>
+    </div>
+    <div style="font-size:0.72rem;color:#94A3B8;margin:-6px 0 16px;line-height:1.5">
+      Ipinapakita ang mga <b>na-deliver</b> ayon sa aktwal na Delivery Date. Hindi kasama ang RTS/returns dito —
+      walang RTS date sa source sheet. Para sa return analysis, gamitin ang <b>Order Date</b>.
+    </div>
+    ${deliveredTable('Delivered by Product', d.byProduct, t.delivered)}
+    ${deliveredTable('Delivered by Region', d.byRegion, t.delivered)}
+  `;
 }
 
 // Default: month-to-date
