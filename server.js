@@ -16,9 +16,9 @@ const META_TOKEN_HUSSE = process.env.META_TOKEN_HUSSE || META_ACCESS_TOKEN;
 // Current portfolio token — covers all active ad accounts (Clear Sight, CanPro, Fixora, HearWell)
 const META_TOKEN_MAIN  = process.env.META_TOKEN_MAIN  || 'EAAamYRVUt6ABR9WKMojnjQfZCP2v3JDZBNFzdIitsBbTDquf6AZB4ZANZAaQlnBRTWdUwUfNEWmdrrdiptgm3BUnbFdEjU4w1NkTlYDRqurE4BZAXLVeRVRltRQR1jsr5yjSams2gZChVh9cnZAqdR6Oq4Cl7cLdB7nDlCLVwxLIVaLIj9a8smoU0RMMsAfYZCLmdagZDZD';
 
-// Pancake POS API — live order / delivery status (recommend moving key to Railway env: PANCAKE_POS_KEY)
-const PANCAKE_POS_KEY  = process.env.PANCAKE_POS_KEY  || '6b4ac6c4828f499a9c763c9ca2d5fa6b';
-const PANCAKE_POS_SHOP = process.env.PANCAKE_POS_SHOP || '1174160958';
+// Pancake POS API — live order / delivery status (key + shop from Railway env vars)
+const PANCAKE_POS_KEY  = process.env.PANCAKE_POS_KEY  || '';
+const PANCAKE_POS_SHOP = process.env.PANCAKE_POS_SHOP || '';
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
