@@ -864,6 +864,7 @@ app.get('/api/budgets/:date', requireAuth, async (req, res) => {
 // Report hub + protected pages
 app.get('/home',              requireAuth, (_req, res) => res.sendFile(path.join(__dirname, 'home.html')));
 app.get('/ad-spend',          requireAuth, (_req, res) => res.sendFile(path.join(__dirname, 'ad-spend.html')));
+app.get('/logistics',         requireAuth, (_req, res) => res.sendFile(path.join(__dirname, 'logistics.html')));
 app.get('/roas-report',       requireAuth, (_req, res) => res.sendFile(path.join(__dirname, 'roas-report.html')));
 app.get('/income-statement',  requireAuth, (_req, res) => res.sendFile(path.join(__dirname, 'income-statement.html')));
 app.get('/aov-cvr-report',    requireAuth, (_req, res) => res.sendFile(path.join(__dirname, 'aov-cvr-report.html')));
@@ -1072,6 +1073,78 @@ app.get('/api/inquiries-hourly', requireAuth, async (req, res) => {
     const result = { from, to, morning, evening, total: morning + evening, byProduct };
     cacheSet(metaInsightsCache, cacheKey, result);
     res.json(result);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── LOGISTICS: delivery / RTS analytics from the POS export ──
+const logisticsCache = new Map();
+async function fetchLogistics(fromDate, toDate) {
+  const key = `log_${fromDate}_${toDate}`;
+  const cached = cacheGet(logisticsCache, key, TTL_PANCAKE);
+  if (cached) return cached;
+
+  const allCsvs = await Promise.all(PANCAKE_CSV_URLS.map(url => fetchRaw(url)));
+  const rows = allCsvs.flatMap(csv => parseCSV(csv));
+  const from = new Date(fromDate + 'T00:00:00Z');
+  const to   = new Date(toDate   + 'T23:59:59Z');
+  const PROD_LABEL = { 'CLEAR SIGHT':'Clear Sight', 'CANPRO':'CanPro', 'FIXORA':'Hearing Aid', 'HEARWELL':'HearWell' };
+
+  const blank = () => ({ delivered:0, returned:0, shipped:0, cancelled:0, deliveredValue:0, returnedValue:0, shippedValue:0 });
+  const bump = (o, bucket, price) => {
+    if (bucket === 'delivered')      { o.delivered++; o.deliveredValue += price; }
+    else if (bucket === 'returned')  { o.returned++;  o.returnedValue  += price; }
+    else if (bucket === 'cancelled') { o.cancelled++; }
+    else                             { o.shipped++;   o.shippedValue   += price; }
+  };
+  const totals = blank(), byProduct = {}, byRegion = {};
+
+  for (const row of rows) {
+    const dateRaw = row['sales date'] || ''; if (!dateRaw) continue;
+    let d; try { d = new Date(dateRaw); if (isNaN(d.getTime())) continue; } catch(e) { continue; }
+    if (d < from || d > to) continue;
+
+    const status = (row['status'] || '').toLowerCase();
+    const price  = parseFloat((row['unit price'] || '0').replace(/,/g,'')) || 0;
+    let bucket;
+    if (status.includes('deliver'))    bucket = 'delivered';
+    else if (status.includes('return')) bucket = 'returned';
+    else if (status.includes('cancel')) bucket = 'cancelled';
+    else                                bucket = 'shipped'; // shipped / in-transit / packaging / waiting
+
+    const prodKey = classifyNdapProduct(Object.values(row).join(' ').toLowerCase());
+    const product = prodKey ? (PROD_LABEL[prodKey] || prodKey) : ((row['product name'] || 'Other').trim() || 'Other');
+    const region  = (row['by region'] || '').trim() || 'Unknown';
+
+    bump(totals, bucket, price);
+    if (!byProduct[product]) byProduct[product] = blank();
+    bump(byProduct[product], bucket, price);
+    if (!byRegion[region]) byRegion[region] = blank();
+    bump(byRegion[region], bucket, price);
+  }
+
+  const withRates = (o, name) => {
+    const resolved = o.delivered + o.returned; // completed outcomes
+    return { name, ...o,
+      orders: o.delivered + o.returned + o.shipped + o.cancelled,
+      grossValue: o.deliveredValue + o.returnedValue + o.shippedValue,
+      deliveryRate: resolved > 0 ? o.delivered / resolved * 100 : null,
+      rtsRate:      resolved > 0 ? o.returned  / resolved * 100 : null };
+  };
+  const result = {
+    from: fromDate, to: toDate,
+    totals: withRates(totals, 'All'),
+    byProduct: Object.entries(byProduct).map(([n,o]) => withRates(o,n)).sort((a,b)=>b.orders-a.orders),
+    byRegion:  Object.entries(byRegion).map(([n,o]) => withRates(o,n)).sort((a,b)=>b.orders-a.orders),
+  };
+  cacheSet(logisticsCache, key, result);
+  return result;
+}
+
+app.get('/api/logistics', requireAuth, async (req, res) => {
+  try {
+    const from = req.query.from || new Date().toISOString().split('T')[0];
+    const to   = req.query.to   || from;
+    res.json(await fetchLogistics(from, to));
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
