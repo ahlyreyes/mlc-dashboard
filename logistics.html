@@ -108,15 +108,6 @@ tr:last-child td { border-bottom: none; }
   <div class="range-label" id="rangeLabel"></div>
 </div>
 
-<div class="basis-row">
-  <span class="range-pick-label">Date basis</span>
-  <div class="basis-tabs">
-    <button class="basis-tab active" data-basis="order" onclick="setBasis('order')">Order Date</button>
-    <button class="basis-tab" data-basis="delivery" onclick="setBasis('delivery')">Delivery Date</button>
-  </div>
-  <span class="basis-note" id="basisNote"></span>
-</div>
-
 <div id="content"><div class="state-msg">Loading...</div></div>
 
 <script>
@@ -168,37 +159,23 @@ function breakdownTable(title, rows) {
   </div>`;
 }
 
-let currentBasis = 'order';
-const BASIS_NOTE = {
-  order:    'Orders placed in this range + how they turned out (best for RTS rate over a full period).',
-  delivery: 'Units actually delivered per Delivery Date (real daily throughput). RTS still by order date — no RTS date in the source sheet.'
-};
-
-function setBasis(b) {
-  currentBasis = b;
-  document.querySelectorAll('.basis-tab').forEach(el => el.classList.toggle('active', el.dataset.basis === b));
-  load();
-}
-
 async function load() {
   const from = document.getElementById('fromDate').value;
   const to   = document.getElementById('toDate').value;
   if (!from || !to) return;
   if (from > to) { document.getElementById('toDate').value = from; return; }
   document.getElementById('content').innerHTML = '<div class="state-msg">Loading...</div>';
-  document.getElementById('basisNote').textContent = BASIS_NOTE[currentBasis];
   setRangeLabel(from, to);
   try {
     const [res, dsRes] = await Promise.all([
-      fetch(`/api/logistics?from=${from}&to=${to}&basis=${currentBasis}`),
+      fetch(`/api/logistics?from=${from}&to=${to}`),
       fetch(`/api/delivery-status?from=${from}&to=${to}`)
     ]);
     if (!res.ok) throw new Error('Server error');
     const d = await res.json();
     if (d.error) throw new Error(d.error);
     const ds = dsRes.ok ? await dsRes.json() : null;
-    const view = currentBasis === 'delivery' ? renderDeliveryView(d) : renderOrderView(d);
-    document.getElementById('content').innerHTML = renderLiveStatus(ds) + view;
+    document.getElementById('content').innerHTML = renderLiveStatus(ds) + renderOrderView(d);
   } catch(e) {
     document.getElementById('content').innerHTML = `<div class="state-msg error-msg">Failed to load: ${e.message}</div>`;
   }
@@ -258,39 +235,6 @@ function renderOrderView(d) {
   `;
 }
 
-// DELIVERY DATE mode — delivered throughput only (RTS has no date in the sheet)
-function deliveredTable(title, rows, totalDel) {
-  const label = title.includes('Product') ? 'Product' : 'Region';
-  const body = rows.filter(r => r.delivered > 0).sort((a,b) => b.delivered - a.delivered).map(r => `<tr>
-    <td class="name-cell">${r.name}</td>
-    <td>${NUM(r.delivered)}</td>
-    <td>${totalDel > 0 ? (r.delivered / totalDel * 100).toFixed(1) + '%' : '—'}</td>
-    <td>${PHP(r.deliveredValue)}</td>
-  </tr>`).join('');
-  return `<div class="tbl-card"><div class="tbl-title">${title}</div>
-    <table><thead><tr><th>${label}</th><th>Delivered</th><th>Share</th><th>Realized Revenue</th></tr></thead>
-    <tbody>${body || '<tr><td colspan="4" style="text-align:center;color:#94A3B8">No data</td></tr>'}</tbody></table></div>`;
-}
-
-function renderDeliveryView(d) {
-  const t = d.totals;
-  return `
-    <div class="metric-group">
-      <div class="group-label">Delivery Activity — units delivered in this range</div>
-      <div class="grid-3">
-        <div class="card good"><div class="k-label">Delivered</div><div class="k-value v-good">${NUM(t.delivered)}</div><div class="k-sub">Units actually delivered</div></div>
-        <div class="card hl"><div class="k-label">Realized Revenue</div><div class="k-value">${PHP(t.deliveredValue)}</div><div class="k-sub">From delivered units</div></div>
-        <div class="card"><div class="k-label">Avg / Order</div><div class="k-value">${t.delivered > 0 ? PHP(t.deliveredValue / t.delivered) : '—'}</div><div class="k-sub">Delivered AOV</div></div>
-      </div>
-    </div>
-    <div style="font-size:0.72rem;color:#94A3B8;margin:-6px 0 16px;line-height:1.5">
-      Ipinapakita ang mga <b>na-deliver</b> ayon sa aktwal na Delivery Date. Hindi kasama ang RTS/returns dito —
-      walang RTS date sa source sheet. Para sa return analysis, gamitin ang <b>Order Date</b>.
-    </div>
-    ${deliveredTable('Delivered by Product', d.byProduct, t.delivered)}
-    ${deliveredTable('Delivered by Region', d.byRegion, t.delivered)}
-  `;
-}
 
 // Default: month-to-date
 document.getElementById('fromDate').value = monthStart();
