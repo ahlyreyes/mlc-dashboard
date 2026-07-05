@@ -72,6 +72,15 @@ tr:last-child td { border-bottom: none; }
 .bar-fill { height: 100%; border-radius: 3px; }
 .state-msg { text-align: center; padding: 48px; color: #94A3B8; font-size: 0.85rem; }
 .error-msg { color: #EF4444; }
+
+/* Date-basis toggle */
+.basis-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+.basis-tabs { display: inline-flex; background: #E2E8F0; border-radius: 11px; padding: 4px; gap: 2px; }
+.basis-tab { padding: 7px 16px; border-radius: 8px; border: none; background: transparent; font-size: 0.76rem;
+  font-weight: 600; color: #64748B; cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.15s; }
+.basis-tab:hover { color: #1E40AF; }
+.basis-tab.active { background: #fff; color: #1D4ED8; box-shadow: 0 1px 6px rgba(15,23,42,0.10); }
+.basis-note { font-size: 0.7rem; color: #94A3B8; }
 </style>
 </head>
 <body>
@@ -96,6 +105,15 @@ tr:last-child td { border-bottom: none; }
     <button class="btn" id="applyBtn">Apply</button>
   </div>
   <div class="range-label" id="rangeLabel"></div>
+</div>
+
+<div class="basis-row">
+  <span class="range-pick-label">Date basis</span>
+  <div class="basis-tabs">
+    <button class="basis-tab active" data-basis="order" onclick="setBasis('order')">Order Date</button>
+    <button class="basis-tab" data-basis="delivery" onclick="setBasis('delivery')">Delivery Date</button>
+  </div>
+  <span class="basis-note" id="basisNote"></span>
 </div>
 
 <div id="content"><div class="state-msg">Loading...</div></div>
@@ -149,15 +167,28 @@ function breakdownTable(title, rows) {
   </div>`;
 }
 
+let currentBasis = 'order';
+const BASIS_NOTE = {
+  order:    'Orders placed in this range + how they turned out (best for RTS rate over a full period).',
+  delivery: 'Units actually delivered per Delivery Date (real daily throughput). RTS still by order date — no RTS date in the source sheet.'
+};
+
+function setBasis(b) {
+  currentBasis = b;
+  document.querySelectorAll('.basis-tab').forEach(el => el.classList.toggle('active', el.dataset.basis === b));
+  load();
+}
+
 async function load() {
   const from = document.getElementById('fromDate').value;
   const to   = document.getElementById('toDate').value;
   if (!from || !to) return;
   if (from > to) { document.getElementById('toDate').value = from; return; }
   document.getElementById('content').innerHTML = '<div class="state-msg">Loading...</div>';
+  document.getElementById('basisNote').textContent = BASIS_NOTE[currentBasis];
   setRangeLabel(from, to);
   try {
-    const res = await fetch(`/api/logistics?from=${from}&to=${to}`);
+    const res = await fetch(`/api/logistics?from=${from}&to=${to}&basis=${currentBasis}`);
     if (!res.ok) throw new Error('Server error');
     const d = await res.json();
     if (d.error) throw new Error(d.error);

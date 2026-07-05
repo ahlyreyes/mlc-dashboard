@@ -1078,8 +1078,9 @@ app.get('/api/inquiries-hourly', requireAuth, async (req, res) => {
 
 // ── LOGISTICS: delivery / RTS analytics from the POS export ──
 const logisticsCache = new Map();
-async function fetchLogistics(fromDate, toDate) {
-  const key = `log_${fromDate}_${toDate}`;
+// basis: 'order' = filter by Sales Date (cohort); 'delivery' = delivered rows filtered by Delivered Date
+async function fetchLogistics(fromDate, toDate, basis = 'order') {
+  const key = `log_${basis}_${fromDate}_${toDate}`;
   const cached = cacheGet(logisticsCache, key, TTL_PANCAKE);
   if (cached) return cached;
 
@@ -1099,18 +1100,24 @@ async function fetchLogistics(fromDate, toDate) {
   const totals = blank(), byProduct = {}, byRegion = {};
 
   for (const row of rows) {
-    const dateRaw = row['sales date'] || ''; if (!dateRaw) continue;
-    let d; try { d = new Date(dateRaw); if (isNaN(d.getTime())) continue; } catch(e) { continue; }
-    if (d < from || d > to) continue;
-
     const status = (row['status'] || '').toLowerCase();
-    const price  = parseFloat((row['unit price'] || '0').replace(/,/g,'')) || 0;
     let bucket;
     if (status.includes('deliver'))    bucket = 'delivered';
     else if (status.includes('return')) bucket = 'returned';
     else if (status.includes('cancel')) bucket = 'cancelled';
     else                                bucket = 'shipped'; // shipped / in-transit / packaging / waiting
 
+    // Choose the date to filter by. In 'delivery' basis, delivered rows use the
+    // actual Delivered Date; everything else falls back to Sales Date (no RTS date in sheet).
+    let dateRaw = row['sales date'] || '';
+    if (basis === 'delivery' && bucket === 'delivered' && (row['delivered date'] || '').trim()) {
+      dateRaw = row['delivered date'];
+    }
+    if (!dateRaw) continue;
+    let d; try { d = new Date(dateRaw); if (isNaN(d.getTime())) continue; } catch(e) { continue; }
+    if (d < from || d > to) continue;
+
+    const price  = parseFloat((row['unit price'] || '0').replace(/,/g,'')) || 0;
     const prodKey = classifyNdapProduct(Object.values(row).join(' ').toLowerCase());
     const product = prodKey ? (PROD_LABEL[prodKey] || prodKey) : ((row['product name'] || 'Other').trim() || 'Other');
     const region  = (row['by region'] || '').trim() || 'Unknown';
@@ -1142,9 +1149,10 @@ async function fetchLogistics(fromDate, toDate) {
 
 app.get('/api/logistics', requireAuth, async (req, res) => {
   try {
-    const from = req.query.from || new Date().toISOString().split('T')[0];
-    const to   = req.query.to   || from;
-    res.json(await fetchLogistics(from, to));
+    const from  = req.query.from || new Date().toISOString().split('T')[0];
+    const to    = req.query.to   || from;
+    const basis = req.query.basis === 'delivery' ? 'delivery' : 'order';
+    res.json(await fetchLogistics(from, to, basis));
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
