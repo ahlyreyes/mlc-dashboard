@@ -42,6 +42,7 @@ body { font-family: 'Inter', sans-serif; background: #EEF2FF; min-height: 100vh;
 .metric-group { margin-bottom: 22px; }
 .group-label { font-size: 0.68rem; font-weight: 800; color: #94A3B8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; padding-left: 2px; }
 .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.grid-auto { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 14px; }
 .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
 .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; max-width: 60%; }
 @media (max-width: 820px) { .grid-4 { grid-template-columns: 1fr 1fr; } .grid-2 { max-width: 100%; } }
@@ -194,19 +195,24 @@ async function load() {
     if (d.error) throw new Error(d.error);
     const t = d.totals;
 
+    // Total orders (fulfillable = delivered + RTS + in-transit; cancelled shown separately)
+    const totalOrders = t.delivered + t.returned + t.shipped;
+    const pctTot = a => totalOrders > 0 ? (a / totalOrders * 100).toFixed(1) + '%' : '—';
+
     document.getElementById('content').innerHTML = `
       <div class="metric-group">
-        <div class="group-label">Order Outcomes</div>
-        <div class="grid-4">
-          <div class="card good"><div class="k-label">Delivered</div><div class="k-value v-good">${NUM(t.delivered)}</div><div class="k-sub">Successfully received</div></div>
-          <div class="card bad"><div class="k-label">RTS (Returned)</div><div class="k-value v-bad">${NUM(t.returned)}</div><div class="k-sub">Failed / returned to sender</div></div>
-          <div class="card"><div class="k-label">In Transit</div><div class="k-value">${NUM(t.shipped)}</div><div class="k-sub">Shipped, not yet resolved</div></div>
-          <div class="card"><div class="k-label">Cancelled</div><div class="k-value">${NUM(t.cancelled)}</div><div class="k-sub">Cancelled orders</div></div>
+        <div class="group-label">Order Outcomes — over total orders</div>
+        <div class="grid-auto">
+          <div class="card hl"><div class="k-label">Total Orders</div><div class="k-value">${NUM(totalOrders)}</div><div class="k-sub">Delivered + RTS + in-transit</div></div>
+          <div class="card good"><div class="k-label">Delivered</div><div class="k-value v-good">${NUM(t.delivered)}</div><div class="k-sub"><b>${pctTot(t.delivered)}</b> of total orders</div></div>
+          <div class="card bad"><div class="k-label">RTS (Returned)</div><div class="k-value v-bad">${NUM(t.returned)}</div><div class="k-sub"><b>${pctTot(t.returned)}</b> of total orders</div></div>
+          <div class="card"><div class="k-label">In Transit</div><div class="k-value">${NUM(t.shipped)}</div><div class="k-sub"><b>${pctTot(t.shipped)}</b> still on the way</div></div>
+          <div class="card"><div class="k-label">Cancelled</div><div class="k-value">${NUM(t.cancelled)}</div><div class="k-sub">Not counted in total</div></div>
         </div>
       </div>
 
       <div class="metric-group">
-        <div class="group-label">Success Rates</div>
+        <div class="group-label">Delivery Quality — of completed orders (excludes in-transit)</div>
         <div class="grid-2">
           <div class="card hl"><div class="k-label">Delivery Rate</div><div class="k-value ${delClass(t.deliveryRate)}">${PCT(t.deliveryRate)}</div><div class="k-sub">Delivered ÷ (Delivered + RTS)</div></div>
           <div class="card"><div class="k-label">RTS Rate</div><div class="k-value ${rtsClass(t.rtsRate)}">${PCT(t.rtsRate)}</div><div class="k-sub">Returned ÷ (Delivered + RTS)</div></div>
