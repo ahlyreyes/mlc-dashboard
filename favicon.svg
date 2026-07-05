@@ -1,11 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#1D4ED8"/>
-      <stop offset="1" stop-color="#3B82F6"/>
-    </linearGradient>
-  </defs>
-  <rect x="2" y="2" width="60" height="60" rx="14" fill="url(#g)"/>
+  <rect x="1" y="1" width="62" height="62" rx="14" fill="#ffffff" stroke="#E2E8F0" stroke-width="1"/>
   <text x="32" y="43" font-family="'Arial Black','Arial',sans-serif" font-weight="900"
-        font-size="26" fill="#ffffff" text-anchor="middle" letter-spacing="-1">MLC</text>
+        font-size="25" text-anchor="middle" letter-spacing="-1.5">
+    <tspan fill="#EE7C1E">M</tspan><tspan fill="#A7ADB4">L</tspan><tspan fill="#3E454F">C</tspan>
+  </text>
 </svg>
