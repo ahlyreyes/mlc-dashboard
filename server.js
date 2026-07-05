@@ -32,6 +32,7 @@ const AUTHORIZED_USERS = [
   { email: 'sfahovey03@gmail.com',                 name: 'FSA Hovey',        role: 'advertiser' },
   { email: 'johnericc1234@gmail.com',              name: 'Ericson',          role: 'admin' },
   { email: 'reyes.ahlyssa04@gmail.com',            name: 'Aly',              role: 'admin' },
+  { email: 'crismarkreyes49@gmail.com',            name: 'Cris Mark',        role: 'advertiser' },
 ];
 
 // PostgreSQL setup
@@ -709,6 +710,8 @@ function cacheSet(map, key, data) {
 
 // Public assets
 app.get('/logo.svg', (_req, res) => res.sendFile(path.join(__dirname, 'logo.svg')));
+app.get('/favicon.svg', (_req, res) => res.sendFile(path.join(__dirname, 'favicon.svg')));
+app.get('/favicon.ico', (_req, res) => res.sendFile(path.join(__dirname, 'favicon.svg')));
 
 // Auth routes
 app.get('/login', (req, res) => res.sendFile(path.join(__dirname, 'login.html')));
