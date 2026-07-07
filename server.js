@@ -166,6 +166,31 @@ async function loadDbUsers() {
     console.log(`✅ Loaded ${dbUsers.length} DB user(s)`);
   } catch(e) { console.warn('loadDbUsers error:', e.message); }
 }
+
+// ── ROLE-BASED PAGE ACCESS ──
+// admin = all pages; others limited to the listed paths.
+const ROLE_PAGES = {
+  admin:      'ALL',
+  advertiser: ['/', '/ad-spend', '/logistics'],
+  fsa:        ['/ad-spend', '/logistics'],
+  logistics:  ['/ad-spend', '/logistics'],
+};
+function allowedPagesFor(user) {
+  if (isAdmin(user)) return 'ALL';
+  const role = String(user && user.role || '').toLowerCase();
+  return ROLE_PAGES[role] || ['/ad-spend', '/logistics'];
+}
+function canAccess(user, path) {
+  const p = allowedPagesFor(user);
+  return p === 'ALL' || p.includes(path);
+}
+function pageGuard(path) {
+  return (req, res, next) => {
+    if (!req.isAuthenticated()) return res.redirect('/login');
+    if (canAccess(req.user, path)) return next();
+    return res.redirect('/home');
+  };
+}
 const PANCAKE_CSV_URLS = [
   process.env.PANCAKE_CSV_URL || 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRRmBJlKTC1iFdU5mcZ8sQlWkHuxAtYxezNnAO1ggj1wKh1_ki045CTbDw6aV2FvVL5tBV42gMHilio/pub?gid=0&single=true&output=csv',
   process.env.PANCAKE_CSV_URL_APRIL || 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSWfevqFhSyLoIFwvwFFdgFY3NzyhTOu6nbW3_2CfhI460Etz60TPWH2yA1TkVfG2y439O43BOvXHb4/pub?gid=0&single=true&output=csv',
@@ -777,7 +802,7 @@ app.get('/auth/google/callback',
   }
 );
 app.get('/logout', (req, res) => { req.logout(() => res.redirect('/login')); });
-app.get('/api/me', requireAuth, (req, res) => res.json(req.user));
+app.get('/api/me', requireAuth, (req, res) => res.json({ ...req.user, isAdmin: isAdmin(req.user), allowedPages: allowedPagesFor(req.user) }));
 
 // ── ADMIN: user management (admins only) ──
 const VALID_ROLES = ['FSA', 'Logistics', 'Advertiser', 'Admin'];
@@ -798,6 +823,24 @@ app.post('/api/users', requireAdmin, async (req, res) => {
     if (!VALID_ROLES.some(r => r.toLowerCase() === role.toLowerCase())) return res.status(400).json({ error: 'Invalid role.' });
     if (findUser(email)) return res.status(409).json({ error: 'May account na ang email na ito.' });
     await pool.query('INSERT INTO app_users (email, name, role, created_by) VALUES ($1,$2,$3,$4)', [email, name, role, req.user.email]);
+    await loadDbUsers();
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.put('/api/users/:email', requireAdmin, async (req, res) => {
+  try {
+    const oldEmail = normEmail(req.params.email);
+    if (SEED_EMAILS.has(oldEmail)) return res.status(400).json({ error: 'Hindi maaaring i-edit ang system user.' });
+    const email = normEmail(req.body.email);
+    const name  = (req.body.name || '').trim();
+    const role  = (req.body.role || '').trim();
+    if (!email || !name || !role) return res.status(400).json({ error: 'Kumpletuhin ang lahat ng fields.' });
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({ error: 'Invalid email format.' });
+    if (!VALID_ROLES.some(r => r.toLowerCase() === role.toLowerCase())) return res.status(400).json({ error: 'Invalid role.' });
+    if (email !== oldEmail && findUser(email)) return res.status(409).json({ error: 'May account na ang bagong email.' });
+    const r = await pool.query('UPDATE app_users SET email=$1, name=$2, role=$3 WHERE email=$4', [email, name, role, oldEmail]);
+    if (r.rowCount === 0) return res.status(404).json({ error: 'User not found.' });
     await loadDbUsers();
     res.json({ success: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -935,16 +978,16 @@ app.get('/api/budgets/:date', requireAuth, async (req, res) => {
   } catch(e) { res.json({}); }
 });
 
-// Report hub + protected pages
-app.get('/home',              requireAuth, (_req, res) => res.sendFile(path.join(__dirname, 'home.html')));
-app.get('/ad-spend',          requireAuth, (_req, res) => res.sendFile(path.join(__dirname, 'ad-spend.html')));
-app.get('/logistics',         requireAuth, (_req, res) => res.sendFile(path.join(__dirname, 'logistics.html')));
-app.get('/admin',             requireAdmin, (_req, res) => res.sendFile(path.join(__dirname, 'admin.html')));
-app.get('/roas-report',       requireAuth, (_req, res) => res.sendFile(path.join(__dirname, 'roas-report.html')));
-app.get('/income-statement',  requireAuth, (_req, res) => res.sendFile(path.join(__dirname, 'income-statement.html')));
-app.get('/aov-cvr-report',    requireAuth, (_req, res) => res.sendFile(path.join(__dirname, 'aov-cvr-report.html')));
-app.get('/sales-report',      requireAuth, (_req, res) => res.sendFile(path.join(__dirname, 'sales-report.html')));
-app.get('/',                  requireAuth, (_req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+// Report hub + protected pages (role-gated)
+app.get('/home',              requireAuth,          (_req, res) => res.sendFile(path.join(__dirname, 'home.html')));
+app.get('/ad-spend',          pageGuard('/ad-spend'),  (_req, res) => res.sendFile(path.join(__dirname, 'ad-spend.html')));
+app.get('/logistics',         pageGuard('/logistics'), (_req, res) => res.sendFile(path.join(__dirname, 'logistics.html')));
+app.get('/admin',             requireAdmin,         (_req, res) => res.sendFile(path.join(__dirname, 'admin.html')));
+app.get('/roas-report',       requireAdmin,         (_req, res) => res.sendFile(path.join(__dirname, 'roas-report.html')));
+app.get('/income-statement',  requireAdmin,         (_req, res) => res.sendFile(path.join(__dirname, 'income-statement.html')));
+app.get('/aov-cvr-report',    requireAdmin,         (_req, res) => res.sendFile(path.join(__dirname, 'aov-cvr-report.html')));
+app.get('/sales-report',      requireAdmin,         (_req, res) => res.sendFile(path.join(__dirname, 'sales-report.html')));
+app.get('/',                  pageGuard('/'),          (_req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 app.get('/api/ndap', requireAuth, async (req, res) => {
   try {

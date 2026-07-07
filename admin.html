@@ -51,6 +51,10 @@ tr:last-child td { border-bottom: none; }
 .tag-sys { font-size: 0.6rem; color: #94A3B8; font-weight: 600; }
 .btn-del { background: none; border: 1px solid #FECACA; color: #dc2626; border-radius: 8px; padding: 4px 10px; font-size: 0.72rem; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; }
 .btn-del:hover { background: #FEF2F2; }
+.btn-edit { background: none; border: 1px solid #BFDBFE; color: #1D4ED8; border-radius: 8px; padding: 4px 10px; font-size: 0.72rem; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; margin-right: 4px; }
+.btn-edit:hover { background: #EFF6FF; }
+.btn-save { background: #16a34a; border: none; color: #fff; border-radius: 8px; padding: 4px 12px; font-size: 0.72rem; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; margin-right: 4px; }
+.edit-input { width: 100%; padding: 6px 9px; border: 1.5px solid #93C5FD; border-radius: 8px; font-size: 0.78rem; font-family: 'Inter', sans-serif; outline: none; }
 .state-msg { text-align: center; padding: 30px; color: #94A3B8; font-size: 0.85rem; }
 </style>
 </head>
@@ -89,7 +93,12 @@ tr:last-child td { border-bottom: none; }
 </div>
 
 <script>
+const ROLES = ['FSA', 'Logistics', 'Advertiser', 'Admin'];
 const roleClass = r => 'r-' + String(r || '').toLowerCase();
+const esc = s => String(s || '').replace(/"/g, '&quot;').replace(/'/g, "\\'");
+
+let USERS = [];
+let editingEmail = null;
 
 function showMsg(text, ok) {
   const el = document.getElementById('msg');
@@ -101,21 +110,60 @@ async function loadUsers() {
   try {
     const res = await fetch('/api/users');
     if (!res.ok) throw new Error('Hindi ma-load (admin only)');
-    const users = await res.json();
-    const rows = users.map(u => `<tr>
-      <td style="font-weight:600">${u.name}</td>
-      <td style="color:#64748B">${u.email}</td>
-      <td><span class="role-pill ${roleClass(u.role)}">${u.role}</span></td>
-      <td style="text-align:right">${u.source === 'system'
-        ? '<span class="tag-sys">system</span>'
-        : `<button class="btn-del" onclick="delUser('${u.email}')">Remove</button>`}</td>
-    </tr>`).join('');
-    document.getElementById('usersTable').innerHTML = `
-      <table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th style="text-align:right">Action</th></tr></thead>
-      <tbody>${rows}</tbody></table>`;
+    USERS = await res.json();
+    renderUsers();
   } catch(e) {
     document.getElementById('usersTable').innerHTML = `<div class="state-msg" style="color:#dc2626">${e.message}</div>`;
   }
+}
+
+function renderUsers() {
+  const rows = USERS.map(u => {
+    if (u.source === 'db' && u.email === editingEmail) {
+      const opts = ROLES.map(r => `<option ${r.toLowerCase() === String(u.role).toLowerCase() ? 'selected' : ''}>${r}</option>`).join('');
+      return `<tr>
+        <td><input class="edit-input" id="ed-name" value="${esc(u.name)}"></td>
+        <td><input class="edit-input" id="ed-email" value="${esc(u.email)}"></td>
+        <td><select class="edit-input" id="ed-role">${opts}</select></td>
+        <td style="text-align:right;white-space:nowrap">
+          <button class="btn-save" onclick="saveEdit('${esc(u.email)}')">Save</button>
+          <button class="btn-del" onclick="cancelEdit()">Cancel</button>
+        </td>
+      </tr>`;
+    }
+    return `<tr>
+      <td style="font-weight:600">${u.name}</td>
+      <td style="color:#64748B">${u.email}</td>
+      <td><span class="role-pill ${roleClass(u.role)}">${u.role}</span></td>
+      <td style="text-align:right;white-space:nowrap">${u.source === 'system'
+        ? '<span class="tag-sys">system</span>'
+        : `<button class="btn-edit" onclick="startEdit('${esc(u.email)}')">Edit</button><button class="btn-del" onclick="delUser('${esc(u.email)}')">Remove</button>`}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('usersTable').innerHTML = `
+    <table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th style="text-align:right">Action</th></tr></thead>
+    <tbody>${rows}</tbody></table>`;
+}
+
+function startEdit(email) { editingEmail = email; renderUsers(); }
+function cancelEdit() { editingEmail = null; renderUsers(); }
+
+async function saveEdit(oldEmail) {
+  const name  = document.getElementById('ed-name').value.trim();
+  const email = document.getElementById('ed-email').value.trim();
+  const role  = document.getElementById('ed-role').value;
+  if (!name || !email) { showMsg('Kumpletuhin ang name at email.', false); return; }
+  try {
+    const res = await fetch('/api/users/' + encodeURIComponent(oldEmail), {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, role })
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || 'Failed');
+    showMsg('✓ Na-update ang user.', true);
+    editingEmail = null;
+    loadUsers();
+  } catch(e) { showMsg(e.message, false); }
 }
 
 async function addUser() {

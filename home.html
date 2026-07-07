@@ -255,9 +255,15 @@ body {
 
 <script>
 fetch('/api/me').then(r => r.json()).then(u => {
-  document.getElementById('userLabel').textContent = u.name || u.email || '—';
-  if (u && String(u.role || '').toLowerCase() === 'admin') {
-    document.getElementById('adminLink').style.display = '';
+  document.getElementById('userLabel').textContent = (u.name || u.email || '—') + (u.role ? ' · ' + u.role : '');
+  if (u && u.isAdmin) document.getElementById('adminLink').style.display = '';
+  // Hide report cards the user's role can't access
+  const allowed = u.allowedPages;
+  if (allowed && allowed !== 'ALL') {
+    document.querySelectorAll('.report-card').forEach(a => {
+      const href = a.getAttribute('href');
+      if (!allowed.includes(href)) a.style.display = 'none';
+    });
   }
 }).catch(() => {});
 </script>
