@@ -24,20 +24,24 @@ const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
 const BASE_URL = process.env.BASE_URL || 'https://sellershub-fsd.com';
 
-// Authorized users
+// Permanent super-admin(s) — always valid, cannot be edited/removed via UI (prevents lockout)
 const AUTHORIZED_USERS = [
-  { email: 'ronatocharlonejrs@gmail.com',          name: 'Charlone',         role: 'admin' },
-  { email: 'ahlyssar.work@gmail.com',              name: 'Aly',              role: 'admin' },
-  { email: 'advertisingspecialist5ejay@gmail.com', name: 'Advertiser Ejay',  role: 'advertiser' },
-  { email: 'advertisingspecialist6husse@gmail.com',name: 'Advertiser Husse', role: 'advertiser' },
-  { email: 'adstafflaila@gmail.com',               name: 'Advertiser Angelika', role: 'advertiser' },
-  { email: 'jackcruz1117@gmail.com',               name: 'Advertiser Jack',  role: 'advertiser' },
-  { email: 'sczezsa@gmail.com',                    name: 'FSA Che',          role: 'advertiser' },
-  { email: 'sfahovey03@gmail.com',                 name: 'FSA Hovey',        role: 'advertiser' },
-  { email: 'johnericc1234@gmail.com',              name: 'Ericson',          role: 'admin' },
-  { email: 'reyes.ahlyssa04@gmail.com',            name: 'Aly',              role: 'admin' },
-  { email: 'crismarkreyes49@gmail.com',            name: 'Cris Mark',        role: 'admin' },
-  { email: 'anglnslls1234@gmail.com',              name: 'FSA Angeline',     role: 'advertiser' },
+  { email: 'reyes.ahlyssa04@gmail.com', name: 'Aly', role: 'Admin' },
+];
+
+// Legacy users migrated once into app_users (then fully editable/deletable via Admin Settings)
+const MIGRATION_SEED_USERS = [
+  { email: 'ronatocharlonejrs@gmail.com',           name: 'Charlone',            role: 'Admin' },
+  { email: 'ahlyssar.work@gmail.com',               name: 'Aly',                 role: 'Admin' },
+  { email: 'advertisingspecialist5ejay@gmail.com',  name: 'Advertiser Ejay',     role: 'Advertiser' },
+  { email: 'advertisingspecialist6husse@gmail.com', name: 'Advertiser Husse',    role: 'Advertiser' },
+  { email: 'adstafflaila@gmail.com',                name: 'Advertiser Angelika', role: 'Advertiser' },
+  { email: 'jackcruz1117@gmail.com',                name: 'Advertiser Jack',     role: 'Advertiser' },
+  { email: 'sczezsa@gmail.com',                     name: 'FSA Che',             role: 'FSA' },
+  { email: 'sfahovey03@gmail.com',                  name: 'FSA Hovey',           role: 'FSA' },
+  { email: 'johnericc1234@gmail.com',               name: 'Ericson',             role: 'Admin' },
+  { email: 'crismarkreyes49@gmail.com',             name: 'Cris Mark',           role: 'Admin' },
+  { email: 'anglnslls1234@gmail.com',               name: 'FSA Angeline',        role: 'FSA' },
 ];
 
 // Users added at runtime via Admin Settings (persisted in the app_users DB table)
@@ -112,8 +116,23 @@ async function initDB() {
         created_at TIMESTAMP DEFAULT NOW()
       )
     `);
+    await pool.query(`CREATE TABLE IF NOT EXISTS app_meta ( key TEXT PRIMARY KEY, value TEXT )`);
     // Add locked column if it doesn't exist (migration)
     await pool.query(`ALTER TABLE page_budgets ADD COLUMN IF NOT EXISTS locked BOOLEAN DEFAULT FALSE`);
+
+    // One-time migration: move legacy hardcoded users into app_users (runs once ever)
+    const mig = await pool.query("SELECT value FROM app_meta WHERE key='seed_migrated'");
+    if (mig.rowCount === 0) {
+      for (const u of MIGRATION_SEED_USERS) {
+        await pool.query(
+          'INSERT INTO app_users (email, name, role, created_by) VALUES ($1,$2,$3,$4) ON CONFLICT (email) DO NOTHING',
+          [normEmail(u.email), u.name, u.role, 'migration']
+        );
+      }
+      await pool.query("INSERT INTO app_meta (key, value) VALUES ('seed_migrated','1') ON CONFLICT (key) DO NOTHING");
+      console.log(`✅ Migrated ${MIGRATION_SEED_USERS.length} legacy users into app_users`);
+    }
+
     await loadDbUsers();
     console.log('✅ DB tables ready');
   } catch(e) {
