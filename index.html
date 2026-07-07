@@ -1141,6 +1141,12 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
           <div class="nav-subitem nav-subitem-disabled" title="Coming soon">Sales Report</div>
         </div>
       </div>
+      <div class="nav-group" id="manageProductGroup" style="margin-top:8px;display:none">
+        <a class="nav-item-parent" href="/manage-products" style="text-decoration:none">
+          <span class="nav-dot"></span>
+          Manage Product
+        </a>
+      </div>
     </nav>
     <div class="sidebar-footer">Settings</div>
   </aside>
@@ -1514,6 +1520,10 @@ let currentCreativeName = '';
 fetch('/api/me').then(r=>r.json()).then(u=>{
   currentUser = u;
   document.getElementById('userBadge').textContent = u.name + ' · ' + u.role;
+  if (u && u.isAdmin) {
+    const mp = document.getElementById('manageProductGroup');
+    if (mp) mp.style.display = '';
+  }
 });
 
 fetch('/api/action-logs').then(r=>r.json()).then(logs=>{

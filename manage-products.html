@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/png" href="/mlc-logo.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manage Product — MLC Insights</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', sans-serif; background: #EEF2FF; min-height: 100vh; padding: 24px 20px; }
+.wrap { max-width: 960px; margin: 0 auto; }
+.app-header { background: linear-gradient(90deg, #1D4ED8 0%, #2563EB 60%, #3B82F6 100%); color: #fff;
+  padding: 0 22px; height: 54px; display: flex; align-items: center; justify-content: space-between;
+  border-radius: 16px; margin-bottom: 22px; box-shadow: 0 4px 20px rgba(37,99,235,0.25); }
+.header-logo { font-size: 1.05rem; font-weight: 800; }
+.header-logo span { opacity: 0.65; font-weight: 500; font-size: 0.8rem; margin-left: 8px; }
+.back-link { font-size: 0.75rem; font-weight: 600; color: #fff; text-decoration: none; opacity: 0.85;
+  padding: 5px 12px; border: 1px solid rgba(255,255,255,0.35); border-radius: 8px; }
+.back-link:hover { opacity: 1; background: rgba(255,255,255,0.15); }
+.page-title { font-size: 1.3rem; font-weight: 800; color: #0F172A; margin-bottom: 4px; }
+.page-sub { font-size: 0.78rem; color: #64748B; margin-bottom: 22px; }
+
+.tabs { display: inline-flex; background: #E2E8F0; border-radius: 11px; padding: 4px; gap: 2px; margin-bottom: 18px; flex-wrap: wrap; }
+.tab { padding: 8px 16px; border-radius: 8px; border: none; background: transparent; font-size: 0.78rem; font-weight: 600; color: #64748B; cursor: pointer; font-family: 'Inter', sans-serif; }
+.tab.active { background: #fff; color: #1D4ED8; box-shadow: 0 1px 6px rgba(15,23,42,0.10); }
+
+.card { background: #fff; border: 1px solid #E2E8F0; border-radius: 16px; padding: 22px; box-shadow: 0 2px 12px rgba(0,0,0,0.05); margin-bottom: 20px; }
+.card-title { font-size: 0.72rem; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 16px; }
+.form-grid { display: grid; gap: 12px; align-items: end; margin-bottom: 6px; }
+.field label { display: block; font-size: 0.62rem; font-weight: 700; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 5px; }
+.field input, .field select { width: 100%; padding: 9px 11px; border: 1.5px solid #DBEAFE; border-radius: 10px; font-size: 0.82rem; font-family: 'Inter', sans-serif; color: #0F172A; outline: none; background: #fff; }
+.field input:focus, .field select:focus { border-color: #2563EB; }
+.btn { padding: 10px 20px; border-radius: 10px; border: none; background: linear-gradient(135deg, #2563EB, #3B82F6); color: #fff; font-size: 0.8rem; font-weight: 700; cursor: pointer; font-family: 'Inter', sans-serif; box-shadow: 0 3px 12px rgba(37,99,235,0.30); white-space: nowrap; }
+.btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.msg { font-size: 0.76rem; margin-top: 10px; font-weight: 600; }
+.msg.err { color: #dc2626; } .msg.ok { color: #16a34a; }
+
+table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+th { text-align: left; padding: 9px 12px; font-size: 0.62rem; font-weight: 700; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.6px; border-bottom: 2px solid #E2E8F0; }
+td { padding: 10px 12px; border-bottom: 1px solid #F1F5F9; color: #0F172A; font-weight: 500; vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+.prod-head td { background: #F8FAFF; font-weight: 800; color: #1E40AF; }
+.pill { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.62rem; font-weight: 700; background: #DBEAFE; color: #1E40AF; }
+.mono { font-family: monospace; font-size: 0.76rem; color: #64748B; }
+.btn-edit { background: none; border: 1px solid #BFDBFE; color: #1D4ED8; border-radius: 8px; padding: 4px 10px; font-size: 0.72rem; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; margin-right: 4px; }
+.btn-del { background: none; border: 1px solid #FECACA; color: #dc2626; border-radius: 8px; padding: 4px 10px; font-size: 0.72rem; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; }
+.btn-sm { background: #16a34a; border: none; color: #fff; border-radius: 8px; padding: 4px 12px; font-size: 0.72rem; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; margin-right: 4px; }
+.edit-input { width: 100%; padding: 6px 9px; border: 1.5px solid #93C5FD; border-radius: 8px; font-size: 0.78rem; font-family: 'Inter', sans-serif; outline: none; }
+.view { display: none; } .view.active { display: block; }
+.state-msg { text-align: center; padding: 24px; color: #94A3B8; font-size: 0.85rem; }
+.hint { font-size: 0.68rem; color: #94A3B8; margin-top: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="app-header">
+    <div class="header-logo">MLC<span>Manage Product</span></div>
+    <a href="/" class="back-link">← Dashboard</a>
+  </div>
+  <div class="page-title">Manage Product</div>
+  <div class="page-sub">I-manage ang mga products, ad accounts, at Meta tokens — walang code change na kailangan</div>
+
+  <div class="tabs">
+    <button class="tab active" data-v="accounts" onclick="switchTab('accounts')">Products &amp; Ad Accounts</button>
+    <button class="tab" data-v="tokens" onclick="switchTab('tokens')">Meta Tokens</button>
+    <button class="tab" data-v="history" onclick="switchTab('history')">Action History</button>
+  </div>
+
+  <!-- PRODUCTS & ACCOUNTS -->
+  <div id="v-accounts" class="view active">
+    <div class="card">
+      <div class="card-title">➕ Add Product</div>
+      <div class="form-grid" style="grid-template-columns: 1fr 1fr 1fr auto">
+        <div class="field"><label>Product Code</label><input id="p-code" placeholder="e.g. CANPRO"><div class="hint">Internal (CAPS, walang space)</div></div>
+        <div class="field"><label>Display Name</label><input id="p-label" placeholder="e.g. CanPro"></div>
+        <div class="field"><label>POS Keyword</label><input id="p-keyword" placeholder="e.g. canpro"><div class="hint">Pantugma sa sales sheet</div></div>
+        <div class="field"><button class="btn" id="pAddBtn" onclick="addProduct()">Add Product</button></div>
+      </div>
+      <div class="msg" id="p-msg"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">➕ Add Ad Account</div>
+      <div class="form-grid" style="grid-template-columns: 1fr 1fr 1fr 1fr 1fr auto">
+        <div class="field"><label>Ad Account ID</label><input id="a-id" placeholder="e.g. 123456789"><div class="hint">"act_" auto-added</div></div>
+        <div class="field"><label>Account Name</label><input id="a-name" placeholder="e.g. CanPro Main"></div>
+        <div class="field"><label>Product</label><select id="a-product"></select></div>
+        <div class="field"><label>Meta Token</label><select id="a-token"></select></div>
+        <div class="field"><label>Assign Page</label><select id="a-page"></select></div>
+        <div class="field"><button class="btn" id="aAddBtn" onclick="addAccount()">Add Account</button></div>
+      </div>
+      <div class="msg" id="a-msg"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">👀 Products &amp; Ad Accounts</div>
+      <div id="accountsTable"><div class="state-msg">Loading...</div></div>
+    </div>
+  </div>
+
+  <!-- TOKENS -->
+  <div id="v-tokens" class="view">
+    <div class="card">
+      <div class="card-title">➕ Add Meta Token</div>
+      <div class="form-grid" style="grid-template-columns: 1fr 2fr auto">
+        <div class="field"><label>Token Name</label><input id="t-name" placeholder="e.g. Token 3"></div>
+        <div class="field"><label>Access Token</label><input id="t-token" placeholder="EAAxxxxx..."></div>
+        <div class="field"><button class="btn" id="tAddBtn" onclick="addToken()">Add Token</button></div>
+      </div>
+      <div class="msg" id="t-msg"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">🔑 Meta Tokens</div>
+      <div id="tokensTable"><div class="state-msg">Loading...</div></div>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div id="v-history" class="view">
+    <div class="card">
+      <div class="card-title">🕑 Action History</div>
+      <div id="historyTable"><div class="state-msg">Loading...</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const esc = s => String(s == null ? '' : s).replace(/"/g, '&quot;').replace(/'/g, "\\'");
+let CFG = { products: [], tokens: [], accounts: [], pages: [] };
+let editAcct = null, editTok = null, editProd = null;
+
+function switchTab(v) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.v === v));
+  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+  document.getElementById('v-' + v).classList.add('active');
+  if (v === 'history') loadHistory();
+}
+function msg(id, text, ok) { const el = document.getElementById(id); el.textContent = text; el.className = 'msg ' + (ok ? 'ok' : 'err'); }
+
+async function api(url, method, body) {
+  const opt = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body) opt.body = JSON.stringify(body);
+  const res = await fetch(url, opt);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || data.error) throw new Error(data.error || 'Failed');
+  return data;
+}
+
+async function loadConfig() {
+  try {
+    CFG = await (await fetch('/api/mp/config')).json();
+    fillSelects();
+    renderAccounts();
+    renderTokens();
+  } catch(e) {
+    document.getElementById('accountsTable').innerHTML = `<div class="state-msg" style="color:#dc2626">${e.message}</div>`;
+  }
+}
+
+function fillSelects() {
+  document.getElementById('a-product').innerHTML = CFG.products.map(p => `<option value="${p.code}">${p.label}</option>`).join('');
+  document.getElementById('a-token').innerHTML = CFG.tokens.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+  document.getElementById('a-page').innerHTML = '<option value="">— None —</option>' + CFG.pages.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+}
+
+function tokName(id) { const t = CFG.tokens.find(t => t.id === id); return t ? t.name : '—'; }
+function pageName(id) { const p = CFG.pages.find(p => p.id === id); return p ? p.name : (id || '—'); }
+
+function renderAccounts() {
+  let html = '<table><thead><tr><th>Account</th><th>Ad ID</th><th>Token</th><th>Page</th><th style="text-align:right">Action</th></tr></thead><tbody>';
+  for (const prod of CFG.products) {
+    const accts = CFG.accounts.filter(a => a.product_code === prod.code);
+    html += `<tr class="prod-head"><td colspan="5">${prod.label} <span class="mono">(${prod.code})</span> · ${accts.length} account(s)
+      <button class="btn-edit" style="float:right" onclick="startEditProd('${esc(prod.code)}')">Edit</button>
+      <button class="btn-del" style="float:right;margin-right:6px" onclick="delProduct('${esc(prod.code)}')">Delete</button></td></tr>`;
+    if (editProd === prod.code) {
+      html += `<tr><td colspan="5">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <input class="edit-input" id="ep-label" value="${esc(prod.label)}" placeholder="Display name" style="max-width:200px">
+          <input class="edit-input" id="ep-keyword" value="${esc(prod.keyword)}" placeholder="POS keyword" style="max-width:200px">
+          <button class="btn-sm" onclick="saveProd('${esc(prod.code)}')">Save</button>
+          <button class="btn-del" onclick="editProd=null;renderAccounts()">Cancel</button>
+        </div></td></tr>`;
+    }
+    for (const a of accts) {
+      if (editAcct === a.id) {
+        html += `<tr><td colspan="5">
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+            <input class="edit-input" id="ea-name" value="${esc(a.name)}" placeholder="Name" style="max-width:160px">
+            <input class="edit-input" id="ea-id" value="${esc(a.account_id)}" placeholder="act_..." style="max-width:170px">
+            <select class="edit-input" id="ea-product" style="max-width:150px">${CFG.products.map(p => `<option value="${p.code}" ${p.code === a.product_code ? 'selected' : ''}>${p.label}</option>`).join('')}</select>
+            <select class="edit-input" id="ea-token" style="max-width:120px">${CFG.tokens.map(t => `<option value="${t.id}" ${t.id === a.token_id ? 'selected' : ''}>${t.name}</option>`).join('')}</select>
+            <select class="edit-input" id="ea-page" style="max-width:160px"><option value="">— None —</option>${CFG.pages.map(p => `<option value="${p.id}" ${p.id === a.page_id ? 'selected' : ''}>${p.name}</option>`).join('')}</select>
+            <button class="btn-sm" onclick="saveAcct(${a.id})">Save</button>
+            <button class="btn-del" onclick="editAcct=null;renderAccounts()">Cancel</button>
+          </div></td></tr>`;
+      } else {
+        html += `<tr>
+          <td style="font-weight:600">${a.name}</td>
+          <td class="mono">${a.account_id}</td>
+          <td><span class="pill">${tokName(a.token_id)}</span></td>
+          <td>${pageName(a.page_id)}</td>
+          <td style="text-align:right;white-space:nowrap"><button class="btn-edit" onclick="startEditAcct(${a.id})">Edit</button><button class="btn-del" onclick="delAccount(${a.id})">Remove</button></td>
+        </tr>`;
+      }
+    }
+  }
+  html += '</tbody></table>';
+  document.getElementById('accountsTable').innerHTML = html;
+}
+
+function renderTokens() {
+  let html = '<table><thead><tr><th>Name</th><th>Token</th><th>Used by</th><th style="text-align:right">Action</th></tr></thead><tbody>';
+  for (const t of CFG.tokens) {
+    const uses = CFG.accounts.filter(a => a.token_id === t.id).length;
+    if (editTok === t.id) {
+      html += `<tr><td colspan="4">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <input class="edit-input" id="et-name" value="${esc(t.name)}" placeholder="Name" style="max-width:160px">
+          <input class="edit-input" id="et-token" placeholder="Bagong token (iwan blanko kung wag palitan)" style="max-width:320px">
+          <button class="btn-sm" onclick="saveTok(${t.id})">Save</button>
+          <button class="btn-del" onclick="editTok=null;renderTokens()">Cancel</button>
+        </div></td></tr>`;
+    } else {
+      html += `<tr><td style="font-weight:600">${t.name}</td><td class="mono">${t.tokenMasked}</td><td>${uses} account(s)</td>
+        <td style="text-align:right;white-space:nowrap"><button class="btn-edit" onclick="startEditTok(${t.id})">Edit</button><button class="btn-del" onclick="delToken(${t.id})">Remove</button></td></tr>`;
+    }
+  }
+  html += '</tbody></table>';
+  document.getElementById('tokensTable').innerHTML = html;
+}
+
+// Products
+async function addProduct() {
+  const code = document.getElementById('p-code').value.trim(), label = document.getElementById('p-label').value.trim(), keyword = document.getElementById('p-keyword').value.trim();
+  if (!code || !label) { msg('p-msg', 'Code at display name ay required.', false); return; }
+  try { await api('/api/mp/products', 'POST', { code, label, keyword }); msg('p-msg', '✓ Naidagdag ang product.', true);
+    document.getElementById('p-code').value = document.getElementById('p-label').value = document.getElementById('p-keyword').value = ''; loadConfig();
+  } catch(e) { msg('p-msg', e.message, false); }
+}
+function startEditProd(code) { editProd = code; editAcct = null; renderAccounts(); }
+async function saveProd(code) {
+  const label = document.getElementById('ep-label').value.trim(), keyword = document.getElementById('ep-keyword').value.trim();
+  try { await api('/api/mp/products/' + encodeURIComponent(code), 'PUT', { label, keyword }); editProd = null; loadConfig(); }
+  catch(e) { msg('p-msg', e.message, false); }
+}
+async function delProduct(code) {
+  if (!confirm('Delete product ' + code + '?')) return;
+  try { await api('/api/mp/products/' + encodeURIComponent(code), 'DELETE'); loadConfig(); }
+  catch(e) { alert(e.message); }
+}
+
+// Accounts
+async function addAccount() {
+  const account_id = document.getElementById('a-id').value.trim(), name = document.getElementById('a-name').value.trim();
+  const product_code = document.getElementById('a-product').value, token_id = document.getElementById('a-token').value, page_id = document.getElementById('a-page').value;
+  if (!account_id || !name || !product_code) { msg('a-msg', 'Ad ID, name, at product ay required.', false); return; }
+  try { await api('/api/mp/accounts', 'POST', { account_id, name, product_code, token_id, page_id }); msg('a-msg', '✓ Naidagdag ang ad account.', true);
+    document.getElementById('a-id').value = document.getElementById('a-name').value = ''; loadConfig();
+  } catch(e) { msg('a-msg', e.message, false); }
+}
+function startEditAcct(id) { editAcct = id; editProd = null; renderAccounts(); }
+async function saveAcct(id) {
+  const body = { account_id: document.getElementById('ea-id').value.trim(), name: document.getElementById('ea-name').value.trim(),
+    product_code: document.getElementById('ea-product').value, token_id: document.getElementById('ea-token').value, page_id: document.getElementById('ea-page').value };
+  try { await api('/api/mp/accounts/' + id, 'PUT', body); editAcct = null; loadConfig(); }
+  catch(e) { msg('a-msg', e.message, false); }
+}
+async function delAccount(id) {
+  if (!confirm('Remove ad account?')) return;
+  try { await api('/api/mp/accounts/' + id, 'DELETE'); loadConfig(); } catch(e) { alert(e.message); }
+}
+
+// Tokens
+async function addToken() {
+  const name = document.getElementById('t-name').value.trim(), token = document.getElementById('t-token').value.trim();
+  if (!name || !token) { msg('t-msg', 'Name at token ay required.', false); return; }
+  try { await api('/api/mp/tokens', 'POST', { name, token }); msg('t-msg', '✓ Naidagdag ang token.', true);
+    document.getElementById('t-name').value = document.getElementById('t-token').value = ''; loadConfig();
+  } catch(e) { msg('t-msg', e.message, false); }
+}
+function startEditTok(id) { editTok = id; renderTokens(); }
+async function saveTok(id) {
+  const name = document.getElementById('et-name').value.trim(), token = document.getElementById('et-token').value.trim();
+  try { await api('/api/mp/tokens/' + id, 'PUT', { name, token }); editTok = null; loadConfig(); }
+  catch(e) { msg('t-msg', e.message, false); }
+}
+async function delToken(id) {
+  if (!confirm('Remove token?')) return;
+  try { await api('/api/mp/tokens/' + id, 'DELETE'); loadConfig(); } catch(e) { alert(e.message); }
+}
+
+async function loadHistory() {
+  try {
+    const rows = await (await fetch('/api/mp/history')).json();
+    const body = rows.map(r => `<tr>
+      <td style="color:#64748B;white-space:nowrap">${new Date(r.created_at).toLocaleString('en-PH', { timeZone:'Asia/Manila', month:'short', day:'numeric', hour:'numeric', minute:'2-digit', hour12:true })}</td>
+      <td style="font-weight:600">${r.action}</td><td>${r.detail || ''}</td><td style="color:#64748B">${r.done_by || ''}</td></tr>`).join('');
+    document.getElementById('historyTable').innerHTML = `<table><thead><tr><th>When (PHT)</th><th>Action</th><th>Detail</th><th>By</th></tr></thead>
+      <tbody>${body || '<tr><td colspan="4" class="state-msg">Wala pang history.</td></tr>'}</tbody></table>`;
+  } catch(e) { document.getElementById('historyTable').innerHTML = `<div class="state-msg" style="color:#dc2626">${e.message}</div>`; }
+}
+
+loadConfig();
+</script>
+</body>
+</html>

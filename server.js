@@ -117,6 +117,15 @@ async function initDB() {
       )
     `);
     await pool.query(`CREATE TABLE IF NOT EXISTS app_meta ( key TEXT PRIMARY KEY, value TEXT )`);
+    await pool.query(`CREATE TABLE IF NOT EXISTS mp_products (
+      id SERIAL PRIMARY KEY, code TEXT UNIQUE NOT NULL, label TEXT NOT NULL, keyword TEXT, created_at TIMESTAMP DEFAULT NOW() )`);
+    await pool.query(`CREATE TABLE IF NOT EXISTS mp_tokens (
+      id SERIAL PRIMARY KEY, name TEXT UNIQUE NOT NULL, token TEXT NOT NULL, created_at TIMESTAMP DEFAULT NOW() )`);
+    await pool.query(`CREATE TABLE IF NOT EXISTS mp_accounts (
+      id SERIAL PRIMARY KEY, account_id TEXT UNIQUE NOT NULL, name TEXT NOT NULL, product_code TEXT NOT NULL,
+      token_id INTEGER, page_id TEXT, created_at TIMESTAMP DEFAULT NOW() )`);
+    await pool.query(`CREATE TABLE IF NOT EXISTS mp_history (
+      id SERIAL PRIMARY KEY, action TEXT NOT NULL, detail TEXT, done_by TEXT, created_at TIMESTAMP DEFAULT NOW() )`);
     // Add locked column if it doesn't exist (migration)
     await pool.query(`ALTER TABLE page_budgets ADD COLUMN IF NOT EXISTS locked BOOLEAN DEFAULT FALSE`);
 
@@ -133,7 +142,26 @@ async function initDB() {
       console.log(`✅ Migrated ${MIGRATION_SEED_USERS.length} legacy users into app_users`);
     }
 
+    // One-time migration: seed Manage Product tables from the hardcoded config
+    const mpMig = await pool.query("SELECT value FROM app_meta WHERE key='mp_migrated'");
+    if (mpMig.rowCount === 0) {
+      for (const p of SEED_PRODUCTS) {
+        await pool.query('INSERT INTO mp_products (code,label,keyword) VALUES ($1,$2,$3) ON CONFLICT (code) DO NOTHING', [p.code, p.label, p.keyword]);
+      }
+      await pool.query('INSERT INTO mp_tokens (name,token) VALUES ($1,$2) ON CONFLICT (name) DO NOTHING', ['Token 1', META_TOKEN_MAIN]);
+      await pool.query('INSERT INTO mp_tokens (name,token) VALUES ($1,$2) ON CONFLICT (name) DO NOTHING', ['Token 2', process.env.META_TOKEN_2 || META_TOKEN_MAIN]);
+      const tok1 = await pool.query("SELECT id FROM mp_tokens WHERE name='Token 1'");
+      const tok1Id = tok1.rows[0] && tok1.rows[0].id;
+      for (const a of SEED_AD_ACCOUNTS) {
+        await pool.query('INSERT INTO mp_accounts (account_id,name,product_code,token_id,page_id) VALUES ($1,$2,$3,$4,$5) ON CONFLICT (account_id) DO NOTHING',
+          [a.id, a.name, a.product, tok1Id, null]);
+      }
+      await pool.query("INSERT INTO app_meta (key, value) VALUES ('mp_migrated','1') ON CONFLICT (key) DO NOTHING");
+      console.log('✅ Migrated Manage Product config into DB');
+    }
+
     await loadDbUsers();
+    await loadMPConfig();
     console.log('✅ DB tables ready');
   } catch(e) {
     console.error('DB init error:', e.message);
@@ -184,6 +212,33 @@ async function loadDbUsers() {
     dbUsers = r.rows;
     console.log(`✅ Loaded ${dbUsers.length} DB user(s)`);
   } catch(e) { console.warn('loadDbUsers error:', e.message); }
+}
+
+// Load Manage Product config and rebuild the live AD_ACCOUNTS list
+async function loadMPConfig() {
+  try {
+    const [pr, tk, ac] = await Promise.all([
+      pool.query('SELECT code, label, keyword FROM mp_products ORDER BY created_at'),
+      pool.query('SELECT id, name, token FROM mp_tokens ORDER BY id'),
+      pool.query('SELECT id, account_id, name, product_code, token_id, page_id FROM mp_accounts ORDER BY created_at'),
+    ]);
+    if (pr.rows.length) mpProducts = pr.rows;
+    mpTokens   = tk.rows;
+    mpAccounts = ac.rows;
+    if (mpAccounts.length) {
+      const tokById = Object.fromEntries(mpTokens.map(t => [t.id, t.token]));
+      AD_ACCOUNTS = mpAccounts.map(a => ({
+        id: a.account_id, name: a.name, currency: 'PHP',
+        product: a.product_code, token: tokById[a.token_id] || META_TOKEN_MAIN,
+      }));
+    }
+    console.log(`✅ Manage Product: ${mpProducts.length} products, ${mpTokens.length} tokens, ${AD_ACCOUNTS.length} accounts`);
+  } catch(e) { console.warn('loadMPConfig error:', e.message); }
+}
+
+async function logMPHistory(action, detail, email) {
+  try { await pool.query('INSERT INTO mp_history (action, detail, done_by) VALUES ($1,$2,$3)', [action, detail, email || '']); }
+  catch(e) { console.warn('logMPHistory error:', e.message); }
 }
 
 // ── ROLE-BASED PAGE ACCESS ──
@@ -415,18 +470,30 @@ async function fetchPancakeTagDefs(pageId) {
   }
 }
 
-const AD_ACCOUNTS = [
-  // --- CLEAR SIGHT ---
+// Seed ad accounts — used as fallback and for the one-time DB migration.
+// At runtime AD_ACCOUNTS is rebuilt from the Manage Product DB config (see loadMPConfig).
+const SEED_AD_ACCOUNTS = [
   { id: 'act_3948257548644609', name: 'CS New Page',   currency: 'PHP', product: 'CLEAR SIGHT', token: META_TOKEN_MAIN },
   { id: 'act_2825452284312899', name: 'Clear Sight 1', currency: 'PHP', product: 'CLEAR SIGHT', token: META_TOKEN_MAIN },
   { id: 'act_1264536714635179', name: 'Clear Sight 2', currency: 'PHP', product: 'CLEAR SIGHT', token: META_TOKEN_MAIN },
-  // --- CANPRO ---
   { id: 'act_1360519375937020', name: 'CanPro',        currency: 'PHP', product: 'CANPRO',      token: META_TOKEN_MAIN },
-  // --- FIXORA (displayed as "Hearing Aid") ---
   { id: 'act_1783871125514527', name: 'Hearing Aid',   currency: 'PHP', product: 'FIXORA',      token: META_TOKEN_MAIN },
-  // --- HEARWELL ---
   { id: 'act_971532679101983',  name: 'HearWell PH',   currency: 'PHP', product: 'HEARWELL',    token: META_TOKEN_MAIN },
 ];
+let AD_ACCOUNTS = [...SEED_AD_ACCOUNTS];
+
+// Seed products (code = internal label used across the app; label = display; keyword = POS match)
+const SEED_PRODUCTS = [
+  { code: 'CLEAR SIGHT', label: 'Clear Sight',  keyword: 'clear sight' },
+  { code: 'CANPRO',      label: 'CanPro',        keyword: 'canpro' },
+  { code: 'FIXORA',      label: 'Hearing Aid',   keyword: 'fixora' },
+  { code: 'HEARWELL',    label: 'HearWell',      keyword: 'hearwell' },
+];
+
+// Manage Product config loaded from DB (fallbacks keep the dashboard working if DB is empty)
+let mpProducts = [...SEED_PRODUCTS];
+let mpTokens   = [];
+let mpAccounts = [];
 
 // Currency conversion to PHP (update as needed)
 const FX_TO_PHP = { 'PHP': 1, 'HKD': 7.3, 'USD': 56, 'SGD': 42 };
@@ -605,12 +672,16 @@ async function fetchPancakeSalesByDate() {
 
 // Classify a POS row into an NDAP product label (must match AD_ACCOUNTS product values)
 function classifyNdapProduct(rowText) {
+  // Dynamic: match each managed product's keyword (from Manage Product config)
+  for (const p of mpProducts) {
+    const kw = (p.keyword || '').trim().toLowerCase();
+    if (kw && rowText.includes(kw)) return p.code;
+  }
+  // Legacy fallbacks / aliases
   if (rowText.includes('clear sight') || rowText.includes('clearsight')) return 'CLEAR SIGHT';
-  if (rowText.includes('canpro') || rowText.includes('can pro') || rowText.includes('canro')) return 'CANPRO';
-  if (rowText.includes('fixora')) return 'FIXORA';
-  if (rowText.includes('hearwell') || rowText.includes('hear well')) return 'HEARWELL';
-  // Legacy: older POS rows labelled "Hearing Aid" belong to the Fixora hearing-aid product
+  if (rowText.includes('can pro') || rowText.includes('canro')) return 'CANPRO';
   if (rowText.includes('hearing aid') || rowText.includes('hearingaid') || rowText.includes('audicure')) return 'FIXORA';
+  if (rowText.includes('hear well')) return 'HEARWELL';
   return null;
 }
 
@@ -876,6 +947,122 @@ app.delete('/api/users/:email', requireAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ── MANAGE PRODUCT: products, Meta tokens, ad accounts (admin only) ──
+const maskToken = t => !t ? '' : (t.length <= 12 ? '••••' : t.slice(0, 6) + '••••••' + t.slice(-4));
+const normAcctId = v => { v = (v || '').trim(); return v && !v.startsWith('act_') ? 'act_' + v : v; };
+
+app.get('/api/products', requireAuth, (_req, res) => res.json(mpProducts.map(p => ({ code: p.code, label: p.label }))));
+
+app.get('/api/mp/config', requireAdmin, (_req, res) => {
+  res.json({
+    products: mpProducts,
+    tokens: mpTokens.map(t => ({ id: t.id, name: t.name, tokenMasked: maskToken(t.token) })),
+    accounts: mpAccounts.map(a => ({ id: a.id, account_id: a.account_id, name: a.name, product_code: a.product_code, token_id: a.token_id, page_id: a.page_id })),
+    pages: Object.entries(PANCAKE_PAGE_META).map(([id, m]) => ({ id, name: m.short })),
+  });
+});
+app.get('/api/mp/history', requireAdmin, async (_req, res) => {
+  try { const r = await pool.query('SELECT action, detail, done_by, created_at FROM mp_history ORDER BY created_at DESC LIMIT 200'); res.json(r.rows); }
+  catch(e) { res.json([]); }
+});
+
+// Products
+app.post('/api/mp/products', requireAdmin, async (req, res) => {
+  try {
+    const code = (req.body.code || '').trim().toUpperCase(), label = (req.body.label || '').trim(), keyword = (req.body.keyword || '').trim();
+    if (!code || !label) return res.status(400).json({ error: 'Code at label ay required.' });
+    if (mpProducts.some(p => p.code === code)) return res.status(409).json({ error: 'May product na ang code na ito.' });
+    await pool.query('INSERT INTO mp_products (code,label,keyword) VALUES ($1,$2,$3)', [code, label, keyword]);
+    await logMPHistory('Add product', `${label} (${code})`, req.user.email);
+    await loadMPConfig(); res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+app.put('/api/mp/products/:code', requireAdmin, async (req, res) => {
+  try {
+    const code = req.params.code.toUpperCase(), label = (req.body.label || '').trim(), keyword = (req.body.keyword || '').trim();
+    if (!label) return res.status(400).json({ error: 'Label required.' });
+    const r = await pool.query('UPDATE mp_products SET label=$1, keyword=$2 WHERE code=$3', [label, keyword, code]);
+    if (!r.rowCount) return res.status(404).json({ error: 'Product not found.' });
+    await logMPHistory('Edit product', `${label} (${code})`, req.user.email);
+    await loadMPConfig(); res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+app.delete('/api/mp/products/:code', requireAdmin, async (req, res) => {
+  try {
+    const code = req.params.code.toUpperCase();
+    if (mpAccounts.some(a => a.product_code === code)) return res.status(400).json({ error: 'May ad accounts pa dito. Alisin muna ang accounts.' });
+    await pool.query('DELETE FROM mp_products WHERE code=$1', [code]);
+    await logMPHistory('Delete product', code, req.user.email);
+    await loadMPConfig(); res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Tokens
+app.post('/api/mp/tokens', requireAdmin, async (req, res) => {
+  try {
+    const name = (req.body.name || '').trim(), token = (req.body.token || '').trim();
+    if (!name || !token) return res.status(400).json({ error: 'Name at token ay required.' });
+    if (mpTokens.some(t => t.name === name)) return res.status(409).json({ error: 'May token na ang pangalang ito.' });
+    await pool.query('INSERT INTO mp_tokens (name,token) VALUES ($1,$2)', [name, token]);
+    await logMPHistory('Add token', name, req.user.email);
+    await loadMPConfig(); res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+app.put('/api/mp/tokens/:id', requireAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id), name = (req.body.name || '').trim(), token = (req.body.token || '').trim();
+    if (!name) return res.status(400).json({ error: 'Name required.' });
+    if (token) await pool.query('UPDATE mp_tokens SET name=$1, token=$2 WHERE id=$3', [name, token, id]);
+    else await pool.query('UPDATE mp_tokens SET name=$1 WHERE id=$2', [name, id]);
+    await logMPHistory('Edit token', name, req.user.email);
+    await loadMPConfig(); res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+app.delete('/api/mp/tokens/:id', requireAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (mpAccounts.some(a => a.token_id === id)) return res.status(400).json({ error: 'May accounts na gumagamit ng token na ito.' });
+    await pool.query('DELETE FROM mp_tokens WHERE id=$1', [id]);
+    await logMPHistory('Delete token', 'token#' + id, req.user.email);
+    await loadMPConfig(); res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Ad accounts
+app.post('/api/mp/accounts', requireAdmin, async (req, res) => {
+  try {
+    const account_id = normAcctId(req.body.account_id), name = (req.body.name || '').trim();
+    const product_code = (req.body.product_code || '').trim().toUpperCase();
+    const token_id = parseInt(req.body.token_id) || null, page_id = (req.body.page_id || '').trim() || null;
+    if (!account_id || !name || !product_code) return res.status(400).json({ error: 'Ad ID, name, at product ay required.' });
+    if (mpAccounts.some(a => a.account_id === account_id)) return res.status(409).json({ error: 'May account na ang ad ID na ito.' });
+    await pool.query('INSERT INTO mp_accounts (account_id,name,product_code,token_id,page_id) VALUES ($1,$2,$3,$4,$5)', [account_id, name, product_code, token_id, page_id]);
+    await logMPHistory('Add ad account', `${name} (${account_id}) → ${product_code}`, req.user.email);
+    await loadMPConfig(); res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+app.put('/api/mp/accounts/:id', requireAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id), account_id = normAcctId(req.body.account_id), name = (req.body.name || '').trim();
+    const product_code = (req.body.product_code || '').trim().toUpperCase();
+    const token_id = parseInt(req.body.token_id) || null, page_id = (req.body.page_id || '').trim() || null;
+    if (!account_id || !name || !product_code) return res.status(400).json({ error: 'Ad ID, name, at product ay required.' });
+    if (mpAccounts.some(a => a.account_id === account_id && a.id !== id)) return res.status(409).json({ error: 'May ibang account na ang ad ID na ito.' });
+    const r = await pool.query('UPDATE mp_accounts SET account_id=$1,name=$2,product_code=$3,token_id=$4,page_id=$5 WHERE id=$6', [account_id, name, product_code, token_id, page_id, id]);
+    if (!r.rowCount) return res.status(404).json({ error: 'Account not found.' });
+    await logMPHistory('Edit ad account', `${name} (${account_id})`, req.user.email);
+    await loadMPConfig(); res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+app.delete('/api/mp/accounts/:id', requireAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    await pool.query('DELETE FROM mp_accounts WHERE id=$1', [id]);
+    await logMPHistory('Delete ad account', 'account#' + id, req.user.email);
+    await loadMPConfig(); res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/flush-cache', requireAuth, (req, res) => {
   pancakeCache.clear(); metaInsightsCache.clear(); budgetCache.clear(); activeAdsCache.clear(); pancakeConvCache.clear();
   console.log('🗑️ All caches flushed by', req.user.email);
@@ -1002,6 +1189,7 @@ app.get('/home',              requireAuth,          (_req, res) => res.sendFile(
 app.get('/ad-spend',          pageGuard('/ad-spend'),  (_req, res) => res.sendFile(path.join(__dirname, 'ad-spend.html')));
 app.get('/logistics',         pageGuard('/logistics'), (_req, res) => res.sendFile(path.join(__dirname, 'logistics.html')));
 app.get('/admin',             requireAdmin,         (_req, res) => res.sendFile(path.join(__dirname, 'admin.html')));
+app.get('/manage-products',   requireAdmin,         (_req, res) => res.sendFile(path.join(__dirname, 'manage-products.html')));
 app.get('/roas-report',       requireAdmin,         (_req, res) => res.sendFile(path.join(__dirname, 'roas-report.html')));
 app.get('/income-statement',  requireAdmin,         (_req, res) => res.sendFile(path.join(__dirname, 'income-statement.html')));
 app.get('/aov-cvr-report',    requireAdmin,         (_req, res) => res.sendFile(path.join(__dirname, 'aov-cvr-report.html')));
