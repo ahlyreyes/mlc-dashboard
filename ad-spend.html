@@ -377,15 +377,26 @@ function setRangeLabel(fromStr, toStr) {
 
 const NUM = n => Number(n || 0).toLocaleString('en-PH');
 
-// Products — labels must match server product tags (AD_ACCOUNTS / classifyNdapProduct)
-const ALL_PRODUCTS = ['CLEAR SIGHT', 'CANPRO', 'FIXORA', 'HEARWELL'];
-const PRODUCTS = [
-  { key: 'ALL',         label: 'All Products', set: ALL_PRODUCTS },
-  { key: 'CLEAR SIGHT', label: 'Clear Sight',  set: ['CLEAR SIGHT'] },
-  { key: 'CANPRO',      label: 'CanPro',        set: ['CANPRO'] },
-  { key: 'FIXORA',      label: 'Hearing Aid',   set: ['FIXORA'] },
-  { key: 'HEARWELL',    label: 'HearWell',      set: ['HEARWELL'] },
+// Products — loaded dynamically from Manage Product (/api/products); fallback if API fails
+const FALLBACK_PRODUCTS = [
+  { code: 'CLEAR SIGHT', label: 'Clear Sight' },
+  { code: 'CANPRO',      label: 'CanPro' },
+  { code: 'FIXORA',      label: 'Hearing Aid' },
+  { code: 'HEARWELL',    label: 'HearWell' },
 ];
+let ALL_PRODUCTS = [];
+let PRODUCTS = [];
+function buildProducts(list) {
+  ALL_PRODUCTS = list.map(p => p.code);
+  PRODUCTS = [{ key: 'ALL', label: 'All Products', set: ALL_PRODUCTS },
+    ...list.map(p => ({ key: p.code, label: p.label, set: [p.code] }))];
+}
+async function initProducts() {
+  try {
+    const ps = await (await fetch('/api/products')).json();
+    buildProducts(Array.isArray(ps) && ps.length ? ps : FALLBACK_PRODUCTS);
+  } catch(e) { buildProducts(FALLBACK_PRODUCTS); }
+}
 
 let STATE = { data: null, inq: null };
 let currentKey = 'ALL';
@@ -598,8 +609,8 @@ fetch('/api/me').then(r => r.json()).then(u => {
   document.getElementById('headerUser').textContent = u.name || u.email || '';
 }).catch(() => {});
 
-// Initial load
-load();
+// Initial load — build product tabs from Manage Product first
+initProducts().then(load);
 </script>
 </body>
 </html>

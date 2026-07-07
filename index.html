@@ -1120,10 +1120,7 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
           <span class="nav-arrow">▾</span>
         </div>
         <div class="nav-submenu">
-          <div class="nav-subitem" onclick="switchTab('clearsight', this)" data-tab="clearsight">Clear Sight</div>
-          <div class="nav-subitem" onclick="switchTab('canpro', this)" data-tab="canpro">CanPro</div>
-          <div class="nav-subitem" onclick="switchTab('audicure', this)" data-tab="audicure">Hearing Aid</div>
-          <div class="nav-subitem" onclick="switchTab('chickenvit', this)" data-tab="chickenvit">HearWell</div>
+          <div id="productNavItems"></div>
           <div class="nav-subitem" onclick="switchTab('analytics', this)" data-tab="analytics">Data Analytics</div>
           <div class="nav-subitem" onclick="switchTab('history', this)" data-tab="history">Action History</div>
         </div>
@@ -1296,65 +1293,8 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
       </div>
     </div>
 
-    <!-- CLEAR SIGHT TAB -->
-    <div id="tab-clearsight" class="tab-content"><div class="page-wrap">
-      <div class="kpi-grid" id="kpiGrid-clearsight" style="display:none">
-        <div class="kpi-card"><div class="kpi-label">Avg ROAS</div><div class="kpi-value" id="kpi-clearsight-roas">—</div><div class="kpi-sub">Revenue / peso spent</div></div>
-        <div class="kpi-card"><div class="kpi-label">Total Spend</div><div class="kpi-value" id="kpi-clearsight-spend">—</div><div class="kpi-sub" id="kpi-clearsight-spend-sub">All accounts</div></div>
-        <div class="kpi-card"><div class="kpi-label">Total Sales</div><div class="kpi-value" id="kpi-clearsight-sales">—</div><div class="kpi-sub" id="kpi-clearsight-sales-sub">Gross (Pancake)</div></div>
-        <div class="kpi-card"><div class="kpi-label">CVR</div><div class="kpi-value" id="kpi-clearsight-cvr">—</div><div class="kpi-sub">Inquiries to orders</div></div>
-        <div class="kpi-card"><div class="kpi-label">Avg CPM</div><div class="kpi-value" id="kpi-clearsight-cpm">—</div><div class="kpi-sub">Spend / inquiry</div></div>
-        <div class="kpi-card"><div class="kpi-label">Total Orders</div><div class="kpi-value" id="kpi-clearsight-orders">—</div><div class="kpi-sub">POS orders (Pancake)</div></div>
-        <div class="kpi-card"><div class="kpi-label">Avg AOV</div><div class="kpi-value" id="kpi-clearsight-aov">—</div><div class="kpi-sub">Average order value</div></div>
-      </div>
-      <div class="loading-wrap" id="loading-clearsight" style="display:none">Loading...</div>
-      <div id="tableContainer-clearsight"></div>
-    </div></div>
-
-    <!-- CANPRO TAB -->
-    <div id="tab-canpro" class="tab-content"><div class="page-wrap">
-      <div class="kpi-grid" id="kpiGrid-canpro" style="display:none">
-        <div class="kpi-card"><div class="kpi-label">Avg ROAS</div><div class="kpi-value" id="kpi-canpro-roas">—</div><div class="kpi-sub">Revenue / peso spent</div></div>
-        <div class="kpi-card"><div class="kpi-label">Total Spend</div><div class="kpi-value" id="kpi-canpro-spend">—</div><div class="kpi-sub" id="kpi-canpro-spend-sub">All accounts</div></div>
-        <div class="kpi-card"><div class="kpi-label">Total Sales</div><div class="kpi-value" id="kpi-canpro-sales">—</div><div class="kpi-sub" id="kpi-canpro-sales-sub">Gross (Pancake)</div></div>
-        <div class="kpi-card"><div class="kpi-label">CVR</div><div class="kpi-value" id="kpi-canpro-cvr">—</div><div class="kpi-sub">Inquiries to orders</div></div>
-        <div class="kpi-card"><div class="kpi-label">Avg CPM</div><div class="kpi-value" id="kpi-canpro-cpm">—</div><div class="kpi-sub">Spend / inquiry</div></div>
-        <div class="kpi-card"><div class="kpi-label">Total Orders</div><div class="kpi-value" id="kpi-canpro-orders">—</div><div class="kpi-sub">POS orders (Pancake)</div></div>
-        <div class="kpi-card"><div class="kpi-label">Avg AOV</div><div class="kpi-value" id="kpi-canpro-aov">—</div><div class="kpi-sub">Average order value</div></div>
-      </div>
-      <div class="loading-wrap" id="loading-canpro" style="display:none">Loading...</div>
-      <div id="tableContainer-canpro"></div>
-    </div></div>
-
-    <!-- FIXORA TAB (id kept as audicure) -->
-    <div id="tab-audicure" class="tab-content"><div class="page-wrap">
-      <div class="kpi-grid" id="kpiGrid-audicure" style="display:none">
-        <div class="kpi-card"><div class="kpi-label">Avg ROAS</div><div class="kpi-value" id="kpi-audicure-roas">—</div><div class="kpi-sub">Revenue / peso spent</div></div>
-        <div class="kpi-card"><div class="kpi-label">Total Spend</div><div class="kpi-value" id="kpi-audicure-spend">—</div><div class="kpi-sub" id="kpi-audicure-spend-sub">All accounts</div></div>
-        <div class="kpi-card"><div class="kpi-label">Total Sales</div><div class="kpi-value" id="kpi-audicure-sales">—</div><div class="kpi-sub" id="kpi-audicure-sales-sub">Gross (Pancake)</div></div>
-        <div class="kpi-card"><div class="kpi-label">CVR</div><div class="kpi-value" id="kpi-audicure-cvr">—</div><div class="kpi-sub">Inquiries to orders</div></div>
-        <div class="kpi-card"><div class="kpi-label">Avg CPM</div><div class="kpi-value" id="kpi-audicure-cpm">—</div><div class="kpi-sub">Spend / inquiry</div></div>
-        <div class="kpi-card"><div class="kpi-label">Total Orders</div><div class="kpi-value" id="kpi-audicure-orders">—</div><div class="kpi-sub">POS orders (Pancake)</div></div>
-        <div class="kpi-card"><div class="kpi-label">Avg AOV</div><div class="kpi-value" id="kpi-audicure-aov">—</div><div class="kpi-sub">Average order value</div></div>
-      </div>
-      <div class="loading-wrap" id="loading-audicure" style="display:none">Loading...</div>
-      <div id="tableContainer-audicure"></div>
-    </div></div>
-
-    <!-- HEARWELL TAB (id kept as chickenvit) -->
-    <div id="tab-chickenvit" class="tab-content"><div class="page-wrap">
-      <div class="kpi-grid" id="kpiGrid-chickenvit" style="display:none">
-        <div class="kpi-card"><div class="kpi-label">Avg ROAS</div><div class="kpi-value" id="kpi-chickenvit-roas">—</div><div class="kpi-sub">Revenue / peso spent</div></div>
-        <div class="kpi-card"><div class="kpi-label">Total Spend</div><div class="kpi-value" id="kpi-chickenvit-spend">—</div><div class="kpi-sub" id="kpi-chickenvit-spend-sub">All accounts</div></div>
-        <div class="kpi-card"><div class="kpi-label">Total Sales</div><div class="kpi-value" id="kpi-chickenvit-sales">—</div><div class="kpi-sub" id="kpi-chickenvit-sales-sub">Gross (Pancake)</div></div>
-        <div class="kpi-card"><div class="kpi-label">CVR</div><div class="kpi-value" id="kpi-chickenvit-cvr">—</div><div class="kpi-sub">Inquiries to orders</div></div>
-        <div class="kpi-card"><div class="kpi-label">Avg CPM</div><div class="kpi-value" id="kpi-chickenvit-cpm">—</div><div class="kpi-sub">Spend / inquiry</div></div>
-        <div class="kpi-card"><div class="kpi-label">Total Orders</div><div class="kpi-value" id="kpi-chickenvit-orders">—</div><div class="kpi-sub">POS orders (Pancake)</div></div>
-        <div class="kpi-card"><div class="kpi-label">Avg AOV</div><div class="kpi-value" id="kpi-chickenvit-aov">—</div><div class="kpi-sub">Average order value</div></div>
-      </div>
-      <div class="loading-wrap" id="loading-chickenvit" style="display:none">Loading...</div>
-      <div id="tableContainer-chickenvit"></div>
-    </div></div>
+    <!-- PRODUCT TABS (generated dynamically from Manage Product) -->
+    <div id="productTabsContainer"></div>
 
     <!-- DATA ANALYTICS TAB -->
     <div id="tab-analytics" class="tab-content">
@@ -1755,7 +1695,7 @@ const FMT2 = n => Number(n||0).toFixed(2);
 const NUM  = n => Number(n||0).toLocaleString('en-PH');
 
 // All NDAP product labels (must match server AD_ACCOUNTS / classifyNdapProduct)
-const ALL_NDAP_PRODUCTS = ['CLEAR SIGHT','CANPRO','FIXORA','HEARWELL'];
+let ALL_NDAP_PRODUCTS = ['CLEAR SIGHT','CANPRO','FIXORA','HEARWELL'];
 
 // Gross POS sales/orders for a set of products over a date range (with + without Ad ID)
 function grossForProducts(productSalesByDate, products, dates) {
@@ -2262,7 +2202,8 @@ function render({ dates, campaigns }) {
   document.getElementById('tableContainer').innerHTML = html;
 }
 
-loadCEO();
+// Build product tabs/subpages from Manage Product first, then load the overview
+initProducts().then(loadCEO);
 check3PMAlert();
 // Auto-refresh every 30 minutes
 setInterval(() => {
@@ -2299,26 +2240,64 @@ function toggleNdapMenu() {
   document.getElementById('ndapGroup').classList.toggle('open');
 }
 
-// NOTE: tab keys 'audicure'/'chickenvit' are kept as internal element IDs only;
-// they now map to the Fixora and HearWell products respectively.
-const PRODUCT_TABS = {
-  'audicure':   ['FIXORA'],
-  'canpro':     ['CANPRO'],
-  'ginseng':    ['GINSENG'],
-  'sinuxyl':    ['SINUXYL', 'SINUXYL 2'],
-  'clearsight': ['CLEAR SIGHT'],
-  'pterygium':  ['PTERYGIUM'],
-  'chickenvit': ['HEARWELL'],
-};
-const PRODUCT_TAB_NAMES = {
-  'audicure':   'Hearing Aid',
-  'canpro':     'CanPro',
-  'ginseng':    'Ginseng',
-  'sinuxyl':    'Sinuxyl',
-  'clearsight': 'Clear Sight',
-  'pterygium':  'Pterygium',
-  'chickenvit': 'HearWell',
-};
+// Product tab keys are slugs derived from each product code (see buildProductUI).
+// Product tabs are generated dynamically from Manage Product (/api/products)
+let PRODUCT_TABS = {};       // slug → [product code]
+let PRODUCT_TAB_NAMES = {};  // slug → display label
+
+const FALLBACK_NDAP_PRODUCTS = [
+  { code: 'CLEAR SIGHT', label: 'Clear Sight' },
+  { code: 'CANPRO',      label: 'CanPro' },
+  { code: 'FIXORA',      label: 'Hearing Aid' },
+  { code: 'HEARWELL',    label: 'HearWell' },
+];
+const PILL_PALETTE = [
+  { bg:'#ede9fe', color:'#4c1d95' }, { bg:'#fef3c7', color:'#78350f' }, { bg:'#fce7f3', color:'#9d174d' },
+  { bg:'#d1fae5', color:'#065f46' }, { bg:'#dbeafe', color:'#1e3a8a' }, { bg:'#ccfbf1', color:'#134e4a' },
+  { bg:'#ffe4e6', color:'#9f1239' }, { bg:'#e0e7ff', color:'#3730a3' },
+];
+function slugify(code) { return String(code).toLowerCase().replace(/[^a-z0-9]/g, ''); }
+
+function productTabHTML(slug, label) {
+  const cell = (lbl, id, sub, subId) =>
+    `<div class="kpi-card"><div class="kpi-label">${lbl}</div><div class="kpi-value" id="kpi-${slug}-${id}">—</div><div class="kpi-sub"${subId ? ` id="kpi-${slug}-${subId}"` : ''}>${sub}</div></div>`;
+  return `<div id="tab-${slug}" class="tab-content"><div class="page-wrap">
+    <div class="kpi-grid" id="kpiGrid-${slug}" style="display:none">
+      ${cell('Avg ROAS','roas','Revenue / peso spent')}
+      ${cell('Total Spend','spend','All accounts','spend-sub')}
+      ${cell('Total Sales','sales','Gross (Pancake)','sales-sub')}
+      ${cell('CVR','cvr','Inquiries to orders')}
+      ${cell('Avg CPM','cpm','Spend / inquiry')}
+      ${cell('Total Orders','orders','POS orders (Pancake)')}
+      ${cell('Avg AOV','aov','Average order value')}
+    </div>
+    <div class="loading-wrap" id="loading-${slug}" style="display:none">Loading...</div>
+    <div id="tableContainer-${slug}"></div>
+  </div></div>`;
+}
+
+function buildProductUI(list) {
+  ALL_NDAP_PRODUCTS = list.map(p => p.code);
+  PRODUCT_TABS = {}; PRODUCT_TAB_NAMES = {};
+  let navHTML = '', tabHTML = '';
+  list.forEach((p, i) => {
+    const slug = slugify(p.code);
+    PRODUCT_TABS[slug] = [p.code];
+    PRODUCT_TAB_NAMES[slug] = p.label;
+    if (!PRODUCT_PILLS[p.code]) PRODUCT_PILLS[p.code] = PILL_PALETTE[i % PILL_PALETTE.length];
+    navHTML += `<div class="nav-subitem" onclick="switchTab('${slug}', this)" data-tab="${slug}">${p.label}</div>`;
+    tabHTML += productTabHTML(slug, p.label);
+  });
+  document.getElementById('productNavItems').innerHTML = navHTML;
+  document.getElementById('productTabsContainer').innerHTML = tabHTML;
+}
+
+async function initProducts() {
+  try {
+    const ps = await (await fetch('/api/products')).json();
+    buildProductUI(Array.isArray(ps) && ps.length ? ps : FALLBACK_NDAP_PRODUCTS);
+  } catch(e) { buildProductUI(FALLBACK_NDAP_PRODUCTS); }
+}
 
 function toggleSubGroup(id) {
   document.getElementById(id).classList.toggle('open');
@@ -2339,9 +2318,8 @@ function switchTab(tab, el) {
     const sub = document.querySelector(`.nav-subitem[data-tab="${tab}"]`);
     if (sub) sub.classList.add('active');
   }
-  // Preserve the user's selected date range when opening Clear Sight.
-  // Only initialize a default 3-day range if the date inputs are empty.
-  if (tab === 'clearsight') {
+  // Initialize a default date range only if the inputs are empty (any product tab).
+  if (PRODUCT_TABS[tab]) {
     const fromEl = document.getElementById('fromDate');
     const toEl   = document.getElementById('toDate');
     if (!fromEl.value || !toEl.value) {
@@ -2356,7 +2334,7 @@ function switchTab(tab, el) {
   if (PRODUCT_TABS[tab])   loadProductTab(tab);
   if (tab === 'analytics') document.getElementById('analyticsEmpty').style.display = 'block';
   // Only show NDAP controls on ndap/product tabs
-  const showControls = (tab === 'ndap' || tab === 'clearsight' || PRODUCT_TABS[tab] !== undefined);
+  const showControls = (tab === 'ndap' || PRODUCT_TABS[tab] !== undefined);
   document.querySelectorAll('.ndap-ctrl').forEach(c => { c.style.display = showControls ? '' : 'none'; });
   if (tab === 'checklist') loadChecklist();
   if (tab === 'history')   loadHistory();
