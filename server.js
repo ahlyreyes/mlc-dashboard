@@ -40,6 +40,17 @@ const AUTHORIZED_USERS = [
   { email: 'anglnslls1234@gmail.com',              name: 'FSA Angeline',     role: 'advertiser' },
 ];
 
+// Users added at runtime via Admin Settings (persisted in the app_users DB table)
+let dbUsers = [];
+const normEmail = e => (e || '').trim().toLowerCase();
+const SEED_EMAILS = new Set(AUTHORIZED_USERS.map(u => normEmail(u.email)));
+function findUser(email) {
+  const e = normEmail(email);
+  return AUTHORIZED_USERS.find(u => normEmail(u.email) === e) ||
+         dbUsers.find(u => normEmail(u.email) === e) || null;
+}
+function isAdmin(user) { return !!user && String(user.role || '').toLowerCase() === 'admin'; }
+
 // PostgreSQL setup
 const { Pool } = require('pg');
 const pool = new Pool({
@@ -91,8 +102,19 @@ async function initDB() {
         created_at TIMESTAMP DEFAULT NOW()
       )
     `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS app_users (
+        id SERIAL PRIMARY KEY,
+        email TEXT UNIQUE NOT NULL,
+        name TEXT NOT NULL,
+        role TEXT NOT NULL,
+        created_by TEXT,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
     // Add locked column if it doesn't exist (migration)
     await pool.query(`ALTER TABLE page_budgets ADD COLUMN IF NOT EXISTS locked BOOLEAN DEFAULT FALSE`);
+    await loadDbUsers();
     console.log('✅ DB tables ready');
   } catch(e) {
     console.error('DB init error:', e.message);
@@ -117,21 +139,33 @@ passport.use(new GoogleStrategy({
   callbackURL: BASE_URL + '/auth/google/callback'
 }, (accessToken, refreshToken, profile, done) => {
   const email = profile.emails?.[0]?.value;
-  const user = AUTHORIZED_USERS.find(u => u.email === email);
+  const user = findUser(email);
   if (!user) return done(null, false, { message: 'unauthorized' });
   return done(null, { ...user, googleId: profile.id, photo: profile.photos?.[0]?.value });
 }));
 
 passport.serializeUser((user, done) => done(null, user.email));
 passport.deserializeUser((email, done) => {
-  const user = AUTHORIZED_USERS.find(u => u.email === email);
-  done(null, user || false);
+  done(null, findUser(email) || false);
 });
 
 const requireAuth = (req, res, next) => {
   if (req.isAuthenticated()) return next();
   res.redirect('/login');
 };
+const requireAdmin = (req, res, next) => {
+  if (req.isAuthenticated() && isAdmin(req.user)) return next();
+  if (req.accepts('html') && !req.xhr) return res.redirect('/home');
+  res.status(403).json({ error: 'Admin only' });
+};
+
+async function loadDbUsers() {
+  try {
+    const r = await pool.query('SELECT email, name, role FROM app_users ORDER BY created_at');
+    dbUsers = r.rows;
+    console.log(`✅ Loaded ${dbUsers.length} DB user(s)`);
+  } catch(e) { console.warn('loadDbUsers error:', e.message); }
+}
 const PANCAKE_CSV_URLS = [
   process.env.PANCAKE_CSV_URL || 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRRmBJlKTC1iFdU5mcZ8sQlWkHuxAtYxezNnAO1ggj1wKh1_ki045CTbDw6aV2FvVL5tBV42gMHilio/pub?gid=0&single=true&output=csv',
   process.env.PANCAKE_CSV_URL_APRIL || 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSWfevqFhSyLoIFwvwFFdgFY3NzyhTOu6nbW3_2CfhI460Etz60TPWH2yA1TkVfG2y439O43BOvXHb4/pub?gid=0&single=true&output=csv',
@@ -745,6 +779,41 @@ app.get('/auth/google/callback',
 app.get('/logout', (req, res) => { req.logout(() => res.redirect('/login')); });
 app.get('/api/me', requireAuth, (req, res) => res.json(req.user));
 
+// ── ADMIN: user management (admins only) ──
+const VALID_ROLES = ['FSA', 'Logistics', 'Advertiser', 'Admin'];
+
+app.get('/api/users', requireAdmin, (_req, res) => {
+  const seed = AUTHORIZED_USERS.map(u => ({ email: u.email, name: u.name, role: u.role, source: 'system' }));
+  const db   = dbUsers.map(u => ({ email: u.email, name: u.name, role: u.role, source: 'db' }));
+  res.json([...seed, ...db]);
+});
+
+app.post('/api/users', requireAdmin, async (req, res) => {
+  try {
+    const email = normEmail(req.body.email);
+    const name  = (req.body.name || '').trim();
+    const role  = (req.body.role || '').trim();
+    if (!email || !name || !role) return res.status(400).json({ error: 'Kumpletuhin ang lahat ng fields.' });
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({ error: 'Invalid email format.' });
+    if (!VALID_ROLES.some(r => r.toLowerCase() === role.toLowerCase())) return res.status(400).json({ error: 'Invalid role.' });
+    if (findUser(email)) return res.status(409).json({ error: 'May account na ang email na ito.' });
+    await pool.query('INSERT INTO app_users (email, name, role, created_by) VALUES ($1,$2,$3,$4)', [email, name, role, req.user.email]);
+    await loadDbUsers();
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/users/:email', requireAdmin, async (req, res) => {
+  try {
+    const email = normEmail(req.params.email);
+    if (SEED_EMAILS.has(email)) return res.status(400).json({ error: 'Hindi maaaring alisin ang system user.' });
+    if (email === normEmail(req.user.email)) return res.status(400).json({ error: 'Hindi mo maaaring alisin ang sarili mo.' });
+    await pool.query('DELETE FROM app_users WHERE email=$1', [email]);
+    await loadDbUsers();
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/flush-cache', requireAuth, (req, res) => {
   pancakeCache.clear(); metaInsightsCache.clear(); budgetCache.clear(); activeAdsCache.clear(); pancakeConvCache.clear();
   console.log('🗑️ All caches flushed by', req.user.email);
@@ -870,6 +939,7 @@ app.get('/api/budgets/:date', requireAuth, async (req, res) => {
 app.get('/home',              requireAuth, (_req, res) => res.sendFile(path.join(__dirname, 'home.html')));
 app.get('/ad-spend',          requireAuth, (_req, res) => res.sendFile(path.join(__dirname, 'ad-spend.html')));
 app.get('/logistics',         requireAuth, (_req, res) => res.sendFile(path.join(__dirname, 'logistics.html')));
+app.get('/admin',             requireAdmin, (_req, res) => res.sendFile(path.join(__dirname, 'admin.html')));
 app.get('/roas-report',       requireAuth, (_req, res) => res.sendFile(path.join(__dirname, 'roas-report.html')));
 app.get('/income-statement',  requireAuth, (_req, res) => res.sendFile(path.join(__dirname, 'income-statement.html')));
 app.get('/aov-cvr-report',    requireAuth, (_req, res) => res.sendFile(path.join(__dirname, 'aov-cvr-report.html')));

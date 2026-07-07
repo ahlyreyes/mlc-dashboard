@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/png" href="/mlc-logo.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Settings — MLC Insights</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', sans-serif; background: #EEF2FF; min-height: 100vh; padding: 24px 20px; }
+.wrap { max-width: 860px; margin: 0 auto; }
+
+.app-header { background: linear-gradient(90deg, #1D4ED8 0%, #2563EB 60%, #3B82F6 100%); color: #fff;
+  padding: 0 22px; height: 54px; display: flex; align-items: center; justify-content: space-between;
+  border-radius: 16px; margin-bottom: 22px; box-shadow: 0 4px 20px rgba(37,99,235,0.25); }
+.header-logo { font-size: 1.05rem; font-weight: 800; letter-spacing: -0.5px; }
+.header-logo span { opacity: 0.65; font-weight: 500; font-size: 0.8rem; margin-left: 8px; }
+.back-link { font-size: 0.75rem; font-weight: 600; color: #fff; text-decoration: none; opacity: 0.85;
+  padding: 5px 12px; border: 1px solid rgba(255,255,255,0.35); border-radius: 8px; transition: all 0.15s; }
+.back-link:hover { opacity: 1; background: rgba(255,255,255,0.15); }
+
+.page-title { font-size: 1.3rem; font-weight: 800; color: #0F172A; margin-bottom: 4px; letter-spacing: -0.5px; }
+.page-sub { font-size: 0.78rem; color: #64748B; margin-bottom: 22px; }
+
+.card { background: #fff; border: 1px solid #E2E8F0; border-radius: 16px; padding: 22px; box-shadow: 0 2px 12px rgba(0,0,0,0.05); margin-bottom: 20px; }
+.card-title { font-size: 0.72rem; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 16px; }
+
+.form-row { display: grid; grid-template-columns: 1.4fr 1.2fr 1fr auto; gap: 12px; align-items: end; }
+@media (max-width: 720px) { .form-row { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 460px) { .form-row { grid-template-columns: 1fr; } }
+.field label { display: block; font-size: 0.62rem; font-weight: 700; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 5px; }
+.field input, .field select { width: 100%; padding: 9px 11px; border: 1.5px solid #DBEAFE; border-radius: 10px;
+  font-size: 0.82rem; font-family: 'Inter', sans-serif; color: #0F172A; outline: none; background: #fff; }
+.field input:focus, .field select:focus { border-color: #2563EB; }
+.btn { padding: 10px 22px; border-radius: 10px; border: none; background: linear-gradient(135deg, #2563EB, #3B82F6);
+  color: #fff; font-size: 0.82rem; font-weight: 700; cursor: pointer; font-family: 'Inter', sans-serif; box-shadow: 0 3px 12px rgba(37,99,235,0.30); white-space: nowrap; }
+.btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.msg { font-size: 0.76rem; margin-top: 12px; font-weight: 600; }
+.msg.err { color: #dc2626; } .msg.ok { color: #16a34a; }
+
+table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+th { text-align: left; padding: 9px 12px; font-size: 0.62rem; font-weight: 700; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.6px; border-bottom: 2px solid #E2E8F0; }
+td { padding: 11px 12px; border-bottom: 1px solid #F1F5F9; color: #0F172A; font-weight: 500; }
+tr:last-child td { border-bottom: none; }
+.role-pill { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; }
+.r-admin { background: #EDE9FE; color: #5B21B6; }
+.r-advertiser { background: #DBEAFE; color: #1E40AF; }
+.r-fsa { background: #DCFCE7; color: #166534; }
+.r-logistics { background: #CCFBF1; color: #115E59; }
+.tag-sys { font-size: 0.6rem; color: #94A3B8; font-weight: 600; }
+.btn-del { background: none; border: 1px solid #FECACA; color: #dc2626; border-radius: 8px; padding: 4px 10px; font-size: 0.72rem; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; }
+.btn-del:hover { background: #FEF2F2; }
+.state-msg { text-align: center; padding: 30px; color: #94A3B8; font-size: 0.85rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="app-header">
+    <div class="header-logo">MLC<span>Admin Settings</span></div>
+    <a href="/home" class="back-link">← Home</a>
+  </div>
+
+  <div class="page-title">Admin Settings</div>
+  <div class="page-sub">Magdagdag o mag-manage ng mga users na may access sa dashboard</div>
+
+  <div class="card">
+    <div class="card-title">➕ Add New User</div>
+    <div class="form-row">
+      <div class="field"><label>Email</label><input type="email" id="email" placeholder="user@gmail.com" autocomplete="off"></div>
+      <div class="field"><label>Display Name</label><input type="text" id="name" placeholder="Juan Dela Cruz"></div>
+      <div class="field"><label>Role</label>
+        <select id="role">
+          <option value="FSA">FSA</option>
+          <option value="Logistics">Logistics</option>
+          <option value="Advertiser">Advertiser</option>
+          <option value="Admin">Admin</option>
+        </select>
+      </div>
+      <div class="field"><button class="btn" id="addBtn" onclick="addUser()">Add User</button></div>
+    </div>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">👥 Current Users</div>
+    <div id="usersTable"><div class="state-msg">Loading...</div></div>
+  </div>
+</div>
+
+<script>
+const roleClass = r => 'r-' + String(r || '').toLowerCase();
+
+function showMsg(text, ok) {
+  const el = document.getElementById('msg');
+  el.textContent = text;
+  el.className = 'msg ' + (ok ? 'ok' : 'err');
+}
+
+async function loadUsers() {
+  try {
+    const res = await fetch('/api/users');
+    if (!res.ok) throw new Error('Hindi ma-load (admin only)');
+    const users = await res.json();
+    const rows = users.map(u => `<tr>
+      <td style="font-weight:600">${u.name}</td>
+      <td style="color:#64748B">${u.email}</td>
+      <td><span class="role-pill ${roleClass(u.role)}">${u.role}</span></td>
+      <td style="text-align:right">${u.source === 'system'
+        ? '<span class="tag-sys">system</span>'
+        : `<button class="btn-del" onclick="delUser('${u.email}')">Remove</button>`}</td>
+    </tr>`).join('');
+    document.getElementById('usersTable').innerHTML = `
+      <table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th style="text-align:right">Action</th></tr></thead>
+      <tbody>${rows}</tbody></table>`;
+  } catch(e) {
+    document.getElementById('usersTable').innerHTML = `<div class="state-msg" style="color:#dc2626">${e.message}</div>`;
+  }
+}
+
+async function addUser() {
+  const email = document.getElementById('email').value.trim();
+  const name  = document.getElementById('name').value.trim();
+  const role  = document.getElementById('role').value;
+  if (!email || !name) { showMsg('Kumpletuhin ang email at display name.', false); return; }
+  const btn = document.getElementById('addBtn');
+  btn.disabled = true; btn.textContent = 'Adding...';
+  try {
+    const res = await fetch('/api/users', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, name, role })
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || 'Failed');
+    showMsg(`✓ Naidagdag si ${name} (${role}).`, true);
+    document.getElementById('email').value = '';
+    document.getElementById('name').value = '';
+    loadUsers();
+  } catch(e) {
+    showMsg(e.message, false);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Add User';
+  }
+}
+
+async function delUser(email) {
+  if (!confirm('Alisin ang access ni ' + email + '?')) return;
+  try {
+    const res = await fetch('/api/users/' + encodeURIComponent(email), { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || 'Failed');
+    showMsg('✓ Inalis ang user.', true);
+    loadUsers();
+  } catch(e) { showMsg(e.message, false); }
+}
+
+document.getElementById('email').addEventListener('keydown', e => { if (e.key === 'Enter') addUser(); });
+document.getElementById('name').addEventListener('keydown', e => { if (e.key === 'Enter') addUser(); });
+loadUsers();
+</script>
+</body>
+</html>

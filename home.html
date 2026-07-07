@@ -246,13 +246,19 @@ body {
 
   <div class="footer-row">
     <div class="user-info">Logged in as <strong id="userLabel">—</strong></div>
-    <a href="/logout" class="logout-link">Logout</a>
+    <div style="display:flex;align-items:center;gap:8px">
+      <a href="/admin" class="logout-link" id="adminLink" style="display:none">⚙ Admin Settings</a>
+      <a href="/logout" class="logout-link">Logout</a>
+    </div>
   </div>
 </div>
 
 <script>
 fetch('/api/me').then(r => r.json()).then(u => {
   document.getElementById('userLabel').textContent = u.name || u.email || '—';
+  if (u && String(u.role || '').toLowerCase() === 'admin') {
+    document.getElementById('adminLink').style.display = '';
+  }
 }).catch(() => {});
 </script>
 </body>
