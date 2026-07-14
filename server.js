@@ -126,6 +126,9 @@ async function initDB() {
       token_id INTEGER, page_id TEXT, created_at TIMESTAMP DEFAULT NOW() )`);
     await pool.query(`CREATE TABLE IF NOT EXISTS mp_history (
       id SERIAL PRIMARY KEY, action TEXT NOT NULL, detail TEXT, done_by TEXT, created_at TIMESTAMP DEFAULT NOW() )`);
+    await pool.query(`CREATE TABLE IF NOT EXISTS mp_pages (
+      id SERIAL PRIMARY KEY, page_id TEXT UNIQUE NOT NULL, name TEXT NOT NULL, token TEXT,
+      product_code TEXT, created_at TIMESTAMP DEFAULT NOW() )`);
     // Add locked column if it doesn't exist (migration)
     await pool.query(`ALTER TABLE page_budgets ADD COLUMN IF NOT EXISTS locked BOOLEAN DEFAULT FALSE`);
 
@@ -158,6 +161,21 @@ async function initDB() {
       }
       await pool.query("INSERT INTO app_meta (key, value) VALUES ('mp_migrated','1') ON CONFLICT (key) DO NOTHING");
       console.log('✅ Migrated Manage Product config into DB');
+    }
+
+    // One-time migration: seed the Clear Sight inquiry pages (page id + token + product)
+    const pgMig = await pool.query("SELECT value FROM app_meta WHERE key='mp_pages_migrated'");
+    if (pgMig.rowCount === 0) {
+      const seedPages = [
+        { page_id: '183224001550935', name: 'CS OPTICAL CARE', token: SEED_PANCAKE_PAGE_TOKENS['183224001550935'], product_code: 'CLEAR SIGHT' },
+        { page_id: '562290783624265', name: 'CS EYE DROPS',    token: SEED_PANCAKE_PAGE_TOKENS['562290783624265'], product_code: 'CLEAR SIGHT' },
+      ];
+      for (const p of seedPages) {
+        await pool.query('INSERT INTO mp_pages (page_id,name,token,product_code) VALUES ($1,$2,$3,$4) ON CONFLICT (page_id) DO NOTHING',
+          [p.page_id, p.name, p.token, p.product_code]);
+      }
+      await pool.query("INSERT INTO app_meta (key, value) VALUES ('mp_pages_migrated','1') ON CONFLICT (key) DO NOTHING");
+      console.log('✅ Migrated Pancake inquiry pages into DB');
     }
 
     await loadDbUsers();
@@ -217,14 +235,16 @@ async function loadDbUsers() {
 // Load Manage Product config and rebuild the live AD_ACCOUNTS list
 async function loadMPConfig() {
   try {
-    const [pr, tk, ac] = await Promise.all([
+    const [pr, tk, ac, pg] = await Promise.all([
       pool.query('SELECT code, label, keyword FROM mp_products ORDER BY created_at'),
       pool.query('SELECT id, name, token FROM mp_tokens ORDER BY id'),
       pool.query('SELECT id, account_id, name, product_code, token_id, page_id FROM mp_accounts ORDER BY created_at'),
+      pool.query('SELECT id, page_id, name, token, product_code FROM mp_pages ORDER BY created_at'),
     ]);
     if (pr.rows.length) mpProducts = pr.rows;
     mpTokens   = tk.rows;
     mpAccounts = ac.rows;
+    mpPages    = pg.rows;
     if (mpAccounts.length) {
       const tokById = Object.fromEntries(mpTokens.map(t => [t.id, t.token]));
       AD_ACCOUNTS = mpAccounts.map(a => ({
@@ -232,7 +252,14 @@ async function loadMPConfig() {
         product: a.product_code, token: tokById[a.token_id] || META_TOKEN_MAIN,
       }));
     }
-    console.log(`✅ Manage Product: ${mpProducts.length} products, ${mpTokens.length} tokens, ${AD_ACCOUNTS.length} accounts`);
+    // Rebuild Pancake page config from DB (merged with seed)
+    const dbTok = {}, dbMeta = {};
+    for (const p of mpPages) { if (p.token) dbTok[p.page_id] = p.token; dbMeta[p.page_id] = { short: p.name }; }
+    PANCAKE_PAGE_TOKENS = { ...SEED_PANCAKE_PAGE_TOKENS, ...dbTok };
+    PANCAKE_PAGE_META   = { ...SEED_PANCAKE_PAGE_META, ...dbMeta };
+    const csPages = mpPages.filter(p => String(p.product_code || '').toUpperCase() === 'CLEAR SIGHT' && p.token);
+    if (csPages.length) CS_INQUIRY_PAGES = csPages.map(p => ({ pageId: p.page_id, token: p.token }));
+    console.log(`✅ Manage Product: ${mpProducts.length} products, ${mpTokens.length} tokens, ${AD_ACCOUNTS.length} accounts, ${mpPages.length} pages`);
   } catch(e) { console.warn('loadMPConfig error:', e.message); }
 }
 
@@ -282,17 +309,18 @@ const MLC_MAINFILE_CSV_URLS = [
   'https://docs.google.com/spreadsheets/d/e/2PACX-1vR6FNkNs9U2PaZ6w_J68GAhwDsP2K3AQGJ9OaVWFczNLS-4WqRRZ6XS7UqIn0wId30jFn97Hq5N4Mdh/pub?output=csv',   // July 2026
 ];
 
-// Per-page Pancake access tokens (page-scoped, longer-lived)
-const PANCAKE_PAGE_TOKENS = {
+// Per-page Pancake access tokens (page-scoped). Seed values; extended at runtime from Manage Product DB.
+const SEED_PANCAKE_PAGE_TOKENS = {
   '183224001550935': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjE4MzIyNDAwMTU1MDkzNSIsInRpbWVzdGFtcCI6MTc3ODA4ODAwMH0.KT2svFupRuq_bJiHKrysIR0pLyGIKBKQ1CPLyLeiLUI', // CS OPTICAL CARE
   '562290783624265': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjU2MjI5MDc4MzYyNDI2NSIsInRpbWVzdGFtcCI6MTc3NzIxNDY2NH0.xRs7f8JyPd_8DApwbTaV78MfYmzfskHKrcg6PkMPjJs', // CS EYE DROPS
 };
+let PANCAKE_PAGE_TOKENS = { ...SEED_PANCAKE_PAGE_TOKENS };
 // Fallback user-level token
 const PANCAKE_TOKEN = process.env.PANCAKE_TOKEN || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpbmZvIjp7Im9zIjoxLCJjbGllbnRfaXAiOiI2NC4yMjQuOTcuMTU0IiwiYnJvd3NlciI6MSwiZGV2aWNlX3R5cGUiOjN9LCJuYW1lIjoiQ2xhcmljZSBEYWxvbmRvbmFuIiwiZXhwIjoxNzgyMzA1MTQzLCJhcHBsaWNhdGlvbiI6MSwidWlkIjoiMWNjYjM3YTgtZjQ4NS00ZjdiLWJiMWQtZjhjNTQ0Nzg4NWM2Iiwic2Vzc2lvbl9pZCI6ImQ3MDM5OWFhLTIxYTMtNDRmZi05ZmI5LWVmMDBjNzI3YmE2YSIsImlhdCI6MTc3NDUyOTE0MywiZmJfaWQiOiIxMjIxMTI2MzIwNDg5OTY4NTUiLCJsb2dpbl9zZXNzaW9uIjpudWxsLCJmYl9uYW1lIjoiQ2xhcmljZSBEYWxvbmRvbmFuIn0.FUzLeVPKVMDqbruljozSc93SBsX76gj0HMfeiv4kpAA';
 function pageToken(pageId) { return PANCAKE_PAGE_TOKENS[pageId] || PANCAKE_TOKEN; }
 
-// Pages used for per-FSA inquiry count (v2 API, both combined)
-const CS_INQUIRY_PAGES = [
+// Pages used for per-FSA inquiry count (v2 API). Rebuilt from Manage Product DB (Clear Sight pages).
+let CS_INQUIRY_PAGES = [
   { pageId: '183224001550935', token: PANCAKE_PAGE_TOKENS['183224001550935'] }, // CS OPTICAL CARE
   { pageId: '562290783624265', token: PANCAKE_PAGE_TOKENS['562290783624265'] }, // CS EYE DROPS
 ];
@@ -371,7 +399,7 @@ const POS_PAGE_ID_MAP = {
   'clear eye sight ph':         '298354383369379',
 };
 
-const PANCAKE_PAGE_META = {
+const SEED_PANCAKE_PAGE_META = {
   '183224001550935': { short: 'CS OPTICAL CARE' },
   '105504325986879': { short: 'CS ESSENTIALS' },
   '343948545460634': { short: 'CS HUB' },
@@ -385,6 +413,7 @@ const PANCAKE_PAGE_META = {
   '132190129971044': { short: 'CLEARSIGHT MNL' },
   '298354383369379': { short: 'CLEAR EYE SIGHT' },
 };
+let PANCAKE_PAGE_META = { ...SEED_PANCAKE_PAGE_META };
 
 const pancakeConvCache = new Map();
 const TTL_PANCAKE_CONV = 5 * 60 * 1000;
@@ -494,6 +523,7 @@ const SEED_PRODUCTS = [
 let mpProducts = [...SEED_PRODUCTS];
 let mpTokens   = [];
 let mpAccounts = [];
+let mpPages    = []; // Pancake inquiry pages: { id, page_id, name, token, product_code }
 
 // Currency conversion to PHP (update as needed)
 const FX_TO_PHP = { 'PHP': 1, 'HKD': 7.3, 'USD': 56, 'SGD': 42 };
@@ -959,7 +989,42 @@ app.get('/api/mp/config', requireAdmin, (_req, res) => {
     tokens: mpTokens.map(t => ({ id: t.id, name: t.name, tokenMasked: maskToken(t.token) })),
     accounts: mpAccounts.map(a => ({ id: a.id, account_id: a.account_id, name: a.name, product_code: a.product_code, token_id: a.token_id, page_id: a.page_id })),
     pages: Object.entries(PANCAKE_PAGE_META).map(([id, m]) => ({ id, name: m.short })),
+    inquiryPages: mpPages.map(p => ({ id: p.id, page_id: p.page_id, name: p.name, product_code: p.product_code, tokenMasked: maskToken(p.token) })),
   });
+});
+
+// Pancake inquiry pages (page id + page-access token + product)
+app.post('/api/mp/pages', requireAdmin, async (req, res) => {
+  try {
+    const page_id = (req.body.page_id || '').trim(), name = (req.body.name || '').trim();
+    const token = (req.body.token || '').trim(), product_code = (req.body.product_code || '').trim().toUpperCase() || null;
+    if (!page_id || !name) return res.status(400).json({ error: 'Page ID at name ay required.' });
+    if (mpPages.some(p => p.page_id === page_id)) return res.status(409).json({ error: 'May page na ang page ID na ito.' });
+    await pool.query('INSERT INTO mp_pages (page_id,name,token,product_code) VALUES ($1,$2,$3,$4)', [page_id, name, token, product_code]);
+    await logMPHistory('Add Pancake page', `${name} (${page_id})${product_code ? ' → ' + product_code : ''}`, req.user.email);
+    await loadMPConfig(); res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+app.put('/api/mp/pages/:id', requireAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const page_id = (req.body.page_id || '').trim(), name = (req.body.name || '').trim();
+    const token = (req.body.token || '').trim(), product_code = (req.body.product_code || '').trim().toUpperCase() || null;
+    if (!page_id || !name) return res.status(400).json({ error: 'Page ID at name ay required.' });
+    if (mpPages.some(p => p.page_id === page_id && p.id !== id)) return res.status(409).json({ error: 'May ibang page na ang page ID na ito.' });
+    if (token) await pool.query('UPDATE mp_pages SET page_id=$1,name=$2,token=$3,product_code=$4 WHERE id=$5', [page_id, name, token, product_code, id]);
+    else await pool.query('UPDATE mp_pages SET page_id=$1,name=$2,product_code=$3 WHERE id=$4', [page_id, name, product_code, id]);
+    await logMPHistory('Edit Pancake page', `${name} (${page_id})`, req.user.email);
+    await loadMPConfig(); res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+app.delete('/api/mp/pages/:id', requireAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    await pool.query('DELETE FROM mp_pages WHERE id=$1', [id]);
+    await logMPHistory('Delete Pancake page', 'page#' + id, req.user.email);
+    await loadMPConfig(); res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 app.get('/api/mp/history', requireAdmin, async (_req, res) => {
   try { const r = await pool.query('SELECT action, detail, done_by, created_at FROM mp_history ORDER BY created_at DESC LIMIT 200'); res.json(r.rows); }

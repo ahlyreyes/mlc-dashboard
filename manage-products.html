@@ -64,6 +64,7 @@ tr:last-child td { border-bottom: none; }
   <div class="tabs">
     <button class="tab active" data-v="accounts" onclick="switchTab('accounts')">Products &amp; Ad Accounts</button>
     <button class="tab" data-v="tokens" onclick="switchTab('tokens')">Meta Tokens</button>
+    <button class="tab" data-v="pages" onclick="switchTab('pages')">Pancake Pages</button>
     <button class="tab" data-v="history" onclick="switchTab('history')">Action History</button>
   </div>
 
@@ -116,6 +117,25 @@ tr:last-child td { border-bottom: none; }
     </div>
   </div>
 
+  <!-- PANCAKE PAGES -->
+  <div id="v-pages" class="view">
+    <div class="card">
+      <div class="card-title">➕ Add Pancake Page (para sa AOV/CVR inquiries)</div>
+      <div class="form-grid" style="grid-template-columns: 1fr 1fr 2fr 1fr auto">
+        <div class="field"><label>Page Name</label><input id="pg-name" placeholder="e.g. Sinuxyl Care"></div>
+        <div class="field"><label>Page ID</label><input id="pg-id" placeholder="e.g. 464125443455939"></div>
+        <div class="field"><label>Page Access Token</label><input id="pg-token" placeholder="eyJhbGc..."><div class="hint">Galing sa Pancake page settings</div></div>
+        <div class="field"><label>Product</label><select id="pg-product"></select></div>
+        <div class="field"><button class="btn" id="pgAddBtn" onclick="addPage()">Add Page</button></div>
+      </div>
+      <div class="msg" id="pg-msg"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">📄 Pancake Pages (inquiry sources)</div>
+      <div id="pagesTable"><div class="state-msg">Loading...</div></div>
+    </div>
+  </div>
+
   <!-- HISTORY -->
   <div id="v-history" class="view">
     <div class="card">
@@ -127,8 +147,8 @@ tr:last-child td { border-bottom: none; }
 
 <script>
 const esc = s => String(s == null ? '' : s).replace(/"/g, '&quot;').replace(/'/g, "\\'");
-let CFG = { products: [], tokens: [], accounts: [], pages: [] };
-let editAcct = null, editTok = null, editProd = null;
+let CFG = { products: [], tokens: [], accounts: [], pages: [], inquiryPages: [] };
+let editAcct = null, editTok = null, editProd = null, editPg = null;
 
 function switchTab(v) {
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.v === v));
@@ -153,15 +173,66 @@ async function loadConfig() {
     fillSelects();
     renderAccounts();
     renderTokens();
+    renderPages();
   } catch(e) {
     document.getElementById('accountsTable').innerHTML = `<div class="state-msg" style="color:#dc2626">${e.message}</div>`;
   }
 }
 
 function fillSelects() {
-  document.getElementById('a-product').innerHTML = CFG.products.map(p => `<option value="${p.code}">${p.label}</option>`).join('');
+  const prodOpts = CFG.products.map(p => `<option value="${p.code}">${p.label}</option>`).join('');
+  document.getElementById('a-product').innerHTML = prodOpts;
   document.getElementById('a-token').innerHTML = CFG.tokens.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
   document.getElementById('a-page').innerHTML = '<option value="">— None —</option>' + CFG.pages.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+  document.getElementById('pg-product').innerHTML = '<option value="">— None —</option>' + prodOpts;
+}
+
+function prodLabel(code) { const p = CFG.products.find(p => p.code === code); return p ? p.label : (code || '—'); }
+
+function renderPages() {
+  const list = CFG.inquiryPages || [];
+  let body = list.map(p => {
+    if (editPg === p.id) {
+      const opts = '<option value="">— None —</option>' + CFG.products.map(x => `<option value="${x.code}" ${x.code === p.product_code ? 'selected' : ''}>${x.label}</option>`).join('');
+      return `<tr><td colspan="5"><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <input class="edit-input" id="epg-name" value="${esc(p.name)}" placeholder="Name" style="max-width:150px">
+        <input class="edit-input" id="epg-id" value="${esc(p.page_id)}" placeholder="Page ID" style="max-width:160px">
+        <input class="edit-input" id="epg-token" placeholder="Bagong token (iwan blanko)" style="max-width:220px">
+        <select class="edit-input" id="epg-product" style="max-width:150px">${opts}</select>
+        <button class="btn-sm" onclick="savePage(${p.id})">Save</button>
+        <button class="btn-del" onclick="editPg=null;renderPages()">Cancel</button>
+      </div></td></tr>`;
+    }
+    return `<tr>
+      <td style="font-weight:600">${p.name}</td>
+      <td class="mono">${p.page_id}</td>
+      <td class="mono">${p.tokenMasked || '—'}</td>
+      <td>${p.product_code ? `<span class="pill">${prodLabel(p.product_code)}</span>` : '—'}</td>
+      <td style="text-align:right;white-space:nowrap"><button class="btn-edit" onclick="startEditPage(${p.id})">Edit</button><button class="btn-del" onclick="delPage(${p.id})">Remove</button></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('pagesTable').innerHTML = `<table><thead><tr><th>Page Name</th><th>Page ID</th><th>Token</th><th>Product</th><th style="text-align:right">Action</th></tr></thead>
+    <tbody>${body || '<tr><td colspan="5" class="state-msg">Wala pang pages.</td></tr>'}</tbody></table>`;
+}
+
+async function addPage() {
+  const name = document.getElementById('pg-name').value.trim(), page_id = document.getElementById('pg-id').value.trim();
+  const token = document.getElementById('pg-token').value.trim(), product_code = document.getElementById('pg-product').value;
+  if (!name || !page_id) { msg('pg-msg', 'Page name at page ID ay required.', false); return; }
+  try { await api('/api/mp/pages', 'POST', { name, page_id, token, product_code }); msg('pg-msg', '✓ Naidagdag ang page.', true);
+    document.getElementById('pg-name').value = document.getElementById('pg-id').value = document.getElementById('pg-token').value = ''; loadConfig();
+  } catch(e) { msg('pg-msg', e.message, false); }
+}
+function startEditPage(id) { editPg = id; renderPages(); }
+async function savePage(id) {
+  const body = { name: document.getElementById('epg-name').value.trim(), page_id: document.getElementById('epg-id').value.trim(),
+    token: document.getElementById('epg-token').value.trim(), product_code: document.getElementById('epg-product').value };
+  try { await api('/api/mp/pages/' + id, 'PUT', body); editPg = null; loadConfig(); }
+  catch(e) { msg('pg-msg', e.message, false); }
+}
+async function delPage(id) {
+  if (!confirm('Remove this Pancake page?')) return;
+  try { await api('/api/mp/pages/' + id, 'DELETE'); loadConfig(); } catch(e) { alert(e.message); }
 }
 
 function tokName(id) { const t = CFG.tokens.find(t => t.id === id); return t ? t.name : '—'; }
