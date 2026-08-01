@@ -608,9 +608,8 @@ document.getElementById('fromDate').value = bizToday();
 // Prevent picking future dates that have no data
 document.getElementById('fromDate').max = bizToday();
 document.getElementById('toDate').max   = bizToday();
+// Only the Apply button applies the selected From/To range
 document.getElementById('applyBtn').addEventListener('click', load);
-document.getElementById('fromDate').addEventListener('change', load);
-document.getElementById('toDate').addEventListener('change', load);
 
 // User display
 fetch('/api/me').then(r => r.json()).then(u => {
