@@ -574,10 +574,15 @@ function renderAll() {
 }
 
 async function load() {
-  const fromDate = document.getElementById('fromDate').value;
-  const toDate   = document.getElementById('toDate').value;
+  let fromDate = document.getElementById('fromDate').value;
+  let toDate   = document.getElementById('toDate').value;
   if (!fromDate || !toDate) return;
-  if (fromDate > toDate) { document.getElementById('toDate').value = fromDate; return; }
+  // If the range is reversed, swap so any selection order still loads correct data
+  if (fromDate > toDate) {
+    [fromDate, toDate] = [toDate, fromDate];
+    document.getElementById('fromDate').value = fromDate;
+    document.getElementById('toDate').value   = toDate;
+  }
 
   document.getElementById('contentSection').innerHTML = '<div class="state-msg">Loading...</div>';
   setRangeLabel(fromDate, toDate);
@@ -600,6 +605,9 @@ async function load() {
 // Date picker — default to today (5 AM PHT rollover), auto-reload on change
 document.getElementById('toDate').value   = bizToday();
 document.getElementById('fromDate').value = bizToday();
+// Prevent picking future dates that have no data
+document.getElementById('fromDate').max = bizToday();
+document.getElementById('toDate').max   = bizToday();
 document.getElementById('applyBtn').addEventListener('click', load);
 document.getElementById('fromDate').addEventListener('change', load);
 document.getElementById('toDate').addEventListener('change', load);
