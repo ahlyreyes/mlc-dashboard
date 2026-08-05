@@ -232,6 +232,9 @@ async function loadMPConfig() {
         product: a.product_code, token: tokById[a.token_id] || META_TOKEN_MAIN,
       }));
     }
+    // Config changed — clear Meta/sales caches so product/account reassignments
+    // (which are baked into cached ad + insight rows) take effect immediately.
+    try { activeAdsCache.clear(); metaInsightsCache.clear(); budgetCache.clear(); pancakeCache.clear(); } catch(e) {}
     console.log(`✅ Manage Product: ${mpProducts.length} products, ${mpTokens.length} tokens, ${AD_ACCOUNTS.length} accounts`);
   } catch(e) { console.warn('loadMPConfig error:', e.message); }
 }
