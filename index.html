@@ -2676,7 +2676,7 @@ function renderCEO({ dates, campaigns, productSalesByDate }) {
           <td>${PHP(p.sales)}</td>
           <td>${PHP(p.spend)}</td>
           <td style="font-weight:700;color:${rc}">${p.spend > 0 ? FMT2(p.roas) : '—'}</td>
-          <td>${p.orders || '—'}</td>
+          <td>${p.orders}</td>
           <td>${p.inquiries || '—'}</td>
           <td>${p.inquiries > 0 ? p.cvr.toFixed(1) + '%' : '—'}</td>
           <td style="color:var(--muted)">${p.ads}</td>
