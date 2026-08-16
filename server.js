@@ -1241,18 +1241,22 @@ app.get('/api/ndap', requireAuth, async (req, res) => {
       };
     }
 
-    // Sequential per-date fetching with staggered account calls to avoid Meta automation flags
+    // Sequential per-date fetching with staggered account calls to avoid Meta automation flags.
+    // The stagger only applies after a real Meta call — cached account/date pairs (30-min TTL)
+    // return immediately, so a warm-cache load isn't paying the throttle delay for no reason.
     const sleep = ms => new Promise(r => setTimeout(r, ms));
     const insightsByDate = {};
     for (const date of dates) {
       const allRows = [];
+      let hadLiveFetch = false;
       for (const acc of AD_ACCOUNTS) {
+        const wasCached = !!cacheGet(metaInsightsCache, `${acc.id}_${date}`, TTL_META);
         const rows = await fetchAccountInsights(acc, date);
         allRows.push(...rows);
-        await sleep(300);
+        if (!wasCached) { hadLiveFetch = true; await sleep(300); }
       }
       insightsByDate[date] = allRows;
-      await sleep(500);
+      if (hadLiveFetch) await sleep(500);
     }
 
     // Merge insights into adMap — one row per ad, grouped by adId
