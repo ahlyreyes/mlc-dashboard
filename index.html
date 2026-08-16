@@ -1221,6 +1221,26 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
               <div class="ceo-kpi-val" id="ceo-orders">—</div>
               <div class="ceo-delta" id="ceo-orders-delta"></div>
             </div>
+            <div class="ceo-kpi-card">
+              <div class="ceo-kpi-label">Avg CPM</div>
+              <div class="ceo-kpi-val" id="ceo-cpm">—</div>
+              <div class="ceo-delta" id="ceo-cpm-delta"></div>
+            </div>
+          </div>
+          <div class="ceo-rank-wrap" style="margin-bottom:16px">
+            <div class="ceo-rank-title" style="display:flex;justify-content:space-between;align-items:center">
+              <span>Today's Ad Spend Pacing</span>
+              <span style="font-size:11px;font-weight:600" id="ceo-pacing-pct">—</span>
+            </div>
+            <div style="padding:14px 16px">
+              <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:12px;color:var(--muted)">
+                <span>Spent: <strong style="color:var(--text)" id="ceo-pacing-spend">—</strong></span>
+                <span>Declared Budget: <strong style="color:var(--text)" id="ceo-pacing-budget">—</strong></span>
+              </div>
+              <div class="pacing-bar-wrap" style="border-radius:4px;overflow:hidden;position:relative;height:10px;background:#E2E8F0">
+                <div class="pacing-bar-fill" id="ceo-pacing-bar" style="width:0%;background:#D97706;position:absolute;top:0;left:0;height:100%;border-radius:4px"></div>
+              </div>
+            </div>
           </div>
           <div class="ceo-rank-wrap">
             <div class="ceo-rank-title">Product Performance</div>
@@ -1629,8 +1649,10 @@ async function check3PMAlert() {
     if (data.error) return;
     let totalSpend = 0, totalBudget = 0;
     for (const c of (data.campaigns || [])) {
-      totalSpend  += c.totalSpend || 0;
-      totalBudget += c.budget     || 0;
+      const todaySpend = c.dates[today]?.spend || 0;
+      if (todaySpend <= 0) continue; // exclude ads with no spend today from the declared-budget total
+      totalSpend  += todaySpend;
+      totalBudget += c.budget || 0;
     }
     const pct  = totalBudget > 0 ? totalSpend / totalBudget * 100 : 0;
     const mark = totalBudget * 0.6;
@@ -2436,7 +2458,7 @@ function renderChecklist({ dates, campaigns }, endDate, savedBudgets = {}) {
     bucket.orders      += dd.orders            || 0;
     bucket.impressions += dd.impressions       || 0;
     bucket.messages    += dd.messagesStarted   || 0;
-    bucket.budget      += c.budget             || 0;
+    if (dd.spend > 0) bucket.budget += c.budget || 0; // only count declared budget for ads that actually spent today
   }
   const pctColor = pct => pct >= 90 ? 'pct-bad' : pct >= 70 ? 'pct-warn' : 'pct-good';
   let totalBudget=0, totalSpend=0, totalSales=0;
@@ -2536,11 +2558,17 @@ function renderCEO({ dates, campaigns, productSalesByDate }) {
   const yest  = dates.length >= 2 ? dates[dates.length - 2] : null;
 
   // All-product overview — Total Sales = gross POS; ad-attributed tracked for the split.
-  let todaySpend = 0, yesterSpend = 0, withAdToday = 0;
+  let todaySpend = 0, yesterSpend = 0, withAdToday = 0, todayInquiries = 0, yesterInquiries = 0, todayBudget = 0;
   for (const c of campaigns) {
-    todaySpend  += c.dates[today]?.spend      || 0;
-    withAdToday += c.dates[today]?.grossSales || 0;
-    if (yest) yesterSpend += c.dates[yest]?.spend || 0;
+    const tSpend = c.dates[today]?.spend || 0;
+    todaySpend     += tSpend;
+    withAdToday    += c.dates[today]?.grossSales      || 0;
+    todayInquiries += c.dates[today]?.messagesStarted || 0;
+    if (tSpend > 0) todayBudget += c.budget || 0; // only ads that actually spent today count toward today's declared budget
+    if (yest) {
+      yesterSpend     += c.dates[yest]?.spend           || 0;
+      yesterInquiries += c.dates[yest]?.messagesStarted || 0;
+    }
   }
   const gToday = grossForProducts(productSalesByDate, ALL_NDAP_PRODUCTS, [today]);
   const gYest  = yest ? grossForProducts(productSalesByDate, ALL_NDAP_PRODUCTS, [yest]) : null;
@@ -2550,6 +2578,8 @@ function renderCEO({ dates, campaigns, productSalesByDate }) {
   const withoutAdToday = Math.max(0, todaySales - withAdToday);
   const todayRoas = todaySpend  > 0 ? todaySales  / todaySpend  : 0;
   const yesterRoas= yesterSpend > 0 && yesterSales != null ? yesterSales / yesterSpend : 0;
+  const avgCpm    = todayInquiries  > 0 ? todaySpend  / todayInquiries  : 0;
+  const yesterCpm = yest && yesterInquiries > 0 ? yesterSpend / yesterInquiries : null;
 
   function delta(now, prev) {
     if (prev === null || prev === 0) return '<span class="ceo-delta flat">—</span>';
@@ -2569,33 +2599,60 @@ function renderCEO({ dates, campaigns, productSalesByDate }) {
   document.getElementById('ceo-spend-delta').innerHTML  = delta(todaySpend,  yesterSpend);
   document.getElementById('ceo-roas-delta').innerHTML   = delta(todayRoas,   yesterRoas);
   document.getElementById('ceo-orders-delta').innerHTML = delta(todayOrders, yesterOrders);
+  document.getElementById('ceo-cpm').textContent      = todayInquiries > 0 ? PHP(avgCpm) : '—';
+  document.getElementById('ceo-cpm-delta').innerHTML   = delta(avgCpm, yesterCpm);
+
+  // Today's ad spend pacing — spend so far vs. declared budget of ads that spent today
+  const pacingPct   = todayBudget > 0 ? Math.min(150, todaySpend / todayBudget * 100) : 0;
+  const pacingColor = pacingPct > 100 ? '#dc2626' : pacingPct >= 50 ? '#16a34a' : '#D97706';
+  document.getElementById('ceo-pacing-spend').textContent  = PHP(todaySpend);
+  document.getElementById('ceo-pacing-budget').textContent = PHP(todayBudget);
+  const pacingPctEl = document.getElementById('ceo-pacing-pct');
+  pacingPctEl.textContent = todayBudget > 0 ? pacingPct.toFixed(1) + '%' : '—';
+  pacingPctEl.style.color = pacingColor;
+  const pacingBarEl = document.getElementById('ceo-pacing-bar');
+  pacingBarEl.style.width      = Math.min(100, pacingPct) + '%';
+  pacingBarEl.style.background = pacingColor;
 
   // Product ranking — group today's data by product
   const byProd = {};
   for (const c of campaigns) {
     const prod = (c.product || 'Other').toUpperCase();
-    if (!byProd[prod]) byProd[prod] = { spend:0, sales:0, ads:0 };
-    byProd[prod].spend += c.dates[today]?.spend      || 0;
-    byProd[prod].sales += c.dates[today]?.grossSales || 0;
+    if (!byProd[prod]) byProd[prod] = { spend:0, sales:0, orders:0, inquiries:0, ads:0 };
+    const dd = c.dates[today];
+    byProd[prod].spend     += dd?.spend           || 0;
+    byProd[prod].sales     += dd?.grossSales      || 0;
+    byProd[prod].orders    += dd?.orders          || 0;
+    byProd[prod].inquiries += dd?.messagesStarted || 0;
     byProd[prod].ads++;
   }
   const rows = Object.entries(byProd)
-    .map(([prod, d]) => ({ prod, roas: d.spend > 0 ? d.sales / d.spend : 0, ...d }))
+    .map(([prod, d]) => ({
+      prod,
+      roas: d.spend > 0 ? d.sales / d.spend : 0,
+      cvr:  d.inquiries > 0 ? d.orders / d.inquiries * 100 : 0,
+      cpm:  d.inquiries > 0 ? d.spend / d.inquiries : 0,
+      ...d
+    }))
     .sort((a, b) => b.roas - a.roas);
 
   document.getElementById('ceoProductRank').innerHTML = `
     <table class="ceo-rank-table">
-      <thead><tr><th>#</th><th>Product</th><th>ROAS</th><th>Spend</th><th>Sales</th><th>Ads</th></tr></thead>
+      <thead><tr><th>#</th><th>Product</th><th>Sales</th><th>Ads Spend</th><th>ROAS</th><th>Orders</th><th>Inquiries</th><th>CVR</th><th>Running Ads</th><th>Avg CPM</th></tr></thead>
       <tbody>${rows.map((p, i) => {
         const pill = PRODUCT_PILLS[p.prod] || { bg:'#f5f4ef', color:'#555' };
         const rc   = p.roas >= 3 ? 'var(--scale)' : p.roas >= 2.7 ? 'var(--stay)' : p.spend > 0 ? 'var(--kill)' : 'var(--muted2)';
         return `<tr>
           <td style="color:var(--muted2);font-weight:600">${i+1}</td>
           <td><span class="product-pill" style="background:${pill.bg};color:${pill.color}">${p.prod}</span></td>
-          <td style="font-weight:700;color:${rc}">${p.spend > 0 ? FMT2(p.roas) : '—'}</td>
-          <td>${PHP(p.spend)}</td>
           <td>${PHP(p.sales)}</td>
+          <td>${PHP(p.spend)}</td>
+          <td style="font-weight:700;color:${rc}">${p.spend > 0 ? FMT2(p.roas) : '—'}</td>
+          <td>${p.orders || '—'}</td>
+          <td>${p.inquiries || '—'}</td>
+          <td>${p.inquiries > 0 ? p.cvr.toFixed(1) + '%' : '—'}</td>
           <td style="color:var(--muted)">${p.ads}</td>
+          <td>${p.inquiries > 0 ? PHP(p.cpm) : '—'}</td>
         </tr>`;
       }).join('')}</tbody>
     </table>`;
