@@ -1647,13 +1647,15 @@ async function check3PMAlert() {
     const r    = await fetch(`/api/ndap?endDate=${today}&days=1`);
     const data = await r.json();
     if (data.error) return;
-    let totalSpend = 0, totalBudget = 0;
+    let totalSpend = 0;
+    const spendingAds = [];
     for (const c of (data.campaigns || [])) {
       const todaySpend = c.dates[today]?.spend || 0;
       if (todaySpend <= 0) continue; // exclude ads with no spend today from the declared-budget total
-      totalSpend  += todaySpend;
-      totalBudget += c.budget || 0;
+      totalSpend += todaySpend;
+      spendingAds.push(c);
     }
+    const totalBudget = dedupedBudget(spendingAds); // avoids double-counting a shared CBO campaign budget
     const pct  = totalBudget > 0 ? totalSpend / totalBudget * 100 : 0;
     const mark = totalBudget * 0.6;
     const gap  = Math.abs(mark - totalSpend);
@@ -1870,6 +1872,22 @@ function overallRoasClass(roas) {
   if (roas >= 2.7) return 'roas-stay';
   if (roas > 0)    return 'roas-kill';
   return 'roas-empty';
+}
+
+// Sum declared daily budgets across ads from possibly-different campaigns, without
+// double-counting a CBO campaign's shared budget when 2+ of its ads spent the same day.
+function dedupedBudget(ads) {
+  const byCampaign = {};
+  for (const a of ads) {
+    (byCampaign[a.campaignId] ||= []).push(a.budget || 0);
+  }
+  let total = 0;
+  for (const budgets of Object.values(byCampaign)) {
+    const nonZero = budgets.filter(b => b > 0);
+    const unique  = [...new Set(nonZero)];
+    total += unique.length <= 1 ? (unique[0] || 0) : nonZero.reduce((s, b) => s + b, 0);
+  }
+  return total;
 }
 
 // ── BUILD AGGREGATED GROUP DATA ──
@@ -2449,6 +2467,7 @@ function renderChecklist({ dates, campaigns }, endDate, savedBudgets = {}) {
     pageData[p.page] = { ...p, spend:0, sales:0, orders:0, impressions:0, messages:0, budget:0 };
   }
   const unmapped = { page:'Others', fullName:'Others', product:'', spend:0, sales:0, orders:0, impressions:0, messages:0, budget:0 };
+  const spendingAdsByBucket = {}; // pageKey (or 'Others') → ads that spent today, for CBO-safe budget dedup
   for (const c of campaigns) {
     const dd = c.dates[day]; if (!dd) continue;
     const pageKey = matchPage(c.campaignName) || matchPage(c.adName);
@@ -2458,7 +2477,14 @@ function renderChecklist({ dates, campaigns }, endDate, savedBudgets = {}) {
     bucket.orders      += dd.orders            || 0;
     bucket.impressions += dd.impressions       || 0;
     bucket.messages    += dd.messagesStarted   || 0;
-    if (dd.spend > 0) bucket.budget += c.budget || 0; // only count declared budget for ads that actually spent today
+    if (dd.spend > 0) {
+      const bKey = pageKey || 'Others';
+      (spendingAdsByBucket[bKey] ||= []).push(c);
+    }
+  }
+  for (const [bKey, ads] of Object.entries(spendingAdsByBucket)) {
+    const bucket = bKey === 'Others' ? unmapped : pageData[bKey];
+    bucket.budget = dedupedBudget(ads); // avoids double-counting a shared CBO campaign budget
   }
   const pctColor = pct => pct >= 90 ? 'pct-bad' : pct >= 70 ? 'pct-warn' : 'pct-good';
   let totalBudget=0, totalSpend=0, totalSales=0;
@@ -2558,18 +2584,20 @@ function renderCEO({ dates, campaigns, productSalesByDate }) {
   const yest  = dates.length >= 2 ? dates[dates.length - 2] : null;
 
   // All-product overview — Total Sales = gross POS; ad-attributed tracked for the split.
-  let todaySpend = 0, yesterSpend = 0, withAdToday = 0, todayInquiries = 0, yesterInquiries = 0, todayBudget = 0;
+  let todaySpend = 0, yesterSpend = 0, withAdToday = 0, todayInquiries = 0, yesterInquiries = 0;
+  const spendingAdsToday = []; // for CBO-safe declared-budget dedup
   for (const c of campaigns) {
     const tSpend = c.dates[today]?.spend || 0;
     todaySpend     += tSpend;
     withAdToday    += c.dates[today]?.grossSales      || 0;
     todayInquiries += c.dates[today]?.messagesStarted || 0;
-    if (tSpend > 0) todayBudget += c.budget || 0; // only ads that actually spent today count toward today's declared budget
+    if (tSpend > 0) spendingAdsToday.push(c); // only ads that actually spent today count toward today's declared budget
     if (yest) {
       yesterSpend     += c.dates[yest]?.spend           || 0;
       yesterInquiries += c.dates[yest]?.messagesStarted || 0;
     }
   }
+  const todayBudget = dedupedBudget(spendingAdsToday); // avoids double-counting a shared CBO campaign budget
   const gToday = grossForProducts(productSalesByDate, ALL_NDAP_PRODUCTS, [today]);
   const gYest  = yest ? grossForProducts(productSalesByDate, ALL_NDAP_PRODUCTS, [yest]) : null;
   const todaySales   = gToday.sales,  todayOrders  = gToday.orders;
