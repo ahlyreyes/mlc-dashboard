@@ -90,6 +90,15 @@ tr:last-child td { border-bottom: none; }
     <div class="card-title">👥 Current Users</div>
     <div id="usersTable"><div class="state-msg">Loading...</div></div>
   </div>
+
+  <div class="card" id="ai-copy">
+    <div class="card-title">🤖 AI Ad Copy Generator — OpenAI API Key</div>
+    <div class="form-row" style="grid-template-columns:1fr auto;">
+      <div class="field"><label>API Key</label><input type="password" id="openaiKey" placeholder="sk-..." autocomplete="off"></div>
+      <div class="field"><button class="btn" id="saveKeyBtn" onclick="saveOpenAiKey()">Save Key</button></div>
+    </div>
+    <div class="msg" id="openaiKeyMsg"></div>
+  </div>
 </div>
 
 <script>
@@ -205,6 +214,39 @@ async function delUser(email) {
 document.getElementById('email').addEventListener('keydown', e => { if (e.key === 'Enter') addUser(); });
 document.getElementById('name').addEventListener('keydown', e => { if (e.key === 'Enter') addUser(); });
 loadUsers();
+
+// ── AI Ad Copy Generator: OpenAI API key ──
+async function loadOpenAiKeyStatus() {
+  try {
+    const res = await fetch('/api/ad-copy-generator/config');
+    const cfg = await res.json();
+    document.getElementById('openaiKey').placeholder = cfg.hasKey ? `Current: ${cfg.maskedKey}` : 'sk-...';
+  } catch(e) { /* leave default placeholder */ }
+}
+async function saveOpenAiKey() {
+  const apiKey = document.getElementById('openaiKey').value.trim();
+  const msgEl = document.getElementById('openaiKeyMsg');
+  if (!apiKey) { msgEl.textContent = 'Type an API key first.'; msgEl.className = 'msg err'; return; }
+  const btn = document.getElementById('saveKeyBtn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  try {
+    const res = await fetch('/api/ad-copy-generator/openai-key', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ apiKey })
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || 'Failed');
+    document.getElementById('openaiKey').value = '';
+    msgEl.textContent = `✓ Saved (${data.maskedKey})`;
+    msgEl.className = 'msg ok';
+    loadOpenAiKeyStatus();
+  } catch(e) {
+    msgEl.textContent = e.message; msgEl.className = 'msg err';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Save Key';
+  }
+}
+loadOpenAiKeyStatus();
 </script>
 </body>
 </html>

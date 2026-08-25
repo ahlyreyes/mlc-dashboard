@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/png" href="/mlc-logo.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Product Progress Tracker — MLC Insights</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#f5f7fa;
+  --surface:#ffffff;
+  --surface2:#eef1f6;
+  --border:#dfe3eb;
+  --border2:#c8cdd8;
+  --text:#1a1d26;
+  --muted:#5a6275;
+  --dim:#9aa1b0;
+  --purple:#7c6dd8;
+  --purple-dim:#eeebfa;
+  --teal:#2a9d7e;
+  --teal-dim:#e6f7f1;
+  --amber:#d4960a;
+  --amber-dim:#fef6e0;
+  --blue:#2e7bb4;
+  --blue-dim:#e4f0fa;
+  --coral:#d05545;
+  --coral-dim:#fce8e5;
+  --gray:#6b6e75;
+  --gray-dim:#eeeef0;
+  --green:#4a9d4a;
+  --green-dim:#e6f5e6;
+  --red:#cc4444;
+  --red-dim:#fce5e5;
+  --cyan:#1ba8c4;
+  --cyan-dim:#e2f5fa;
+}
+
+body{
+  font-family:'Poppins','DM Sans',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  font-size:13px;
+  line-height:1.6;
+  min-height:100vh;
+}
+
+.shell{max-width:1140px;margin:0 auto;padding:40px 32px 60px;}
+
+/* Nav bar */
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--border);}
+.topbar-left{display:flex;align-items:center;gap:14px;}
+.topbar-left img{height:36px;border-radius:8px;}
+.topbar-title{font-size:1.1rem;font-weight:700;color:var(--text);}
+.topbar-back{font-size:0.85rem;color:var(--blue);text-decoration:none;padding:8px 20px;border:1px solid var(--border2);border-radius:20px;transition:all 0.2s;}
+.topbar-back:hover{border-color:var(--blue);background:var(--blue-dim);}
+
+/* Header */
+.playbook-header{margin-bottom:32px;}
+.playbook-eyebrow{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:8px;}
+.playbook-title{font-size:32px;font-weight:700;color:var(--text);line-height:1.2;margin-bottom:8px;}
+.playbook-sub{font-size:15px;color:var(--muted);max-width:700px;line-height:1.7;}
+
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px;box-shadow:0 1px 3px rgba(0,0,0,0.04);}
+.card-lbl{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;}
+
+/* Messages tab — editable (manual entry) or written by the AI Ad Copy Generator */
+.msg-ai-hint{background:var(--purple-dim);border:1px solid #d8d2f5;color:#4a3f8a;border-radius:8px;padding:10px 14px;font-size:12px;line-height:1.6;margin-bottom:18px;}
+.msg-ai-hint a{color:#4a3f8a;font-weight:700;}
+.msg-edit-list{display:flex;flex-direction:column;gap:10px;margin-bottom:10px;}
+.msg-edit-row{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;position:relative;}
+.msg-edit-row input,.msg-edit-row textarea{width:100%;margin-bottom:8px;}
+.msg-edit-row input:last-of-type,.msg-edit-row textarea:last-of-type{margin-bottom:0;}
+.msg-edit-remove{position:absolute;top:8px;right:8px;width:22px;height:22px;border-radius:50%;background:var(--red);color:#fff;border:none;cursor:pointer;font-size:13px;line-height:1;}
+.feat-add{background:none;border:1px dashed var(--border2);border-radius:8px;padding:8px 14px;font-size:12px;font-weight:600;color:var(--purple);cursor:pointer;font-family:inherit;width:100%;}
+.feat-add:hover{background:var(--purple-dim);}
+.msg-status{font-size:11.5px;color:var(--muted);margin:10px 0 14px;line-height:1.6;}
+.msg-status a{color:var(--purple);font-weight:600;text-decoration:none;}
+.msg-status a:hover{text-decoration:underline;}
+
+/* Grid */
+.product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px;margin-top:20px;}
+
+/* Product Card */
+.product-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,0.04);transition:all 0.2s;cursor:default;}
+.product-card:hover{border-color:var(--blue);box-shadow:0 4px 16px rgba(46,123,180,0.1);}
+.product-card-name{font-size:16px;font-weight:700;color:var(--text);margin-bottom:12px;}
+.product-card-empty{color:var(--dim);font-style:italic;}
+
+/* Progress bar */
+.progress-wrap{margin-bottom:14px;}
+.progress-label{font-size:11px;color:var(--muted);margin-bottom:4px;font-weight:500;}
+.progress-bar{height:8px;background:var(--surface2);border-radius:4px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--teal),var(--blue));border-radius:4px;transition:width 0.4s ease;}
+
+/* Step indicators */
+.step-indicators{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;}
+.step-ind{font-size:11px;padding:3px 10px;border-radius:6px;font-weight:500;display:flex;align-items:center;gap:4px;}
+.step-done{background:var(--green-dim);color:var(--green);}
+.step-pending{background:var(--gray-dim);color:var(--dim);}
+
+/* Buttons */
+.btn{padding:8px 20px;border-radius:8px;border:none;cursor:pointer;font-family:'Poppins',sans-serif;font-size:12px;font-weight:600;transition:all 0.2s;}
+.btn-primary{background:var(--blue);color:#fff;}
+.btn-primary:hover{background:#256da0;}
+.btn-secondary{background:var(--surface);color:var(--blue);border:1px solid var(--border2);}
+.btn-secondary:hover{background:var(--blue-dim);border-color:var(--blue);}
+.btn-danger{background:var(--red);color:#fff;}
+.btn-danger:hover{background:#b33a3a;}
+.btn-sm{padding:6px 14px;font-size:11px;}
+
+.add-btn{display:flex;align-items:center;gap:8px;}
+
+/* Modal overlay */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:1000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.25s;}
+.modal-overlay.active{opacity:1;pointer-events:all;}
+.modal-box{background:var(--surface);border-radius:14px;width:95%;max-width:860px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.2);padding:28px 32px;}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--border);}
+.modal-title{font-size:18px;font-weight:700;color:var(--text);}
+.modal-close{width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:var(--surface);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--muted);transition:all 0.2s;}
+.modal-close:hover{background:var(--red-dim);border-color:var(--red);color:var(--red);}
+
+/* Tabs */
+.tab-row{display:flex;gap:4px;margin-bottom:20px;border-bottom:2px solid var(--border);padding-bottom:0;flex-wrap:wrap;}
+.tab-btn{padding:8px 16px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px;font-family:'Poppins',sans-serif;transition:all 0.2s;white-space:nowrap;}
+.tab-btn:hover{color:var(--text);}
+.tab-btn.active{color:var(--blue);border-bottom-color:var(--blue);}
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+
+/* Form fields */
+.form-group{margin-bottom:16px;}
+.form-label{font-size:12px;font-weight:600;color:var(--text);margin-bottom:6px;display:block;}
+.form-input{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);background:var(--surface);transition:border-color 0.2s;}
+.form-input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(46,123,180,0.1);}
+textarea.form-input{resize:vertical;min-height:70px;}
+
+/* Pricing table */
+.pricing-table{width:100%;border-collapse:collapse;font-size:12px;}
+.pricing-table th{background:var(--surface2);color:var(--muted);padding:8px 10px;text-align:left;font-size:11px;border-bottom:1px solid var(--border);font-weight:600;}
+.pricing-table td{padding:6px 8px;border-bottom:1px solid var(--border);}
+.pricing-table .row-label{font-weight:600;color:var(--text);font-size:12px;white-space:nowrap;width:170px;}
+.pricing-table input{width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text);background:var(--surface);text-align:right;}
+.pricing-table input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 2px rgba(46,123,180,0.1);}
+.pricing-table input[readonly]{background:var(--surface2);color:var(--muted);cursor:default;}
+.pricing-net-positive{background:var(--green-dim) !important;color:var(--green) !important;font-weight:700 !important;}
+.pricing-net-negative{background:var(--red-dim) !important;color:var(--red) !important;font-weight:700 !important;}
+
+/* File upload zones */
+.upload-zone{border:2px dashed var(--border2);border-radius:10px;padding:30px 20px;text-align:center;cursor:pointer;transition:all 0.25s;background:var(--surface);position:relative;}
+.upload-zone:hover,.upload-zone.dragover{border-color:var(--blue);background:var(--blue-dim);}
+.upload-zone-icon{font-size:36px;color:var(--dim);margin-bottom:8px;}
+.upload-zone-text{font-size:12px;color:var(--muted);}
+.upload-zone-text strong{color:var(--text);}
+.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;}
+.upload-preview{margin-top:14px;position:relative;display:inline-block;}
+.upload-preview img{max-width:100%;max-height:300px;border-radius:8px;border:1px solid var(--border);}
+.upload-remove{position:absolute;top:6px;right:6px;width:28px;height:28px;border-radius:50%;background:var(--red);color:#fff;border:none;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.2);}
+
+/* Toggle */
+.toggle-row{display:flex;gap:8px;margin-bottom:14px;}
+.toggle-opt{padding:6px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border2);color:var(--muted);background:var(--surface);transition:all 0.2s;}
+.toggle-opt.active{background:var(--blue);color:#fff;border-color:var(--blue);}
+
+/* Actions row */
+.modal-actions{display:flex;justify-content:space-between;margin-top:24px;padding-top:16px;border-top:1px solid var(--border);}
+
+/* Loading */
+.loading{text-align:center;padding:60px 20px;color:var(--dim);font-size:14px;}
+
+/* Mobile responsive */
+@media(max-width:768px){
+  .shell{padding:16px 12px 40px;}
+  .topbar{flex-direction:column;gap:10px;align-items:flex-start;}
+  .topbar-left img{height:36px;}
+  .topbar-title{font-size:0.95rem;}
+  .playbook-title{font-size:22px;}
+  .playbook-sub{font-size:13px;}
+  .product-grid{grid-template-columns:1fr;gap:12px;}
+  .product-card{padding:16px;}
+  .product-card-name{font-size:14px;}
+
+  /* Modal full screen on mobile */
+  .modal-box{padding:16px 14px;width:100%;max-width:100%;max-height:100vh;border-radius:0;height:100vh;}
+  .modal-header{margin-bottom:14px;padding-bottom:10px;}
+  .modal-title{font-size:15px;}
+
+  /* Tabs scroll horizontally */
+  .tab-row{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:0;padding-bottom:0;scrollbar-width:none;}
+  .tab-row::-webkit-scrollbar{display:none;}
+  .tab-btn{padding:8px 12px;font-size:11px;flex-shrink:0;}
+
+  /* Form fields bigger touch targets */
+  .form-input{padding:12px 14px;font-size:14px;}
+  textarea.form-input{min-height:80px;}
+  .form-label{font-size:13px;margin-bottom:8px;}
+
+  /* Pricing table mobile layout */
+  .pricing-table{font-size:11px;}
+  .pricing-table .row-label{width:auto;min-width:100px;font-size:11px;padding:6px 4px;}
+  .pricing-table th{padding:6px 4px;font-size:10px;}
+  .pricing-table td{padding:4px 3px;}
+  .pricing-table input{padding:8px 6px;font-size:13px;min-width:70px;}
+
+  /* Upload zones */
+  .upload-zone{padding:20px 14px;}
+  .upload-zone-icon{font-size:28px;}
+  .upload-preview img{max-height:200px;}
+
+  /* Buttons */
+  .btn{padding:10px 20px;font-size:13px;}
+  .modal-actions{flex-direction:column-reverse;gap:10px;}
+  .modal-actions .btn{width:100%;text-align:center;}
+
+  /* Step indicators wrap better */
+  .step-indicators{gap:4px;}
+  .step-ind{font-size:10px;padding:3px 7px;}
+
+  /* Progress */
+  .progress-label{font-size:10px;}
+
+  /* Toggle */
+  .toggle-opt{padding:8px 14px;font-size:12px;}
+
+  /* Lean canvas textareas */
+  .form-group textarea.form-input{min-height:60px;font-size:13px;}
+
+  /* Add button full width */
+  .add-btn{width:100%;justify-content:center;}
+}
+
+@media(max-width:380px){
+  .pricing-table .row-label{min-width:80px;font-size:10px;}
+  .pricing-table input{min-width:60px;font-size:12px;padding:6px 4px;}
+  .tab-btn{padding:6px 8px;font-size:10px;}
+  .product-card-name{font-size:13px;}
+  .step-ind{font-size:9px;padding:2px 5px;}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- Top Bar -->
+<div class="topbar">
+  <div class="topbar-left">
+    <img src="/mlc-logo.png" alt="MLC">
+    <span class="topbar-title">Product Progress Tracker</span>
+  </div>
+  <a href="/home" class="topbar-back">&#x2B05; Back to Home</a>
+</div>
+
+<!-- Header -->
+<div class="playbook-header">
+  <div class="playbook-eyebrow">Product Development</div>
+  <div class="playbook-title">Product Progress Tracker</div>
+  <div class="playbook-sub">Track every product through the 6-step development process — from naming to testing creative. Each step must be completed before production.</div>
+</div>
+
+<!-- Add Button -->
+<div style="display:flex;justify-content:flex-end;margin-bottom:4px;">
+  <button class="btn btn-primary add-btn" onclick="openNew()">&#x2795; Add New Product</button>
+</div>
+
+<!-- Product Grid -->
+<div id="productGrid" class="product-grid">
+  <div class="loading">Loading products...</div>
+</div>
+
+</div><!-- end shell -->
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal">
+<div class="modal-box">
+  <div class="modal-header">
+    <div class="modal-title" id="modalTitle">New Product</div>
+    <button class="modal-close" onclick="closeModal()">&times;</button>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tab-row">
+    <button class="tab-btn active" onclick="switchTab(this,'tab-name')">Product Name</button>
+    <button class="tab-btn" onclick="switchTab(this,'tab-canvas')">Lean Canvas</button>
+    <button class="tab-btn" onclick="switchTab(this,'tab-label')">Label</button>
+    <button class="tab-btn" onclick="switchTab(this,'tab-formulation')">Formulation</button>
+    <button class="tab-btn" onclick="switchTab(this,'tab-pricing')">Pricing Analysis</button>
+    <button class="tab-btn" onclick="switchTab(this,'tab-creative')">Testing Creative</button>
+    <button class="tab-btn" onclick="switchTab(this,'tab-messages')">Messages</button>
+  </div>
+
+  <!-- Tab: Product Name -->
+  <div class="tab-content active" id="tab-name">
+    <div class="form-group">
+      <label class="form-label">Product Name</label>
+      <input type="text" class="form-input" id="f-name" placeholder="e.g. NutriLay, SkinGlow Serum...">
+    </div>
+  </div>
+
+  <!-- Tab: Lean Canvas -->
+  <div class="tab-content" id="tab-canvas">
+    <div class="form-group">
+      <label class="form-label">Box #1: Customer Segments</label>
+      <textarea class="form-input" id="f-customerSegments" placeholder="Who is the ideal buyer? (target market, demographics)"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Box #2: Problem</label>
+      <textarea class="form-input" id="f-problem" placeholder="What pain point does this product solve?"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Box #3: Unique Value Proposition (UVP)</label>
+      <textarea class="form-input" id="f-uvp" placeholder="What makes this product stand out?"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Box #4: Solution</label>
+      <textarea class="form-input" id="f-solution" placeholder="How does the product address the problem?"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Box #5: Channels</label>
+      <textarea class="form-input" id="f-channels" placeholder="How will you reach customers? (FB Ads, TikTok, etc.)"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Box #6: Revenue Streams</label>
+      <textarea class="form-input" id="f-revenue" placeholder="How does this generate income?"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Box #7: Cost Structure</label>
+      <textarea class="form-input" id="f-costStructure" placeholder="What are the main costs? (production, ads, fulfillment, etc.)"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Box #8: Key Metrics</label>
+      <textarea class="form-input" id="f-metrics" placeholder="What numbers define success? (CPM, CTR, ROAS, etc.)"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Box #9: Unfair Advantage</label>
+      <textarea class="form-input" id="f-unfairAdvantage" placeholder="What can't be easily copied or bought by competitors?"></textarea>
+    </div>
+  </div>
+
+  <!-- Tab: Label -->
+  <div class="tab-content" id="tab-label">
+    <div class="card-lbl">Label Design Image</div>
+    <div class="upload-zone" id="zone-label" ondragover="dzOver(event)" ondragleave="dzLeave(event)" ondrop="dzDrop(event,'label_image')">
+      <input type="file" accept="image/*" onchange="handleFile(event,'label_image')">
+      <div class="upload-zone-icon">&#x1F3A8;</div>
+      <div class="upload-zone-text"><strong>Click or drag</strong> to upload label image<br>(Max 5MB, JPG/PNG)</div>
+    </div>
+    <div class="upload-preview" id="preview-label_image"></div>
+  </div>
+
+  <!-- Tab: Formulation -->
+  <div class="tab-content" id="tab-formulation">
+    <div class="card-lbl">Formulation Details</div>
+    <div class="toggle-row">
+      <div class="toggle-opt active" onclick="setFormulationType('text')">Text Input</div>
+      <div class="toggle-opt" onclick="setFormulationType('photo')">Photo Upload</div>
+    </div>
+    <div id="formulation-text-area">
+      <div class="form-group">
+        <label class="form-label">Formulation Notes</label>
+        <textarea class="form-input" id="f-formulation-text" placeholder="Describe the formulation, ingredients, supplier details..." style="min-height:120px;"></textarea>
+      </div>
+    </div>
+    <div id="formulation-photo-area" style="display:none;">
+      <div class="upload-zone" id="zone-formulation" ondragover="dzOver(event)" ondragleave="dzLeave(event)" ondrop="dzDrop(event,'formulation_image')">
+        <input type="file" accept="image/*" onchange="handleFile(event,'formulation_image')">
+        <div class="upload-zone-icon">&#x1F9EA;</div>
+        <div class="upload-zone-text"><strong>Click or drag</strong> to upload formulation image<br>(Max 5MB, JPG/PNG)</div>
+      </div>
+      <div class="upload-preview" id="preview-formulation_image"></div>
+    </div>
+  </div>
+
+  <!-- Tab: Pricing Analysis -->
+  <div class="tab-content" id="tab-pricing">
+    <div class="card-lbl">Pricing Breakdown (SRP = 100% Basis)</div>
+    <div style="overflow-x:auto;">
+    <table class="pricing-table">
+      <thead>
+        <tr><th style="width:170px;">Item</th><th style="width:140px;">Value (&#8369;)</th><th style="width:140px;">Percentage (%)</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="row-label">SRP</td>
+          <td><input type="number" id="p-srp-val" step="0.01" min="0" placeholder="0.00" oninput="onSrpChange()"></td>
+          <td><input type="text" value="100.00" readonly></td>
+        </tr>
+        <tr>
+          <td class="row-label">CANCELLED</td>
+          <td><input type="number" id="p-cancelled-val" step="0.01" min="0" placeholder="0.00" oninput="onValChange('cancelled')"></td>
+          <td><input type="number" id="p-cancelled-pct" step="0.01" min="0" placeholder="0.00" oninput="onPctChange('cancelled')"></td>
+        </tr>
+        <tr>
+          <td class="row-label">RTS</td>
+          <td><input type="number" id="p-rts-val" step="0.01" min="0" placeholder="0.00" oninput="onValChange('rts')"></td>
+          <td><input type="number" id="p-rts-pct" step="0.01" min="0" placeholder="0.00" oninput="onPctChange('rts')"></td>
+        </tr>
+        <tr>
+          <td class="row-label">PRODUCT COST</td>
+          <td><input type="number" id="p-product_cost-val" step="0.01" min="0" placeholder="0.00" oninput="onValChange('product_cost')"></td>
+          <td><input type="number" id="p-product_cost-pct" step="0.01" min="0" placeholder="0.00" oninput="onPctChange('product_cost')"></td>
+        </tr>
+        <tr>
+          <td class="row-label">ADS</td>
+          <td><input type="number" id="p-ads-val" step="0.01" min="0" placeholder="0.00" oninput="onValChange('ads')"></td>
+          <td><input type="number" id="p-ads-pct" step="0.01" min="0" placeholder="0.00" oninput="onPctChange('ads')"></td>
+        </tr>
+        <tr>
+          <td class="row-label">ADS VAT</td>
+          <td><input type="number" id="p-ads_vat-val" step="0.01" min="0" placeholder="0.00" oninput="onValChange('ads_vat')"></td>
+          <td><input type="number" id="p-ads_vat-pct" step="0.01" min="0" placeholder="0.00" oninput="onPctChange('ads_vat')"></td>
+        </tr>
+        <tr>
+          <td class="row-label">SHIPPING FEE</td>
+          <td><input type="number" id="p-shipping-val" step="0.01" min="0" placeholder="0.00" oninput="onValChange('shipping')"></td>
+          <td><input type="number" id="p-shipping-pct" step="0.01" min="0" placeholder="0.00" oninput="onPctChange('shipping')"></td>
+        </tr>
+        <tr>
+          <td class="row-label">FULFILLMENT COST</td>
+          <td><input type="number" id="p-fulfillment-val" step="0.01" min="0" placeholder="0.00" oninput="onValChange('fulfillment')"></td>
+          <td><input type="number" id="p-fulfillment-pct" step="0.01" min="0" placeholder="0.00" oninput="onPctChange('fulfillment')"></td>
+        </tr>
+        <tr>
+          <td class="row-label">OPEX</td>
+          <td><input type="number" id="p-opex-val" step="0.01" min="0" placeholder="0.00" oninput="onValChange('opex')"></td>
+          <td><input type="number" id="p-opex-pct" step="0.01" min="0" placeholder="0.00" oninput="onPctChange('opex')"></td>
+        </tr>
+        <tr style="background:var(--surface2);">
+          <td class="row-label" style="font-size:13px;font-weight:700;">NET INCOME</td>
+          <td><input type="text" id="p-net-val" readonly style="font-weight:700;font-size:13px;"></td>
+          <td><input type="text" id="p-net-pct" readonly style="font-weight:700;font-size:13px;"></td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <!-- Tab: Testing Creative -->
+  <div class="tab-content" id="tab-creative">
+    <div class="card-lbl">Testing Creative Image</div>
+    <div class="upload-zone" id="zone-creative" ondragover="dzOver(event)" ondragleave="dzLeave(event)" ondrop="dzDrop(event,'creative_image')">
+      <input type="file" accept="image/*" onchange="handleFile(event,'creative_image')">
+      <div class="upload-zone-icon">&#x1F3AC;</div>
+      <div class="upload-zone-text"><strong>Click or drag</strong> to upload testing creative image<br>(Max 5MB, JPG/PNG)</div>
+    </div>
+    <div class="upload-preview" id="preview-creative_image"></div>
+  </div>
+
+  <!-- Tab: Messages — editable here, or generated by the AI Ad Copy Generator -->
+  <div class="tab-content" id="tab-messages">
+    <div class="msg-ai-hint" id="msgAiHint">
+      &#x2728; You can also have these written for you — open the <a href="/ad-copy-generator" id="msgAiLink" target="_blank" rel="noopener">AI Ad Copy Generator</a>,
+      link this product, generate, then click <strong>Save to Product Tracker</strong>. Anything you type below is saved the same way as generated output — the <strong>Save Product</strong> button below covers both.
+    </div>
+
+    <div class="card-lbl">Welcome Message</div>
+    <div id="msg-welcome-list" class="msg-edit-list"></div>
+    <button class="feat-add" onclick="addWelcomeRow()">+ Add welcome message</button>
+
+    <div class="card-lbl" style="margin-top:22px;">Follow-Up Sequence</div>
+    <div id="msg-followup-list" class="msg-edit-list"></div>
+    <button class="feat-add" onclick="addFollowupRow('')">+ Add follow-up message</button>
+  </div>
+
+  <!-- Actions -->
+  <div class="modal-actions">
+    <div>
+      <button class="btn btn-danger btn-sm" id="deleteBtn" onclick="deleteProduct()" style="display:none;">Delete Product</button>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveProduct()">Save Product</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+const API = '/api/product-tracker';
+let products = [];
+let editId = null;
+let pendingUploads = {}; // field -> base64 data URI
+
+const STEP_NAMES = ['Product Name','Lean Canvas','Label','Formulation','Pricing Analysis','Testing Creative'];
+const COST_FIELDS = ['cancelled','rts','product_cost','ads','ads_vat','shipping','fulfillment','opex'];
+function escHtml(s) {
+  return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ---- Load ----
+async function loadProducts() {
+  try {
+    const r = await fetch(API);
+    products = await r.json();
+    renderGrid();
+  } catch(e) {
+    document.getElementById('productGrid').innerHTML = '<div class="loading" style="color:var(--red);">Failed to load products.</div>';
+  }
+}
+
+function getStepsDone(p) {
+  const done = [];
+  if (p.name && p.name.trim()) done.push(0);
+  const lc = (typeof p.lean_canvas === 'string' ? JSON.parse(p.lean_canvas) : p.lean_canvas) || {};
+  if (lc.customerSegments || lc.target || lc.problem || lc.uvp || lc.solution || lc.channels || lc.revenue || lc.costStructure || lc.metrics || lc.unfairAdvantage) done.push(1);
+  // label_image: could be boolean true (list) or a data URI string (detail)
+  if (p.label_image || p.has_label) done.push(2);
+  if ((p.formulation_type === 'text' && p.formulation_text) || p.formulation_image || p.has_formulation_image) done.push(3);
+  const pr = (typeof p.pricing === 'string' ? JSON.parse(p.pricing) : p.pricing) || {};
+  if (pr.srp && Number(pr.srp) > 0) done.push(4);
+  if (p.creative_image || p.has_creative) done.push(5);
+  return done;
+}
+
+function renderGrid() {
+  const g = document.getElementById('productGrid');
+  if (!products.length) {
+    g.innerHTML = '<div class="loading">No products yet. Click "Add New Product" to get started.</div>';
+    return;
+  }
+  g.innerHTML = products.map(p => {
+    const done = getStepsDone(p);
+    const pct = Math.round(done.length / 6 * 100);
+    const name = (p.name && p.name.trim()) ? p.name : '<span class="product-card-empty">Untitled Product</span>';
+    return `<div class="product-card" onclick="openEdit(${p.id})">
+      <div class="product-card-name">${name}</div>
+      <div class="progress-wrap">
+        <div class="progress-label">${done.length}/6 steps completed</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+      </div>
+      <div class="step-indicators">
+        ${STEP_NAMES.map((s,i) => `<span class="step-ind ${done.includes(i)?'step-done':'step-pending'}">${done.includes(i)?'&#x2705;':'&#x2B1C;'} ${s}</span>`).join('')}
+      </div>
+      <div class="msg-status">
+        ${p.has_messages
+          ? `&#x2709;&#xFE0F; Messages saved — <a href="#" onclick="event.stopPropagation();event.preventDefault();openEdit(${p.id},'tab-messages')">view / edit</a>`
+          : `&#x2709;&#xFE0F; No messages yet — <a href="/ad-copy-generator?product=${p.id}" onclick="event.stopPropagation();" target="_blank" rel="noopener">Generate with AI</a> or <a href="#" onclick="event.stopPropagation();event.preventDefault();openEdit(${p.id},'tab-messages')">add manually</a>`}
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();openEdit(${p.id})">Edit</button>
+    </div>`;
+  }).join('');
+}
+
+// ---- Modal ----
+function openModal() {
+  document.getElementById('modal').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal() {
+  document.getElementById('modal').classList.remove('active');
+  document.body.style.overflow = '';
+  editId = null;
+  pendingUploads = {};
+}
+
+function openNew() {
+  editId = null;
+  pendingUploads = {};
+  document.getElementById('modalTitle').textContent = 'New Product';
+  document.getElementById('deleteBtn').style.display = 'none';
+  clearForm();
+  // reset to first tab
+  switchTab(document.querySelector('.tab-btn'), 'tab-name');
+  openModal();
+}
+
+async function openEdit(id, tabId) {
+  editId = id;
+  pendingUploads = {};
+  clearForm();
+  document.getElementById('modalTitle').textContent = 'Loading...';
+  document.getElementById('deleteBtn').style.display = '';
+  switchTab(document.querySelector('.tab-btn'), 'tab-name');
+  openModal();
+  try {
+    const r = await fetch(API + '/' + id);
+    const p = await r.json();
+    document.getElementById('modalTitle').textContent = 'Edit: ' + (p.name || 'Untitled');
+    populateForm(p);
+    if (tabId) {
+      const btn = [...document.querySelectorAll('.tab-btn')].find(b => b.getAttribute('onclick').includes(tabId));
+      if (btn) switchTab(btn, tabId);
+    }
+  } catch(e) {
+    document.getElementById('modalTitle').textContent = 'Error loading product';
+  }
+}
+
+function clearForm() {
+  document.getElementById('f-name').value = '';
+  document.getElementById('f-customerSegments').value = '';
+  document.getElementById('f-problem').value = '';
+  document.getElementById('f-uvp').value = '';
+  document.getElementById('f-solution').value = '';
+  document.getElementById('f-channels').value = '';
+  document.getElementById('f-revenue').value = '';
+  document.getElementById('f-costStructure').value = '';
+  document.getElementById('f-metrics').value = '';
+  document.getElementById('f-unfairAdvantage').value = '';
+  renderMessages([], []);
+  document.getElementById('f-formulation-text').value = '';
+  setFormulationType('text');
+  COST_FIELDS.forEach(f => {
+    const vEl = document.getElementById('p-'+f+'-val');
+    const pEl = document.getElementById('p-'+f+'-pct');
+    if(vEl) vEl.value = '';
+    if(pEl) pEl.value = '';
+  });
+  document.getElementById('p-srp-val').value = '';
+  document.getElementById('p-net-val').value = '';
+  document.getElementById('p-net-pct').value = '';
+  ['label_image','formulation_image','creative_image'].forEach(f => {
+    document.getElementById('preview-'+f).innerHTML = '';
+  });
+}
+
+// Messages tab is editable either way — rows here are populated either by typing manually
+// or by "Save to Product Tracker" from the AI Ad Copy Generator (same welcome_messages/
+// follow_up_messages columns either way, no separate "source" flag).
+function addWelcomeRow(v) {
+  v = v || {};
+  const row = document.createElement('div');
+  row.className = 'msg-edit-row';
+  row.innerHTML = `<button class="msg-edit-remove" onclick="this.parentElement.remove()" title="Remove">&times;</button>
+    <input type="text" class="form-input" placeholder="Headline" value="${escHtml(v.headline || '')}" data-f="headline">
+    <textarea class="form-input" placeholder="Message body" data-f="primaryText">${escHtml(v.primaryText || '')}</textarea>
+    <input type="text" class="form-input" placeholder="CTA (e.g. Order Now)" value="${escHtml(v.cta || '')}" data-f="cta">`;
+  document.getElementById('msg-welcome-list').appendChild(row);
+}
+function addFollowupRow(text) {
+  const row = document.createElement('div');
+  row.className = 'msg-edit-row';
+  row.innerHTML = `<button class="msg-edit-remove" onclick="this.parentElement.remove()" title="Remove">&times;</button>
+    <textarea class="form-input" placeholder="Follow-up message" data-f="text">${escHtml(text || '')}</textarea>`;
+  document.getElementById('msg-followup-list').appendChild(row);
+}
+function getWelcomeMessages() {
+  return [...document.querySelectorAll('#msg-welcome-list .msg-edit-row')].map(row => ({
+    headline: row.querySelector('[data-f=headline]').value.trim(),
+    primaryText: row.querySelector('[data-f=primaryText]').value.trim(),
+    cta: row.querySelector('[data-f=cta]').value.trim(),
+  })).filter(v => v.headline || v.primaryText || v.cta);
+}
+function getFollowupMessages() {
+  return [...document.querySelectorAll('#msg-followup-list .msg-edit-row')]
+    .map(row => row.querySelector('[data-f=text]').value.trim())
+    .filter(Boolean);
+}
+function renderMessages(welcomeMessages, followUpMessages) {
+  document.getElementById('msg-welcome-list').innerHTML = '';
+  document.getElementById('msg-followup-list').innerHTML = '';
+  (welcomeMessages || []).forEach(addWelcomeRow);
+  (followUpMessages || []).forEach(addFollowupRow);
+  const link = document.getElementById('msgAiLink');
+  link.href = editId ? `/ad-copy-generator?product=${editId}` : '/ad-copy-generator';
+}
+
+function populateForm(p) {
+  document.getElementById('f-name').value = p.name || '';
+  const lc = p.lean_canvas || {};
+  // customerSegments replaces the old "target" key — fall back to it for products saved
+  // before the 9-box Lean Canvas revision so their data still shows up.
+  document.getElementById('f-customerSegments').value = lc.customerSegments || lc.target || '';
+  document.getElementById('f-problem').value = lc.problem || '';
+  document.getElementById('f-uvp').value = lc.uvp || '';
+  document.getElementById('f-solution').value = lc.solution || '';
+  document.getElementById('f-channels').value = lc.channels || '';
+  document.getElementById('f-revenue').value = lc.revenue || '';
+  document.getElementById('f-costStructure').value = lc.costStructure || '';
+  document.getElementById('f-metrics').value = lc.metrics || '';
+  document.getElementById('f-unfairAdvantage').value = lc.unfairAdvantage || '';
+  renderMessages(p.welcome_messages || [], p.follow_up_messages || []);
+
+  // Formulation
+  setFormulationType(p.formulation_type === 'photo' ? 'photo' : 'text');
+  document.getElementById('f-formulation-text').value = p.formulation_text || '';
+
+  // Pricing
+  const pr = p.pricing || {};
+  const srp = Number(pr.srp) || 0;
+  document.getElementById('p-srp-val').value = srp || '';
+  COST_FIELDS.forEach(f => {
+    const val = Number(pr[f]) || 0;
+    const vEl = document.getElementById('p-'+f+'-val');
+    const pEl = document.getElementById('p-'+f+'-pct');
+    if(vEl) vEl.value = val || '';
+    if(pEl && srp > 0) pEl.value = (val / srp * 100).toFixed(2);
+    else if(pEl) pEl.value = '';
+  });
+  computeNet();
+
+  // Image previews
+  ['label_image','formulation_image','creative_image'].forEach(field => {
+    const container = document.getElementById('preview-'+field);
+    if (p[field]) {
+      container.innerHTML = `<img src="${p[field]}"><button class="upload-remove" onclick="removeImage('${field}')">&times;</button>`;
+    } else {
+      container.innerHTML = '';
+    }
+  });
+}
+
+// ---- Tabs ----
+function switchTab(btn, tabId) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(tabId).classList.add('active');
+}
+
+// ---- Formulation toggle ----
+function setFormulationType(type) {
+  document.querySelectorAll('.toggle-opt').forEach((el,i) => {
+    el.classList.toggle('active', (i===0 && type==='text') || (i===1 && type==='photo'));
+  });
+  document.getElementById('formulation-text-area').style.display = type === 'text' ? '' : 'none';
+  document.getElementById('formulation-photo-area').style.display = type === 'photo' ? '' : 'none';
+}
+
+// ---- Pricing Calculator ----
+function getSRP() { return Number(document.getElementById('p-srp-val').value) || 0; }
+
+function onSrpChange() {
+  const srp = getSRP();
+  COST_FIELDS.forEach(f => {
+    const vEl = document.getElementById('p-'+f+'-val');
+    const pEl = document.getElementById('p-'+f+'-pct');
+    const val = Number(vEl.value) || 0;
+    if (srp > 0 && val > 0) pEl.value = (val / srp * 100).toFixed(2);
+    else pEl.value = '';
+  });
+  computeNet();
+}
+
+function onValChange(field) {
+  const srp = getSRP();
+  const val = Number(document.getElementById('p-'+field+'-val').value) || 0;
+  const pEl = document.getElementById('p-'+field+'-pct');
+  if (srp > 0) pEl.value = (val / srp * 100).toFixed(2);
+  else pEl.value = '';
+  computeNet();
+}
+
+function onPctChange(field) {
+  const srp = getSRP();
+  const pct = Number(document.getElementById('p-'+field+'-pct').value) || 0;
+  const vEl = document.getElementById('p-'+field+'-val');
+  if (srp > 0) vEl.value = (pct * srp / 100).toFixed(2);
+  else vEl.value = '';
+  computeNet();
+}
+
+function computeNet() {
+  const srp = getSRP();
+  let totalCost = 0;
+  COST_FIELDS.forEach(f => {
+    totalCost += Number(document.getElementById('p-'+f+'-val').value) || 0;
+  });
+  const net = srp - totalCost;
+  const netEl = document.getElementById('p-net-val');
+  const netPctEl = document.getElementById('p-net-pct');
+  netEl.value = srp > 0 ? net.toFixed(2) : '';
+  netPctEl.value = srp > 0 ? (net / srp * 100).toFixed(2) : '';
+  // Color
+  netEl.className = net >= 0 ? 'pricing-net-positive' : 'pricing-net-negative';
+  netPctEl.className = net >= 0 ? 'pricing-net-positive' : 'pricing-net-negative';
+}
+
+// ---- File Upload ----
+function dzOver(e) { e.preventDefault(); e.currentTarget.classList.add('dragover'); }
+function dzLeave(e) { e.currentTarget.classList.remove('dragover'); }
+function dzDrop(e, field) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) processFile(file, field);
+}
+function handleFile(e, field) {
+  const file = e.target.files[0];
+  if (file) processFile(file, field);
+}
+
+function processFile(file, field) {
+  if (file.size > 5 * 1024 * 1024) {
+    alert('File too large! Maximum size is 5MB.');
+    return;
+  }
+  if (!file.type.startsWith('image/')) {
+    alert('Please upload an image file (JPG, PNG, etc.).');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const dataUri = e.target.result;
+    pendingUploads[field] = dataUri;
+    const container = document.getElementById('preview-'+field);
+    container.innerHTML = `<img src="${dataUri}"><button class="upload-remove" onclick="removePendingImage('${field}')">&times;</button>`;
+  };
+  reader.readAsDataURL(file);
+}
+
+function removePendingImage(field) {
+  delete pendingUploads[field];
+  document.getElementById('preview-'+field).innerHTML = '';
+}
+
+function removeImage(field) {
+  // Mark for removal on save
+  pendingUploads[field] = null; // null = remove
+  document.getElementById('preview-'+field).innerHTML = '';
+}
+
+// ---- Save ----
+async function saveProduct() {
+  const name = document.getElementById('f-name').value.trim();
+  if (!name) {
+    alert('Please enter a product name.');
+    switchTab(document.querySelector('.tab-btn'), 'tab-name');
+    document.getElementById('f-name').focus();
+    return;
+  }
+
+  const formulationType = document.querySelector('.toggle-opt.active').textContent.trim().toLowerCase() === 'text input' ? 'text' : 'photo';
+
+  const body = {
+    name,
+    lean_canvas: {
+      customerSegments: document.getElementById('f-customerSegments').value.trim(),
+      problem: document.getElementById('f-problem').value.trim(),
+      uvp: document.getElementById('f-uvp').value.trim(),
+      solution: document.getElementById('f-solution').value.trim(),
+      channels: document.getElementById('f-channels').value.trim(),
+      revenue: document.getElementById('f-revenue').value.trim(),
+      costStructure: document.getElementById('f-costStructure').value.trim(),
+      metrics: document.getElementById('f-metrics').value.trim(),
+      unfairAdvantage: document.getElementById('f-unfairAdvantage').value.trim()
+    },
+    formulation_type: formulationType,
+    formulation_text: document.getElementById('f-formulation-text').value.trim(),
+    pricing: { srp: document.getElementById('p-srp-val').value || '0' }
+  };
+
+  // Add pricing cost fields
+  COST_FIELDS.forEach(f => {
+    body.pricing[f] = document.getElementById('p-'+f+'-val').value || '0';
+  });
+
+  // Include pending image uploads in body
+  ['label_image','formulation_image','creative_image'].forEach(field => {
+    if (field in pendingUploads) {
+      body[field] = pendingUploads[field]; // base64 string or null
+    }
+  });
+
+  try {
+    let r;
+    if (editId) {
+      r = await fetch(API + '/' + editId, {
+        method: 'PUT',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(body)
+      });
+    } else {
+      r = await fetch(API, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(body)
+      });
+    }
+    if (!r.ok) throw new Error('Save failed');
+    const saved = await r.json();
+    const id = editId || saved.id;
+
+    // Messages tab uses its own endpoint (kept separate so it can never blank
+    // name/lean_canvas/pricing) — called here too so the one Save Product button also
+    // covers manual edits to Messages, not just the AI save.
+    await fetch(API + '/' + id + '/messages', {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        welcome_messages: getWelcomeMessages(),
+        follow_up_messages: getFollowupMessages(),
+      })
+    });
+
+    closeModal();
+    await loadProducts();
+  } catch(e) {
+    alert('Error saving product: ' + e.message);
+  }
+}
+
+// ---- Delete ----
+async function deleteProduct() {
+  if (!editId) return;
+  if (!confirm('Delete this product? This cannot be undone.')) return;
+  try {
+    const r = await fetch(API + '/' + editId, { method: 'DELETE' });
+    if (!r.ok) throw new Error('Delete failed');
+    closeModal();
+    await loadProducts();
+  } catch(e) {
+    alert('Error deleting: ' + e.message);
+  }
+}
+
+// ---- Init ----
+loadProducts();
+</script>
+</body>
+</html>

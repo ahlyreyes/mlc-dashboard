@@ -126,6 +126,45 @@ async function initDB() {
       token_id INTEGER, page_id TEXT, created_at TIMESTAMP DEFAULT NOW() )`);
     await pool.query(`CREATE TABLE IF NOT EXISTS mp_history (
       id SERIAL PRIMARY KEY, action TEXT NOT NULL, detail TEXT, done_by TEXT, created_at TIMESTAMP DEFAULT NOW() )`);
+
+    // Product Tracker — 6-step product dev tracker (ported from sellershub-fsd)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS product_tracker (
+        id                 SERIAL PRIMARY KEY,
+        name               TEXT NOT NULL,
+        lean_canvas        JSONB DEFAULT '{}',
+        label_image        TEXT,
+        formulation_type   TEXT DEFAULT 'text',
+        formulation_text   TEXT,
+        formulation_image  TEXT,
+        pricing            JSONB DEFAULT '{}',
+        creative_image     TEXT,
+        welcome_messages   JSONB DEFAULT '[]',
+        follow_up_messages JSONB DEFAULT '[]',
+        created_by         TEXT,
+        created_at         TIMESTAMPTZ DEFAULT NOW(),
+        updated_at         TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    // AI Ad Copy Generator — OpenAI key (own key, entered fresh here, never copied from
+    // another app) + saved form defaults (ported from sellershub-fsd)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS openai_config (
+        id          INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+        api_key     TEXT,
+        updated_by  TEXT,
+        updated_at  TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS ad_copy_defaults (
+        id          INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+        data        JSONB NOT NULL DEFAULT '{}',
+        updated_by  TEXT,
+        updated_at  TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+
     // Add locked column if it doesn't exist (migration)
     await pool.query(`ALTER TABLE page_budgets ADD COLUMN IF NOT EXISTS locked BOOLEAN DEFAULT FALSE`);
 
@@ -246,11 +285,13 @@ async function logMPHistory(action, detail, email) {
 
 // ── ROLE-BASED PAGE ACCESS ──
 // admin = all pages; others limited to the listed paths.
+// Product Tracker + AI Ad Copy Generator are open to every signed-in role (no report
+// restriction), matching how they're gated server-side below (requireAuth only).
 const ROLE_PAGES = {
   admin:      'ALL',
-  advertiser: ['/', '/ad-spend', '/logistics'],
-  fsa:        ['/ad-spend', '/logistics'],
-  logistics:  ['/ad-spend', '/logistics'],
+  advertiser: ['/', '/ad-spend', '/logistics', '/product-tracker', '/ad-copy-generator'],
+  fsa:        ['/ad-spend', '/logistics', '/product-tracker', '/ad-copy-generator'],
+  logistics:  ['/ad-spend', '/logistics', '/product-tracker', '/ad-copy-generator'],
 };
 function allowedPagesFor(user) {
   if (isAdmin(user)) return 'ALL';
@@ -540,6 +581,34 @@ function fetchRaw(url) {
       }).on('error', reject);
     };
     get(url);
+  });
+}
+
+// POST a JSON body with custom headers (e.g. `Authorization: Bearer ...`), parse a JSON
+// response — fetchJson/fetchRaw above are GET-only with no header support. Used by the AI
+// Ad Copy Generator to call OpenAI's Chat Completions API.
+function postJson(url, body, headers = {}, timeoutMs = 60000) {
+  return new Promise((resolve, reject) => {
+    let done = false;
+    const settle = (fn, val) => { if (!done) { done = true; clearTimeout(hard); fn(val); } };
+    const hard = setTimeout(() => settle(reject, new Error(`postJson hard timeout: ${url}`)), timeoutMs + 5000);
+    const payload = JSON.stringify(body);
+    const u = new URL(url);
+    const lib = u.protocol === 'https:' ? https : require('http');
+    const req = lib.request(u, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload), ...headers },
+    }, (res) => {
+      let data = '';
+      res.on('data', c => data += c);
+      res.on('end', () => settle(() => {
+        try { resolve({ status: res.statusCode, body: JSON.parse(data) }); }
+        catch (e) { reject(new Error(`postJson: non-JSON response (${res.statusCode}): ${data.slice(0, 300)}`)); }
+      }, null));
+    }).on('error', e => settle(reject, e));
+    req.setTimeout(timeoutMs, () => req.destroy(new Error(`postJson timeout: ${url}`)));
+    req.write(payload);
+    req.end();
   });
 }
 
@@ -1731,5 +1800,391 @@ app.get('/api/aov-cvr', requireAuth, async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
+
+// ══════════════════════════════════════════════════════════════════════════════════════
+// PRODUCT TRACKER + AI AD COPY GENERATOR — ported from ahlyreyes/sellershub-fsd.
+// Own tables (product_tracker, openai_config, ad_copy_defaults) created in initDB() above,
+// own OpenAI key entered fresh here — no data or credentials shared with that other app.
+// ══════════════════════════════════════════════════════════════════════════════════════
+
+// ── Product Tracker API ── requireAuth only, no role gate — any signed-in user can track
+// a product through the 6 steps.
+app.get('/api/product-tracker', requireAuth, async (_req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, name, lean_canvas,
+              label_image IS NOT NULL AS has_label,
+              formulation_type, formulation_text,
+              formulation_image IS NOT NULL AS has_formulation_image,
+              pricing,
+              creative_image IS NOT NULL AS has_creative,
+              (jsonb_array_length(COALESCE(welcome_messages, '[]'::jsonb)) > 0
+               OR jsonb_array_length(COALESCE(follow_up_messages, '[]'::jsonb)) > 0) AS has_messages,
+              created_by, created_at, updated_at
+       FROM product_tracker ORDER BY created_at DESC`
+    );
+    res.json(result.rows.map(r => ({
+      ...r,
+      label_image: r.has_label || null,
+      formulation_image: r.has_formulation_image || null,
+      creative_image: r.has_creative || null,
+    })));
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/product-tracker/:id', requireAuth, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM product_tracker WHERE id = $1', [req.params.id]);
+    if (!result.rows.length) return res.status(404).json({ error: 'Not found' });
+    res.json(result.rows[0]);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/product-tracker', requireAuth, async (req, res) => {
+  try {
+    const b = req.body;
+    if (!b.name || !String(b.name).trim()) return res.status(400).json({ error: 'name is required' });
+    const result = await pool.query(
+      `INSERT INTO product_tracker
+         (name, lean_canvas, label_image, formulation_type, formulation_text, formulation_image, pricing, creative_image, created_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+      [b.name, JSON.stringify(b.lean_canvas || {}), b.label_image || null, b.formulation_type || 'text',
+       b.formulation_text || null, b.formulation_image || null, JSON.stringify(b.pricing || {}),
+       b.creative_image || null, req.user.email || '']
+    );
+    res.json(result.rows[0]);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.put('/api/product-tracker/:id', requireAuth, async (req, res) => {
+  try {
+    const b = req.body;
+    const id = req.params.id;
+    if (!b.name || !String(b.name).trim()) return res.status(400).json({ error: 'name is required' });
+    // Image columns are only touched when explicitly present in the request body — an edit
+    // that never opens the Label/Formulation/Creative tab leaves those images intact.
+    const sets = ['name = $1', 'lean_canvas = $2', 'formulation_type = $3', 'formulation_text = $4', 'pricing = $5', 'updated_at = NOW()'];
+    const vals = [b.name, JSON.stringify(b.lean_canvas || {}), b.formulation_type || 'text', b.formulation_text || null, JSON.stringify(b.pricing || {})];
+    let idx = 6;
+    for (const field of ['label_image', 'formulation_image', 'creative_image']) {
+      if (field in b) { sets.push(`${field} = $${idx}`); vals.push(b[field] || null); idx++; }
+    }
+    vals.push(id);
+    const result = await pool.query(`UPDATE product_tracker SET ${sets.join(', ')} WHERE id = $${idx} RETURNING *`, vals);
+    if (!result.rows.length) return res.status(404).json({ error: 'Not found' });
+    res.json(result.rows[0]);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Dedicated endpoint for the AI Ad Copy Generator's "Save to Product Tracker" button — only
+// touches welcome_messages/follow_up_messages, so generating ad copy never blanks other tabs.
+app.put('/api/product-tracker/:id/messages', requireAuth, async (req, res) => {
+  try {
+    const b = req.body || {};
+    const result = await pool.query(
+      `UPDATE product_tracker
+       SET welcome_messages = $1, follow_up_messages = $2, updated_at = NOW()
+       WHERE id = $3 RETURNING id, name, welcome_messages, follow_up_messages`,
+      [JSON.stringify(b.welcome_messages || []), JSON.stringify(b.follow_up_messages || []), req.params.id]
+    );
+    if (!result.rows.length) return res.status(404).json({ error: 'Not found' });
+    res.json(result.rows[0]);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/product-tracker/:id', requireAuth, async (req, res) => {
+  try {
+    await pool.query('DELETE FROM product_tracker WHERE id = $1', [req.params.id]);
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── AI Ad Copy Generator API ──
+const OPENAI_CHAT_URL = 'https://api.openai.com/v1/chat/completions';
+const AI_AD_COPY_MODEL = 'gpt-4o-mini';
+
+async function getOpenAiKey() {
+  const { rows } = await pool.query('SELECT api_key FROM openai_config WHERE id = 1');
+  return rows[0]?.api_key || null;
+}
+function maskOpenAiKey(k) { return k ? `••••${String(k).slice(-4)}` : null; }
+
+app.get('/api/ad-copy-generator/config', requireAuth, async (_req, res) => {
+  try {
+    const [{ rows: keyRows }, { rows: defRows }] = await Promise.all([
+      pool.query('SELECT api_key FROM openai_config WHERE id = 1'),
+      pool.query('SELECT data FROM ad_copy_defaults WHERE id = 1'),
+    ]);
+    const key = keyRows[0]?.api_key || null;
+    res.json({ hasKey: !!key, maskedKey: maskOpenAiKey(key), defaults: defRows[0]?.data || {} });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Admin-only — this is a billable credential, not a per-report setting.
+app.put('/api/ad-copy-generator/openai-key', requireAdmin, async (req, res) => {
+  try {
+    const key = (req.body?.apiKey || '').trim();
+    if (!key) return res.status(400).json({ error: 'apiKey is required' });
+    await pool.query(
+      `INSERT INTO openai_config (id, api_key, updated_by, updated_at) VALUES (1, $1, $2, NOW())
+       ON CONFLICT (id) DO UPDATE SET api_key = EXCLUDED.api_key, updated_by = EXCLUDED.updated_by, updated_at = NOW()`,
+      [key, req.user.email || '']
+    );
+    res.json({ ok: true, maskedKey: maskOpenAiKey(key) });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/ad-copy-generator/openai-key', requireAdmin, async (_req, res) => {
+  try {
+    await pool.query('DELETE FROM openai_config WHERE id = 1');
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.put('/api/ad-copy-generator/defaults', requireAuth, async (req, res) => {
+  try {
+    await pool.query(
+      `INSERT INTO ad_copy_defaults (id, data, updated_by, updated_at) VALUES (1, $1, $2, NOW())
+       ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data, updated_by = EXCLUDED.updated_by, updated_at = NOW()`,
+      [JSON.stringify(req.body || {}), req.user.email || '']
+    );
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+function adCopySystemPrompt(language, tone) {
+  return `You are an expert Facebook ads copywriter for the Filipino e-commerce market. ` +
+    `You write in ${language || 'Taglish'} with a ${tone || 'friendly and persuasive'} tone. ` +
+    `You understand Filipino online-shopper psychology: trust signals (COD availability, ` +
+    `legitimate/registered business, real testimonials), urgency without sounding scammy, ` +
+    `relatable everyday pain points, and casual conversational language that reads like a ` +
+    `real seller, not a corporate ad. Respond with ONLY valid JSON matching the requested ` +
+    `schema exactly — no markdown fences, no commentary before or after the JSON.`;
+}
+
+async function getProductKnowledge(productTrackerId) {
+  if (!productTrackerId) return null;
+  const { rows } = await pool.query(
+    'SELECT name, lean_canvas, formulation_text FROM product_tracker WHERE id = $1',
+    [productTrackerId]
+  );
+  return rows[0] || null;
+}
+
+function buildAdCopyBrief(b, knowledge) {
+  const lines = [
+    `Product/Service Name: ${b.productName || '(not given)'}`,
+    `Description: ${b.description || '(not given)'}`,
+    `Key Features: ${(b.keyFeatures || []).filter(Boolean).join('; ') || '(not given)'}`,
+    `Target Audience: ${b.targetAudience || '(not specified — use your best judgment)'}`,
+    `Shop Name: ${b.shopName}`,
+    `Price: ${b.price}`,
+    `Promo/Offer: ${b.promo}`,
+    b.deliveryTime ? `Delivery Time: ${b.deliveryTime}` : null,
+    b.paymentMethod ? `Payment Method: ${b.paymentMethod}` : null,
+    b.legitimacyInfo ? `Legitimacy Info (business registration, permits, proof): ${b.legitimacyInfo}` : null,
+    b.additionalInstructions ? `Additional Instructions: ${b.additionalInstructions}` : null,
+  ].filter(Boolean);
+
+  const lc = knowledge?.lean_canvas || {};
+  const knowledgeLines = [
+    (lc.customerSegments || lc.target) ? `Customer Segments: ${lc.customerSegments || lc.target}` : null,
+    lc.problem ? `Problem: ${lc.problem}` : null,
+    lc.uvp ? `Unique Value Proposition: ${lc.uvp}` : null,
+    lc.solution ? `Solution: ${lc.solution}` : null,
+    lc.channels ? `Channels: ${lc.channels}` : null,
+    lc.revenue ? `Revenue Streams: ${lc.revenue}` : null,
+    lc.costStructure ? `Cost Structure: ${lc.costStructure}` : null,
+    lc.metrics ? `Key Metrics: ${lc.metrics}` : null,
+    lc.unfairAdvantage ? `Unfair Advantage: ${lc.unfairAdvantage}` : null,
+    knowledge?.formulation_text ? `Formulation Notes: ${knowledge.formulation_text}` : null,
+  ].filter(Boolean);
+  if (knowledgeLines.length) {
+    lines.push(`\nProduct Knowledge (from Progress Tracker — "${knowledge.name}" Lean Canvas):`, ...knowledgeLines);
+  }
+  return lines.join('\n');
+}
+
+function adCopySectionPrompts(b, followUps) {
+  const sections = [];
+  const schema = ['"variants": [{"headline": string, "primaryText": string, "cta": string}, ...]'];
+
+  if (followUps > 0) {
+    sections.push(
+      `Also write a sequence of exactly ${followUps} short follow-up messages, meant to be sent ` +
+      `one after another to a customer who inquired but hasn't ordered yet — each one should ` +
+      `escalate gently (more info, urgency, social proof, final nudge) without repeating the same angle.`
+    );
+    schema.push('"followUps": [string, ...]');
+  }
+  if (b.includeMainFlow) {
+    sections.push(
+      `Also write "mainFlow" — the FIRST auto-reply message a customer receives when they message ` +
+      `the page. Include a greeting, the promo highlighted with the OLD PRICE crossed out and the ` +
+      `NEW PROMO PRICE, key benefits as a short numbered/emoji list, and a CTA to reply. Use emojis.`
+    );
+    schema.push('"mainFlow": string');
+  }
+  if (b.includeSalesPrompts) {
+    sections.push(
+      `Also write two ready-to-paste AI chatbot system prompts, markdown formatted:\n` +
+      `1) "salesPrompt" — a complete AI Sales Assistant system prompt: role definition ("You are ` +
+      `[Shop Name]'s AI Sales Assistant"), personality traits, product knowledge (price, features, ` +
+      `promo, delivery, payment), objection handling guidelines, closing techniques, and ground rules ` +
+      `(never give false info, stay polite, escalate to a human when needed).\n` +
+      `2) "afterSalesPrompt" — a complete After-Sales Support system prompt: price reference, ` +
+      `responsibilities (delivery/shipping updates, product questions, handling delays/wrong items/` +
+      `defects/refunds, reassuring worried customers, encouraging reviews), and the rule to always ` +
+      `prioritize resolving the customer's concern.`
+    );
+    schema.push('"salesPrompt": string, "afterSalesPrompt": string');
+  }
+  if (b.includeAdCreatives) {
+    sections.push(
+      `Also write "adCreatives" — a Messenger-ready greeting template with emojis covering the key ` +
+      `benefits (messagingTemplate), plus exactly 3 short quick-reply button texts a customer might ` +
+      `tap (quickReplies), e.g. "Tell me more!", "Colors available?", "Order now!".`
+    );
+    schema.push('"adCreatives": {"messagingTemplate": string, "quickReplies": [string, string, string]}');
+  }
+  if (b.includeVideoScripts) {
+    sections.push(
+      `Also write exactly 3 distinct 30-second video ad script concepts as "videoScripts" (a different ` +
+      `angle/style each, e.g. Problem-Solution, Testimonial, Unboxing). Each object: title, hook (first ` +
+      `3 seconds, must stop the scroll), scene1 (seconds 3-10, present the problem), scene2 (seconds ` +
+      `10-20, product as the solution + benefits), scene3 (seconds 20-27, social proof/results), cta ` +
+      `(last 3 seconds, urgency), textOverlay (array of 3-4 short on-screen text lines), musicMood ` +
+      `(e.g. "upbeat", "emotional").`
+    );
+    schema.push('"videoScripts": [{"title": string, "hook": string, "scene1": string, "scene2": string, "scene3": string, "cta": string, "textOverlay": [string, ...], "musicMood": string}, ...] (exactly 3 objects)');
+  }
+  if (b.includeHourlyFollowups) {
+    sections.push(
+      `Also write exactly 8 "hourlyFollowups" — gentle hourly tap messages (Hour 1 through Hour 8) ` +
+      `for a customer who inquired but hasn't ordered yet, using the sandwich method per hour: value ` +
+      `(warm opening line, not salesy), offer (the product benefit/social proof), cta (gentle call to ` +
+      `action). Escalate gently across hours: Hour 1 warm check-in, Hour 2 share a benefit, Hour 3 ` +
+      `social proof, Hour 4 address a common concern, Hour 5 scarcity/stock update, Hour 6 testimonial, ` +
+      `Hour 7 urgency, Hour 8 final gentle nudge.`
+    );
+    schema.push('"hourlyFollowups": [{"hour": number, "value": string, "offer": string, "cta": string}, ...] (exactly 8 objects, hour 1 to 8)');
+  }
+  return { sections, schema };
+}
+
+app.post('/api/ad-copy-generator/generate', requireAuth, async (req, res) => {
+  try {
+    const apiKey = await getOpenAiKey();
+    if (!apiKey) return res.status(400).json({ error: 'No OpenAI API key configured — add one in Admin Settings first.' });
+
+    const b = req.body || {};
+    for (const field of ['shopName', 'price', 'promo']) {
+      if (!b[field] || !String(b[field]).trim()) return res.status(400).json({ error: `${field} is required` });
+    }
+    const variants   = Math.max(1, Math.min(5, parseInt(b.variants, 10) || 1));
+    const followUps  = Math.max(0, Math.min(20, parseInt(b.followUpCount, 10) || 0));
+    const creativity = Math.max(0, Math.min(1, Number(b.creativity)));
+    const temperature = isFinite(creativity) ? creativity : 0.7;
+    const knowledge = await getProductKnowledge(b.productTrackerId);
+    const { sections, schema } = adCopySectionPrompts(b, followUps);
+
+    const userPrompt =
+      `Write ${variants} distinct Facebook ad copy variant(s) for the product/offer below.\n\n` +
+      sections.map(s => s + '\n\n').join('') +
+      buildAdCopyBrief(b, knowledge) + '\n\n' +
+      `Respond as JSON: {${schema.join(', ')}}`;
+
+    const { status, body } = await postJson(OPENAI_CHAT_URL, {
+      model: AI_AD_COPY_MODEL,
+      messages: [
+        { role: 'system', content: adCopySystemPrompt(b.language, b.tone) },
+        { role: 'user', content: userPrompt },
+      ],
+      temperature,
+      max_tokens: 6000,
+      response_format: { type: 'json_object' },
+    }, { Authorization: `Bearer ${apiKey}` });
+
+    if (status !== 200) return res.status(502).json({ error: body?.error?.message || `OpenAI API error (${status})` });
+    const content = body.choices?.[0]?.message?.content;
+    let parsed;
+    try { parsed = JSON.parse(content); } catch { return res.status(502).json({ error: 'OpenAI returned non-JSON output — try again.' }); }
+    res.json({
+      variants: parsed.variants || [],
+      followUps: parsed.followUps || [],
+      mainFlow: parsed.mainFlow || null,
+      salesPrompt: parsed.salesPrompt || null,
+      afterSalesPrompt: parsed.afterSalesPrompt || null,
+      adCreatives: parsed.adCreatives || null,
+      videoScripts: parsed.videoScripts || [],
+      hourlyFollowups: parsed.hourlyFollowups || [],
+    });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/ad-copy-generator/generate-features', requireAuth, async (req, res) => {
+  try {
+    const apiKey = await getOpenAiKey();
+    if (!apiKey) return res.status(400).json({ error: 'No OpenAI API key configured — add one in Admin Settings first.' });
+    const b = req.body || {};
+    if (!b.productName && !b.description && !b.productTrackerId) return res.status(400).json({ error: 'productName or description is required' });
+    const knowledge = await getProductKnowledge(b.productTrackerId);
+    const lc = knowledge?.lean_canvas || {};
+    const knowledgeBlock = [
+      lc.problem ? `Problem: ${lc.problem}` : null,
+      lc.solution ? `Solution: ${lc.solution}` : null,
+      lc.uvp ? `Unique Value Proposition: ${lc.uvp}` : null,
+      knowledge?.formulation_text ? `Formulation Notes: ${knowledge.formulation_text}` : null,
+    ].filter(Boolean).join('\n');
+
+    const { status, body } = await postJson(OPENAI_CHAT_URL, {
+      model: AI_AD_COPY_MODEL,
+      messages: [
+        { role: 'system', content: 'You write short, punchy product-feature bullets for Facebook ad copy targeting the Filipino market. Respond with ONLY valid JSON, no markdown.' },
+        { role: 'user', content: `Product/Service Name: ${b.productName || knowledge?.name || '(not given)'}\nDescription: ${b.description || '(not given)'}` +
+            (knowledgeBlock ? `\n\nProduct Knowledge (from Progress Tracker Lean Canvas):\n${knowledgeBlock}` : '') +
+            `\n\nSuggest exactly 3 short key features (each under 8 words). Respond as JSON: {"features": [string, string, string]}` },
+      ],
+      temperature: 0.7,
+      response_format: { type: 'json_object' },
+    }, { Authorization: `Bearer ${apiKey}` });
+
+    if (status !== 200) return res.status(502).json({ error: body?.error?.message || `OpenAI API error (${status})` });
+    let parsed;
+    try { parsed = JSON.parse(body.choices?.[0]?.message?.content || '{}'); } catch { parsed = {}; }
+    res.json({ features: parsed.features || [] });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/ad-copy-generator/analyze-image', requireAuth, async (req, res) => {
+  try {
+    const apiKey = await getOpenAiKey();
+    if (!apiKey) return res.status(400).json({ error: 'No OpenAI API key configured — add one in Admin Settings first.' });
+    const dataUri = req.body?.image;
+    if (!dataUri || !String(dataUri).startsWith('data:image/')) return res.status(400).json({ error: 'A base64 image data URI is required' });
+
+    const { status, body } = await postJson(OPENAI_CHAT_URL, {
+      model: AI_AD_COPY_MODEL,
+      messages: [
+        { role: 'system', content: 'You look at product photos and suggest e-commerce listing details for the Filipino market. Respond with ONLY valid JSON, no markdown.' },
+        { role: 'user', content: [
+          { type: 'text', text: 'Suggest a product name, a short description, and 3 key features for this product photo. Respond as JSON: {"productName": string, "description": string, "features": [string, string, string]}' },
+          { type: 'image_url', image_url: { url: dataUri } },
+        ] },
+      ],
+      temperature: 0.5,
+      response_format: { type: 'json_object' },
+    }, { Authorization: `Bearer ${apiKey}` });
+
+    if (status !== 200) return res.status(502).json({ error: body?.error?.message || `OpenAI API error (${status})` });
+    let parsed;
+    try { parsed = JSON.parse(body.choices?.[0]?.message?.content || '{}'); } catch { parsed = {}; }
+    res.json(parsed);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── Pages ──
+app.get('/product-tracker',   requireAuth, (_req, res) => res.sendFile(path.join(__dirname, 'product-tracker.html')));
+app.get('/ad-copy-generator', requireAuth, (_req, res) => res.sendFile(path.join(__dirname, 'ad-copy-generator.html')));
 
 app.listen(PORT, () => console.log(`🐻 NDAP Dashboard at http://localhost:${PORT}`));
