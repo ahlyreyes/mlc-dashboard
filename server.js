@@ -124,6 +124,12 @@ async function initDB() {
     await pool.query(`CREATE TABLE IF NOT EXISTS mp_accounts (
       id SERIAL PRIMARY KEY, account_id TEXT UNIQUE NOT NULL, name TEXT NOT NULL, product_code TEXT NOT NULL,
       token_id INTEGER, page_id TEXT, created_at TIMESTAMP DEFAULT NOW() )`);
+    // Per-account campaign-name overrides — lets one ad account run 2+ products at once.
+    // A campaign whose name contains `keyword` is classified as `product_code` instead of
+    // the account's default product.
+    await pool.query(`CREATE TABLE IF NOT EXISTS mp_account_overrides (
+      id SERIAL PRIMARY KEY, account_id TEXT NOT NULL, keyword TEXT NOT NULL, product_code TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW() )`);
     await pool.query(`CREATE TABLE IF NOT EXISTS mp_history (
       id SERIAL PRIMARY KEY, action TEXT NOT NULL, detail TEXT, done_by TEXT, created_at TIMESTAMP DEFAULT NOW() )`);
 
@@ -256,19 +262,24 @@ async function loadDbUsers() {
 // Load Manage Product config and rebuild the live AD_ACCOUNTS list
 async function loadMPConfig() {
   try {
-    const [pr, tk, ac] = await Promise.all([
+    const [pr, tk, ac, ov] = await Promise.all([
       pool.query('SELECT code, label, keyword FROM mp_products ORDER BY created_at'),
       pool.query('SELECT id, name, token FROM mp_tokens ORDER BY id'),
       pool.query('SELECT id, account_id, name, product_code, token_id, page_id FROM mp_accounts ORDER BY created_at'),
+      pool.query('SELECT id, account_id, keyword, product_code FROM mp_account_overrides ORDER BY created_at'),
     ]);
     if (pr.rows.length) mpProducts = pr.rows;
-    mpTokens   = tk.rows;
-    mpAccounts = ac.rows;
+    mpTokens    = tk.rows;
+    mpAccounts  = ac.rows;
+    mpOverrides = ov.rows;
     if (mpAccounts.length) {
       const tokById = Object.fromEntries(mpTokens.map(t => [t.id, t.token]));
       AD_ACCOUNTS = mpAccounts.map(a => ({
         id: a.account_id, name: a.name, currency: 'PHP',
         product: a.product_code, token: tokById[a.token_id] || META_TOKEN_MAIN,
+        overrides: mpOverrides
+          .filter(o => o.account_id === a.account_id)
+          .map(o => ({ keyword: (o.keyword || '').toLowerCase(), product: o.product_code })),
       }));
     }
     // Config changed — clear Meta/sales caches so product/account reassignments
@@ -537,9 +548,20 @@ const SEED_PRODUCTS = [
 ];
 
 // Manage Product config loaded from DB (fallbacks keep the dashboard working if DB is empty)
-let mpProducts = [...SEED_PRODUCTS];
-let mpTokens   = [];
-let mpAccounts = [];
+let mpProducts  = [...SEED_PRODUCTS];
+let mpTokens    = [];
+let mpAccounts  = [];
+let mpOverrides = [];
+
+// Resolve which product a campaign belongs to: account default, unless an
+// override keyword matches the campaign name (case-insensitive substring).
+function resolveProduct(account, campaignName) {
+  const cn = (campaignName || '').toLowerCase();
+  for (const o of (account.overrides || [])) {
+    if (cn.includes(o.keyword)) return o.product;
+  }
+  return account.product || '';
+}
 
 // Currency conversion to PHP (update as needed)
 const FX_TO_PHP = { 'PHP': 1, 'HKD': 7.3, 'USD': 56, 'SGD': 42 };
@@ -822,7 +844,7 @@ async function fetchAccountInsights(account, date) {
 
       return {
         accountName: account.name,
-        product: account.product || '',
+        product: resolveProduct(account, r.campaign_name),
         adId: r.ad_id, adName: r.ad_name,
         campaignId: r.campaign_id, campaignName: r.campaign_name,
         spend: parseFloat(r.spend || 0) * fxRate,
@@ -892,13 +914,14 @@ async function fetchActiveAdsForAccount(account) {
       const res = await fetchJson(nextUrl);
       if (res.error) { console.warn(`⚠️  Active ads fetch error for ${account.name}: ${res.error.message}`); break; }
       for (const ad of (res.data || [])) {
+        const campaignName = ad.campaign ? ad.campaign.name : '';
         result.push({
           adId: ad.id,
           adName: ad.name,
           campaignId: ad.campaign_id,
-          campaignName: ad.campaign ? ad.campaign.name : '',
+          campaignName,
           accountName: account.name,
-          product: account.product || '',
+          product: resolveProduct(account, campaignName),
         });
       }
       nextUrl = res.paging && res.paging.next ? res.paging.next : null;
@@ -1032,6 +1055,7 @@ app.get('/api/mp/config', requireAdmin, (_req, res) => {
     products: mpProducts,
     tokens: mpTokens.map(t => ({ id: t.id, name: t.name, tokenMasked: maskToken(t.token) })),
     accounts: mpAccounts.map(a => ({ id: a.id, account_id: a.account_id, name: a.name, product_code: a.product_code, token_id: a.token_id, page_id: a.page_id })),
+    overrides: mpOverrides.map(o => ({ id: o.id, account_id: o.account_id, keyword: o.keyword, product_code: o.product_code })),
     pages: Object.entries(PANCAKE_PAGE_META).map(([id, m]) => ({ id, name: m.short })),
   });
 });
@@ -1133,6 +1157,39 @@ app.delete('/api/mp/accounts/:id', requireAdmin, async (req, res) => {
     const id = parseInt(req.params.id);
     await pool.query('DELETE FROM mp_accounts WHERE id=$1', [id]);
     await logMPHistory('Delete ad account', 'account#' + id, req.user.email);
+    await loadMPConfig(); res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Account overrides — one ad account, 2+ products: a campaign whose name contains
+// `keyword` is reassigned to `product_code` instead of the account's default product.
+app.post('/api/mp/overrides', requireAdmin, async (req, res) => {
+  try {
+    const account_id = normAcctId(req.body.account_id), keyword = (req.body.keyword || '').trim().toLowerCase();
+    const product_code = (req.body.product_code || '').trim().toUpperCase();
+    if (!account_id || !keyword || !product_code) return res.status(400).json({ error: 'Account, keyword, at product ay required.' });
+    if (!mpAccounts.some(a => a.account_id === account_id)) return res.status(400).json({ error: 'Walang account na may Ad ID na ito.' });
+    await pool.query('INSERT INTO mp_account_overrides (account_id,keyword,product_code) VALUES ($1,$2,$3)', [account_id, keyword, product_code]);
+    await logMPHistory('Add override', `${account_id}: "${keyword}" → ${product_code}`, req.user.email);
+    await loadMPConfig(); res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+app.put('/api/mp/overrides/:id', requireAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id), keyword = (req.body.keyword || '').trim().toLowerCase();
+    const product_code = (req.body.product_code || '').trim().toUpperCase();
+    if (!keyword || !product_code) return res.status(400).json({ error: 'Keyword at product ay required.' });
+    const r = await pool.query('UPDATE mp_account_overrides SET keyword=$1, product_code=$2 WHERE id=$3', [keyword, product_code, id]);
+    if (!r.rowCount) return res.status(404).json({ error: 'Override not found.' });
+    await logMPHistory('Edit override', `#${id}: "${keyword}" → ${product_code}`, req.user.email);
+    await loadMPConfig(); res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+app.delete('/api/mp/overrides/:id', requireAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    await pool.query('DELETE FROM mp_account_overrides WHERE id=$1', [id]);
+    await logMPHistory('Delete override', 'override#' + id, req.user.email);
     await loadMPConfig(); res.json({ success: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });

@@ -63,6 +63,7 @@ tr:last-child td { border-bottom: none; }
 
   <div class="tabs">
     <button class="tab active" data-v="accounts" onclick="switchTab('accounts')">Products &amp; Ad Accounts</button>
+    <button class="tab" data-v="overrides" onclick="switchTab('overrides')">Account Overrides</button>
     <button class="tab" data-v="tokens" onclick="switchTab('tokens')">Meta Tokens</button>
     <button class="tab" data-v="history" onclick="switchTab('history')">Action History</button>
   </div>
@@ -99,6 +100,26 @@ tr:last-child td { border-bottom: none; }
     </div>
   </div>
 
+  <!-- ACCOUNT OVERRIDES -->
+  <div id="v-overrides" class="view">
+    <div class="card">
+      <div class="card-title">➕ Add Override</div>
+      <div class="form-grid" style="grid-template-columns: 1.4fr 1.2fr 1fr auto">
+        <div class="field"><label>Ad Account</label><select id="o-account"></select></div>
+        <div class="field"><label>Campaign Keyword</label><input id="o-keyword" placeholder="e.g. canpro-relaunch"><div class="hint">Case-insensitive, tumutugma sa campaign name</div></div>
+        <div class="field"><label>Override Product</label><select id="o-product"></select></div>
+        <div class="field"><button class="btn" id="oAddBtn" onclick="addOverride()">Add Override</button></div>
+      </div>
+      <div class="msg" id="o-msg"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🔀 Account Overrides</div>
+      <div class="page-sub" style="margin-bottom:14px">Para sa account na may 2+ products: kapag ang pangalan ng campaign ay naglalaman ng keyword, ic-classify ito bilang override product sa halip na yung default na product ng buong account.</div>
+      <div id="overridesTable"><div class="state-msg">Loading...</div></div>
+    </div>
+  </div>
+
   <!-- TOKENS -->
   <div id="v-tokens" class="view">
     <div class="card">
@@ -127,8 +148,8 @@ tr:last-child td { border-bottom: none; }
 
 <script>
 const esc = s => String(s == null ? '' : s).replace(/"/g, '&quot;').replace(/'/g, "\\'");
-let CFG = { products: [], tokens: [], accounts: [], pages: [] };
-let editAcct = null, editTok = null, editProd = null;
+let CFG = { products: [], tokens: [], accounts: [], overrides: [], pages: [] };
+let editAcct = null, editTok = null, editProd = null, editOv = null;
 
 function switchTab(v) {
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.v === v));
@@ -152,6 +173,7 @@ async function loadConfig() {
     CFG = await (await fetch('/api/mp/config')).json();
     fillSelects();
     renderAccounts();
+    renderOverrides();
     renderTokens();
   } catch(e) {
     document.getElementById('accountsTable').innerHTML = `<div class="state-msg" style="color:#dc2626">${e.message}</div>`;
@@ -162,10 +184,14 @@ function fillSelects() {
   document.getElementById('a-product').innerHTML = CFG.products.map(p => `<option value="${p.code}">${p.label}</option>`).join('');
   document.getElementById('a-token').innerHTML = CFG.tokens.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
   document.getElementById('a-page').innerHTML = '<option value="">— None —</option>' + CFG.pages.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+  document.getElementById('o-account').innerHTML = CFG.accounts.map(a => `<option value="${a.account_id}">${a.name} (${a.account_id})</option>`).join('');
+  document.getElementById('o-product').innerHTML = CFG.products.map(p => `<option value="${p.code}">${p.label}</option>`).join('');
 }
 
 function tokName(id) { const t = CFG.tokens.find(t => t.id === id); return t ? t.name : '—'; }
 function pageName(id) { const p = CFG.pages.find(p => p.id === id); return p ? p.name : (id || '—'); }
+function prodLabel(code) { const p = CFG.products.find(p => p.code === code); return p ? p.label : code; }
+function acctName(account_id) { const a = CFG.accounts.find(a => a.account_id === account_id); return a ? a.name : account_id; }
 
 function renderAccounts() {
   let html = '<table><thead><tr><th>Account</th><th>Ad ID</th><th>Token</th><th>Page</th><th style="text-align:right">Action</th></tr></thead><tbody>';
@@ -229,6 +255,51 @@ function renderTokens() {
   }
   html += '</tbody></table>';
   document.getElementById('tokensTable').innerHTML = html;
+}
+
+function renderOverrides() {
+  if (!CFG.overrides.length) { document.getElementById('overridesTable').innerHTML = '<div class="state-msg">Wala pang override. Gamitin ito kapag may 1 ad account na tumatakbo para sa 2+ products.</div>'; return; }
+  let html = '<table><thead><tr><th>Ad Account</th><th>Campaign Keyword</th><th>→ Product</th><th style="text-align:right">Action</th></tr></thead><tbody>';
+  for (const o of CFG.overrides) {
+    if (editOv === o.id) {
+      html += `<tr><td colspan="4">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <span class="pill">${esc(acctName(o.account_id))}</span>
+          <input class="edit-input" id="eo-keyword" value="${esc(o.keyword)}" placeholder="Campaign keyword" style="max-width:220px">
+          <select class="edit-input" id="eo-product" style="max-width:150px">${CFG.products.map(p => `<option value="${p.code}" ${p.code === o.product_code ? 'selected' : ''}>${p.label}</option>`).join('')}</select>
+          <button class="btn-sm" onclick="saveOverride(${o.id})">Save</button>
+          <button class="btn-del" onclick="editOv=null;renderOverrides()">Cancel</button>
+        </div></td></tr>`;
+    } else {
+      html += `<tr>
+        <td style="font-weight:600">${acctName(o.account_id)}</td>
+        <td class="mono">${o.keyword}</td>
+        <td><span class="pill">${prodLabel(o.product_code)}</span></td>
+        <td style="text-align:right;white-space:nowrap"><button class="btn-edit" onclick="startEditOverride(${o.id})">Edit</button><button class="btn-del" onclick="delOverride(${o.id})">Remove</button></td>
+      </tr>`;
+    }
+  }
+  html += '</tbody></table>';
+  document.getElementById('overridesTable').innerHTML = html;
+}
+
+async function addOverride() {
+  const account_id = document.getElementById('o-account').value, keyword = document.getElementById('o-keyword').value.trim();
+  const product_code = document.getElementById('o-product').value;
+  if (!account_id || !keyword || !product_code) { msg('o-msg', 'Account, keyword, at product ay required.', false); return; }
+  try { await api('/api/mp/overrides', 'POST', { account_id, keyword, product_code }); msg('o-msg', '✓ Naidagdag ang override.', true);
+    document.getElementById('o-keyword').value = ''; loadConfig();
+  } catch(e) { msg('o-msg', e.message, false); }
+}
+function startEditOverride(id) { editOv = id; renderOverrides(); }
+async function saveOverride(id) {
+  const keyword = document.getElementById('eo-keyword').value.trim(), product_code = document.getElementById('eo-product').value;
+  try { await api('/api/mp/overrides/' + id, 'PUT', { keyword, product_code }); editOv = null; loadConfig(); }
+  catch(e) { msg('o-msg', e.message, false); }
+}
+async function delOverride(id) {
+  if (!confirm('Remove override?')) return;
+  try { await api('/api/mp/overrides/' + id, 'DELETE'); loadConfig(); } catch(e) { alert(e.message); }
 }
 
 // Products
