@@ -327,6 +327,7 @@ const PANCAKE_CSV_URLS = [
   'https://docs.google.com/spreadsheets/d/e/2PACX-1vS80NfIGrjxEXGi-KN4hxYh5GlMxlWPmxco7OchDT29n9nm_fCuyJyuL9auyXa2iAx7yBUv75aPDgs3/pub?output=csv', // June 2026
   'https://docs.google.com/spreadsheets/d/e/2PACX-1vR6FNkNs9U2PaZ6w_J68GAhwDsP2K3AQGJ9OaVWFczNLS-4WqRRZ6XS7UqIn0wId30jFn97Hq5N4Mdh/pub?output=csv', // July 2026
   'https://docs.google.com/spreadsheets/d/e/2PACX-1vQFVbzwEmGv7f-YgXhwzjSG3ElzlFetYN8dCr2r53hrBZ0xfMHAloxkDXCUQ8Zfh212s0mhCY7Q4SjQ/pub?output=csv', // August 2026
+  'https://docs.google.com/spreadsheets/d/e/2PACX-1vRLF19rMm5u0IUkiJHDB9jZBWoEiaLJOu5mZrDcZuhztXkYgyiM7dJPSDg8BDiYWYq9UyMLGoujZd5S/pub?output=csv', // September 2026
 ];
 
 // MLC mainfile — source for AOV & CVR FSA report (John Hovey Cabatic, Lex Dela Cruz)
@@ -1454,8 +1455,12 @@ app.get('/api/ndap', requireAuth, async (req, res) => {
         totalDeliveredValue: tDelVal, totalRtsValue: tRtsVal, overallDelRate };
     });
 
-    // Only show ads that actually spent in the selected date range
-    const activeCampaigns = campaigns.filter(c => c.totalSpend > 0);
+    // Only show ads that (a) actually spent in the selected date range AND
+    // (b) are still currently active in Meta — an ad turned OFF drops off the
+    // dashboard immediately (within the 30-min active-ads cache TTL) even if
+    // it had spend earlier in the range.
+    const currentlyActiveIds = new Set(activeAdsList.map(a => a.adId));
+    const activeCampaigns = campaigns.filter(c => c.totalSpend > 0 && currentlyActiveIds.has(c.adId));
 
     // Mirror the manual NDAP order; unknown/new ads go to the end
     const AD_SORT_ORDER = [
