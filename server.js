@@ -1356,6 +1356,20 @@ app.get('/api/ndap', requireAuth, async (req, res) => {
     ]);
     const { salesByDate, clearSightByDate, allSalesByDate, productSalesByDate } = pancakeData;
 
+    // Lifetime delivered/orders per ad, summed across EVERY month in salesByDate — not just
+    // the currently selected from/to range. salesByDate already holds every month configured
+    // in PANCAKE_CSV_URLS (fetchPancakeSalesByDate doesn't date-filter at the source; only the
+    // `dates` loop below does), so this costs nothing extra. Used only for the delivery-rate
+    // badge; every other figure (ROAS, spend, etc.) still respects the selected date range.
+    const lifetimeDelivery = {};
+    for (const dayRows of Object.values(salesByDate)) {
+      for (const [adId, s] of Object.entries(dayRows)) {
+        if (!lifetimeDelivery[adId]) lifetimeDelivery[adId] = { delivered: 0, orders: 0 };
+        lifetimeDelivery[adId].delivered += s.delivered || 0;
+        lifetimeDelivery[adId].orders    += s.orders || 0;
+      }
+    }
+
     // Build adMap keyed by adId — all 14 active ads pre-seeded so none get dropped
     const adMap = {};
     for (const ad of activeAdsList) {
@@ -1451,10 +1465,12 @@ app.get('/api/ndap', requireAuth, async (req, res) => {
         if ((d.frequency || 0) > maxFreq) maxFreq = d.frequency;
       }
       const overallDelRate = (tDel + tRts) > 0 ? (tDel / (tDel + tRts) * 100) : null;
+      const lt = lifetimeDelivery[c.adId] || { delivered: 0, orders: 0 };
       return { ...c, totalSales: ts, totalSpend: tsp, totalOrders: to, maxFrequency: maxFreq,
         totalRoas: tsp > 0 ? ts / tsp : 0,
         totalDelivered: tDel, totalRts: tRts, totalShipped: tShip,
-        totalDeliveredValue: tDelVal, totalRtsValue: tRtsVal, overallDelRate };
+        totalDeliveredValue: tDelVal, totalRtsValue: tRtsVal, overallDelRate,
+        lifetimeDelivered: lt.delivered, lifetimeOrders: lt.orders };
     });
 
     // Only show ads that (a) actually spent in the selected date range AND

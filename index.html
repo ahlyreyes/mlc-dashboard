@@ -1919,13 +1919,15 @@ function firstRunPillHtml(c) {
 }
 
 // Hoverable delivery-rate badge for the campaign meta row. Delivered ÷ Total Orders for this
-// campaign — deliberately NOT the Logistics page's delivered/(delivered+RTS) "resolved" rate.
-// c.totalOrders (server.js's fetchPancakeSalesByDate) already excludes cancelled rows before
-// counting, and a deleted Pancake order never has a row in the sheet to begin with — so no
-// extra filtering is needed here, totalOrders is already "valid orders only".
+// ad, LIFETIME — not scoped to whatever date range is currently selected on the page (that's
+// what c.lifetimeDelivered/lifetimeOrders are, server.js's /api/ndap; c.totalDelivered/
+// totalOrders stay range-scoped for everything else). Deliberately NOT the Logistics page's
+// delivered/(delivered+RTS) "resolved" rate either. The orders count already excludes
+// cancelled rows (fetchPancakeSalesByDate's isCancelled guard), and a deleted Pancake order
+// never has a row in the sheet to begin with — so no extra filtering is needed here.
 function deliveryRateBadgeHtml(c) {
-  const delivered   = c.totalDelivered || 0;
-  const totalOrders = c.totalOrders || 0;
+  const delivered   = c.lifetimeDelivered || 0;
+  const totalOrders = c.lifetimeOrders || 0;
   if (totalOrders === 0) return '';
   const rate = delivered / totalOrders * 100;
   return `<div class="ad-dr-badge">
