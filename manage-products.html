@@ -50,6 +50,13 @@ tr:last-child td { border-bottom: none; }
 .view { display: none; } .view.active { display: block; }
 .state-msg { text-align: center; padding: 24px; color: #94A3B8; font-size: 0.85rem; }
 .hint { font-size: 0.68rem; color: #94A3B8; margin-top: 4px; }
+.sop-steps { margin: 0 0 14px 0; padding-left: 20px; }
+.sop-steps li { font-size: 0.82rem; color: #0F172A; line-height: 1.7; margin-bottom: 4px; }
+.sop-steps b { color: #1D4ED8; }
+.sop-field { font-family: monospace; background: #F1F5F9; padding: 1px 6px; border-radius: 5px; font-size: 0.78rem; color: #1E40AF; }
+.sop-example { background: #F8FAFF; border: 1px solid #DBEAFE; border-radius: 10px; padding: 12px 14px; font-size: 0.8rem; color: #334155; margin-bottom: 4px; line-height: 1.6; }
+.sop-warn { background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 10px; padding: 10px 14px; font-size: 0.78rem; color: #92400E; margin-top: 10px; }
+.sop-prereq { font-size: 0.78rem; color: #64748B; margin-bottom: 10px; font-style: italic; }
 </style>
 </head>
 <body>
@@ -66,6 +73,7 @@ tr:last-child td { border-bottom: none; }
     <button class="tab" data-v="overrides" onclick="switchTab('overrides')">Account Overrides</button>
     <button class="tab" data-v="tokens" onclick="switchTab('tokens')">Meta Tokens</button>
     <button class="tab" data-v="history" onclick="switchTab('history')">Action History</button>
+    <button class="tab" data-v="guide" onclick="switchTab('guide')">📖 Guide / SOP</button>
   </div>
 
   <!-- PRODUCTS & ACCOUNTS -->
@@ -142,6 +150,76 @@ tr:last-child td { border-bottom: none; }
     <div class="card">
       <div class="card-title">🕑 Action History</div>
       <div id="historyTable"><div class="state-msg">Loading...</div></div>
+    </div>
+  </div>
+
+  <!-- GUIDE / SOP -->
+  <div id="v-guide" class="view">
+    <div class="card">
+      <div class="card-title">➕ Paano Mag-add ng Bagong Product</div>
+      <ol class="sop-steps">
+        <li>Pumunta sa tab na <b>"Products & Ad Accounts"</b>.</li>
+        <li>Sa "Add Product" form, punan ang tatlong field:
+          <ul style="margin-top:4px">
+            <li><span class="sop-field">Product Code</span> — internal code, CAPS at walang space (hal. <code>CANPRO</code>). Ito ang gagamitin sa likod ng system, hindi ito nagbabago.</li>
+            <li><span class="sop-field">Display Name</span> — pangalan na makikita sa reports at dashboard (hal. "CanPro").</li>
+            <li><span class="sop-field">POS Keyword</span> — salitang hahanapin sa sales sheet (Pancake CSV) para malaman kung aling order ang kabilang sa product na ito (hal. "canpro"). Case-insensitive, basta tumutugma sa kahit saang bahagi ng row.</li>
+          </ul>
+        </li>
+        <li>I-click ang <b>"Add Product"</b>. Awtomatiko itong lalabas sa dropdown pag mag-a-add ka na ng Ad Account.</li>
+      </ol>
+    </div>
+
+    <div class="card">
+      <div class="card-title">➕ Paano Mag-add ng Bagong Ad Account</div>
+      <div class="sop-prereq">Prerequisite: dapat mayroon nang Product (sa taas) at Meta Token (sa ibaba) bago ito, dahil pinipili mo ang mga ito sa form.</div>
+      <ol class="sop-steps">
+        <li>Pumunta sa tab na <b>"Products & Ad Accounts"</b>.</li>
+        <li>Sa "Add Ad Account" form, punan:
+          <ul style="margin-top:4px">
+            <li><span class="sop-field">Ad Account ID</span> — yung Account ID mula sa Meta Ads Manager (kunin sa Business Settings → Ad Accounts). Awtomatikong idadagdag ang "act_" prefix kung wala pa.</li>
+            <li><span class="sop-field">Account Name</span> — madaling makilalang pangalan (hal. "CanPro Main").</li>
+            <li><span class="sop-field">Product</span> — piliin ang DEFAULT na product para sa account na ito. (Kung may 2+ products ang isang account, i-set muna dito ang mas madalas na product, tapos gamitin ang <b>Account Overrides</b> para sa iba — tingnan sa ibaba.)</li>
+            <li><span class="sop-field">Meta Token</span> — piliin kung anong access token ang gagamitin para kumuha ng data mula kay Meta para sa account na ito.</li>
+            <li><span class="sop-field">Assign Page</span> — (optional) kung may kaugnay na Facebook Page ang account, para sa pag-match ng Pancake inquiries.</li>
+          </ul>
+        </li>
+        <li>I-click ang <b>"Add Account"</b>.</li>
+      </ol>
+      <div class="sop-warn">⏱️ May cache ang app (hanggang 30 minuto) — hindi agad-agad makikita ang bagong account sa NDAP dashboard. Kung gusto mo agad, i-flush ang cache via <code>/api/flush-cache</code>.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🔑 Paano Mag-add ng Bagong Meta Token</div>
+      <ol class="sop-steps">
+        <li>Pumunta sa tab na <b>"Meta Tokens"</b>.</li>
+        <li>Ilagay ang <span class="sop-field">Token Name</span> (para makilala mo kung kanino ito, hal. "Token 3 — Ejay") at ang <span class="sop-field">Access Token</span> mismo (galing sa Meta Graph API Explorer o sa advertiser).</li>
+        <li>I-click ang <b>"Add Token"</b>.</li>
+      </ol>
+      <div class="sop-warn">🔒 Ang mga token na naka-save dito ay masked (hindi buong ipinapakita) pagkatapos i-save — huwag i-share ang buong access token sa kahit kanino maliban sa mga taong kailangang mag-manage ng ad accounts.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🔀 Kailan Gagamitin ang Account Overrides (1 Ad Account, 2+ Products)</div>
+      <div class="sop-example">Kadalasan, isang ad account = isang product lang. Pero minsan may isang account na tumatakbo para sa <b>DALAWANG products nang sabay</b> — halimbawa, may hiwalay na campaign sa loob ng iisang account para sa bawat product. Dito papasok ang Account Overrides: kapag ang pangalan ng isang campaign ay may tumutugmang keyword, ic-cclassify ito bilang ibang product sa halip na yung default ng buong account.</div>
+      <ol class="sop-steps">
+        <li>Pumunta sa tab na <b>"Account Overrides"</b>.</li>
+        <li>Piliin ang <span class="sop-field">Ad Account</span> na apektado.</li>
+        <li>Ilagay ang <span class="sop-field">Campaign Keyword</span> — dapat itong tumutugma sa bahagi ng pangalan ng campaign sa Meta (hindi case-sensitive, substring match lang).</li>
+        <li>Piliin ang <span class="sop-field">Override Product</span> — ito ang product na ipapalit sa mga campaign na tumugma sa keyword.</li>
+        <li>I-click ang <b>"Add Override"</b>.</li>
+      </ol>
+      <div class="sop-example"><b>Halimbawa:</b> ang account na "Clear Sight 1" ay may default na product na CLEAR SIGHT. Pero may campaign doon na pinangalanang "Sore Eyes Relaunch" na dapat sa ibang product (FIXORA). Mag-a-add ka ng override: Ad Account = <i>Clear Sight 1</i>, Keyword = <i>"sore eyes"</i>, Override Product = <i>FIXORA</i>. Kahit isang account lang ito, hahati ang datos sa dalawang tamang product sa NDAP.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">✏️ Pag-edit at Pagtanggal</div>
+      <ol class="sop-steps">
+        <li>Bawat listahan (Products, Ad Accounts, Overrides, Tokens) ay may <b>Edit</b> at <b>Remove</b> buttons sa kanang bahagi ng bawat row.</li>
+        <li>Hindi puwedeng burahin ang isang <b>Product</b> kung may mga Ad Account pa itong ginagamit — alisin/i-reassign muna ang mga account bago burahin ang product.</li>
+        <li>Hindi puwedeng burahin ang isang <b>Meta Token</b> kung may mga Ad Account pa itong ginagamit — sa halip, i-edit na lang ang account para gumamit ng ibang token.</li>
+        <li>Lahat ng ginawang pagbabago ay naka-log sa <b>Action History</b> tab — kasama kung sino at kailan ito ginawa.</li>
+      </ol>
     </div>
   </div>
 </div>
