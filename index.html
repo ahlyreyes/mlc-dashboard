@@ -1195,7 +1195,7 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
       <input type="date" id="fromDate">
       <span class="topbar-label">To</span>
       <input type="date" id="toDate">
-      <button class="btn-refresh" id="refreshBtn" onclick="loadData()">Apply</button>
+      <button class="btn-refresh" id="refreshBtn" onclick="applyDateRange()">Apply</button>
       <select class="ctrl-sort" id="sortSelect" onchange="sortBy=this.value;loadData()">
         <option value="default">Sort: Default</option>
         <option value="roas">ROAS ↓</option>
@@ -1708,18 +1708,28 @@ function bizTodayMinus(n)  { const d = new Date(Date.now() + BIZ_OFFSET_MS); d.s
 document.getElementById('toDate').value   = bizToday();
 document.getElementById('fromDate').value = bizTodayMinus(2);
 
-// Auto-refresh + close panel when either date changes (if both are set)
+// Only auto-correct From/To order on change — do NOT close the panel or reload here.
+// Reloading per-field meant picking "From" fired a request with the still-unedited "To"
+// value and closed the panel before "To" could even be picked. Loading now happens only
+// on explicit Apply (applyDateRange), same as the Daily Summary page's pattern.
 function onDateChange() {
   const f = document.getElementById('fromDate').value;
   const t = document.getElementById('toDate').value;
   if (!f || !t) return;
   if (f > t) { document.getElementById('toDate').value = f; }
+}
+document.getElementById('fromDate').addEventListener('change', onDateChange);
+document.getElementById('toDate').addEventListener('change', onDateChange);
+
+// Apply button: reload whichever view is currently active — the "All" view (loadData)
+// or, if a product tab is open, that tab specifically (loadProductTab). Previously the
+// button always called loadData(), which reset currentProductTab to null and silently
+// kicked the user back to the All view even while they were on a product tab.
+function applyDateRange() {
   closePanels();
   if (currentProductTab) loadProductTab(currentProductTab);
   else loadData();
 }
-document.getElementById('fromDate').addEventListener('change', onDateChange);
-document.getElementById('toDate').addEventListener('change', onDateChange);
 
 // CEO is default tab — hide ndap controls on load
 document.querySelectorAll('.ndap-ctrl').forEach(c => { c.style.display = 'none'; });
@@ -2018,16 +2028,16 @@ function renderDayCardsNdap(c, dates) {
       <div class="day-card-header"><span>${dayLabel(d)}</span>${roasBadgeBtn(roas, spend, safeId, safeName, safeAcct, ap.text, d)}</div>
       <div class="day-card-body">
         <div class="day-row"><span class="day-row-label">ROAS</span><span class="day-row-val ${rCls}">${spend>0?FMT2(roas):'—'}</span></div>
-        <div class="day-row"><span class="day-row-label">Gross Sales</span><span class="day-row-val" style="color:#2563eb;font-weight:700">${dd&&dd.grossSales>0?PHP(dd.grossSales):'—'}</span></div>
-        <div class="day-row"><span class="day-row-label">CVR</span><span class="day-row-val">${dd&&dd.messagesStarted>0?cvr.toFixed(1)+'%':'—'}</span></div>
         <div class="day-row"><span class="day-row-label">AOV</span><span class="day-row-val">${dd&&dd.orders>0?PHP(aov):'—'}</span></div>
+        <div class="day-row"><span class="day-row-label">CVR</span><span class="day-row-val">${dd&&dd.messagesStarted>0?cvr.toFixed(1)+'%':'—'}</span></div>
         <div class="day-row"><span class="day-row-label">CPM</span><span class="day-row-val">${spend>0?PHP(dd.cpm):'—'}</span></div>
-        <div class="day-row"><span class="day-row-label">Frequency</span><span class="day-row-val">${dd&&dd.frequency>0?FMT2(dd.frequency):'—'}</span></div>
-        <div class="day-row"><span class="day-row-label">Cost/1K Impr</span><span class="day-row-val">${dd&&dd.impressions>0?PHP(dd.spend/dd.impressions*1000):'—'}</span></div>
-        <div class="day-row"><span class="day-row-label">Declared Budget</span><span class="day-row-val">${PHP(budget)}</span></div>
+        <div class="day-row"><span class="day-row-label">Gross Sales</span><span class="day-row-val" style="color:#2563eb;font-weight:700">${dd&&dd.grossSales>0?PHP(dd.grossSales):'—'}</span></div>
         <div class="day-row"><span class="day-row-label">Ad Spend</span><span class="day-row-val">${spend>0?PHP(spend):'—'}</span></div>
+        <div class="day-row"><span class="day-row-label">Declared Budget</span><span class="day-row-val">${PHP(budget)}</span></div>
         <div class="day-row"><span class="day-row-label">Inquiries</span><span class="day-row-val">${dd&&dd.messagesStarted>0?NUM(dd.messagesStarted):'—'}</span></div>
         <div class="day-row"><span class="day-row-label">Orders</span><span class="day-row-val">${dd?dd.orders:'—'}</span></div>
+        <div class="day-row"><span class="day-row-label">Frequency</span><span class="day-row-val">${dd&&dd.frequency>0?FMT2(dd.frequency):'—'}</span></div>
+        <div class="day-row"><span class="day-row-label">Cost/1K Impr</span><span class="day-row-val">${dd&&dd.impressions>0?PHP(dd.spend/dd.impressions*1000):'—'}</span></div>
         <div class="day-row"><span class="day-row-label">Delivery Rate</span><span class="day-row-val">${dd&&dd.delRate!=null?dd.delRate.toFixed(1)+'%':'—'}</span></div>
       </div>
       <div class="day-card-footer">
@@ -2051,14 +2061,14 @@ function renderGroupDayCards(groupData, dates) {
       <div class="day-card-header"><span>${dayLabel(d)}</span>${roasBadge(roas, spend)}</div>
       <div class="day-card-body">
         <div class="day-row"><span class="day-row-label">ROAS</span><span class="day-row-val ${rCls}">${spend>0?FMT2(roas):'—'}</span></div>
-        <div class="day-row"><span class="day-row-label">CVR</span><span class="day-row-val">${dd&&dd.messagesStarted>0?cvr.toFixed(1)+'%':'—'}</span></div>
         <div class="day-row"><span class="day-row-label">AOV</span><span class="day-row-val">${dd&&dd.orders>0?PHP(aov):'—'}</span></div>
+        <div class="day-row"><span class="day-row-label">CVR</span><span class="day-row-val">${dd&&dd.messagesStarted>0?cvr.toFixed(1)+'%':'—'}</span></div>
         <div class="day-row"><span class="day-row-label">CPM</span><span class="day-row-val">${spend>0?PHP(dd.cpm):'—'}</span></div>
-        <div class="day-row"><span class="day-row-label">Frequency</span><span class="day-row-val">${dd&&dd.frequency>0?FMT2(dd.frequency):'—'}</span></div>
-        <div class="day-row"><span class="day-row-label">Cost/1K Impr</span><span class="day-row-val">${dd&&dd.impressions>0?PHP(dd.spend/dd.impressions*1000):'—'}</span></div>
         <div class="day-row"><span class="day-row-label">Declared Budget</span><span class="day-row-val">${PHP(groupData.budget)}</span></div>
         <div class="day-row"><span class="day-row-label">Inquiries</span><span class="day-row-val">${dd&&dd.messagesStarted>0?NUM(dd.messagesStarted):'—'}</span></div>
         <div class="day-row"><span class="day-row-label">Orders</span><span class="day-row-val">${dd?dd.orders:'—'}</span></div>
+        <div class="day-row"><span class="day-row-label">Frequency</span><span class="day-row-val">${dd&&dd.frequency>0?FMT2(dd.frequency):'—'}</span></div>
+        <div class="day-row"><span class="day-row-label">Cost/1K Impr</span><span class="day-row-val">${dd&&dd.impressions>0?PHP(dd.spend/dd.impressions*1000):'—'}</span></div>
         <div class="day-row"><span class="day-row-label">Delivery Rate</span><span class="day-row-val">${dd&&dd.delRate!=null?dd.delRate.toFixed(1)+'%':'—'}</span></div>
       </div>
     </div>`;
@@ -2092,16 +2102,16 @@ function renderDayCardsProduct(c, dates, isMultiAd) {
       </div>
       <div class="day-card-body">
         <div class="day-row"><span class="day-row-label">ROAS</span><span class="day-row-val ${rCls}">${spend>0?FMT2(roas):'—'}</span></div>
-        <div class="day-row"><span class="day-row-label">Gross Sales</span><span class="day-row-val" style="color:#2563eb;font-weight:700">${dd&&dd.grossSales>0?PHP(dd.grossSales):'—'}</span></div>
-        <div class="day-row"><span class="day-row-label">CVR</span><span class="day-row-val">${dd&&dd.messagesStarted>0?cvr.toFixed(1)+'%':'—'}</span></div>
         <div class="day-row"><span class="day-row-label">AOV</span><span class="day-row-val">${dd&&dd.orders>0?PHP(aov):'—'}</span></div>
+        <div class="day-row"><span class="day-row-label">CVR</span><span class="day-row-val">${dd&&dd.messagesStarted>0?cvr.toFixed(1)+'%':'—'}</span></div>
         <div class="day-row"><span class="day-row-label">CPM</span><span class="day-row-val">${spend>0?PHP(dd.cpm):'—'}</span></div>
-        <div class="day-row"><span class="day-row-label">Frequency</span><span class="day-row-val">${dd&&dd.frequency>0?FMT2(dd.frequency):'—'}</span></div>
-        <div class="day-row"><span class="day-row-label">Cost/1K Impr</span><span class="day-row-val">${dd&&dd.impressions>0?PHP(dd.spend/dd.impressions*1000):'—'}</span></div>
-        ${!isMultiAd?`<div class="day-row"><span class="day-row-label">Declared Budget</span><span class="day-row-val">${PHP(budget)}</span></div>`:''}
+        <div class="day-row"><span class="day-row-label">Gross Sales</span><span class="day-row-val" style="color:#2563eb;font-weight:700">${dd&&dd.grossSales>0?PHP(dd.grossSales):'—'}</span></div>
         <div class="day-row"><span class="day-row-label">Ad Spend</span><span class="day-row-val">${spend>0?PHP(spend):'—'}</span></div>
+        ${!isMultiAd?`<div class="day-row"><span class="day-row-label">Declared Budget</span><span class="day-row-val">${PHP(budget)}</span></div>`:''}
         <div class="day-row"><span class="day-row-label">Inquiries</span><span class="day-row-val">${dd&&dd.messagesStarted>0?NUM(dd.messagesStarted):'—'}</span></div>
         <div class="day-row"><span class="day-row-label">Orders</span><span class="day-row-val">${dd?dd.orders:'—'}</span></div>
+        <div class="day-row"><span class="day-row-label">Frequency</span><span class="day-row-val">${dd&&dd.frequency>0?FMT2(dd.frequency):'—'}</span></div>
+        <div class="day-row"><span class="day-row-label">Cost/1K Impr</span><span class="day-row-val">${dd&&dd.impressions>0?PHP(dd.spend/dd.impressions*1000):'—'}</span></div>
         <div class="day-row"><span class="day-row-label">Delivery Rate</span><span class="day-row-val">${dd&&dd.delRate!=null?dd.delRate.toFixed(1)+'%':'—'}</span></div>
       </div>
       <div class="day-card-footer">
