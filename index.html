@@ -970,6 +970,14 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
   color: var(--muted);
   margin-top: 3px;
 }
+.camp-meta-line {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 3px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
 .camp-r-row {
   display: flex;
   gap: 18px;
@@ -1867,6 +1875,31 @@ function roasColorClass(roas, spend) {
   return 'val-kill';
 }
 
+// Same 90/75 thresholds as logistics.html's delClass, reused here for campaign-level
+// (whole loaded date range) delivery rate.
+function deliveryRateClass(r) {
+  if (r == null) return 'val-muted';
+  if (r >= 90) return 'val-scale';
+  if (r >= 75) return 'val-stay';
+  return 'val-kill';
+}
+
+// Campaign-card summary line: overall Delivery Rate for the loaded range, plus how long
+// the ad has been running (Meta's created_time — real launch date, not a spend-based guess).
+function campaignMetaLine(c) {
+  const bits = [];
+  if (c.overallDelRate != null) {
+    const total = (c.totalDelivered || 0) + (c.totalRts || 0);
+    bits.push(`<span class="${deliveryRateClass(c.overallDelRate)}" style="font-weight:700">${c.overallDelRate.toFixed(1)}%</span> delivery rate (${c.totalDelivered || 0}/${total})`);
+  }
+  if (c.createdTime) {
+    const created = new Date(c.createdTime);
+    const days = Math.max(0, Math.round((Date.now() - created) / 86400000));
+    bits.push(`Running since ${created.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })} (${days}d)`);
+  }
+  return bits.length ? `<div class="camp-meta-line">${bits.join(' &nbsp;·&nbsp; ')}</div>` : '';
+}
+
 function overallRoasClass(roas) {
   if (roas >= 3.0) return 'roas-scale';
   if (roas >= 2.7) return 'roas-stay';
@@ -2070,6 +2103,7 @@ function renderAdCardNdap(c, dates, showCampaign) {
           <span class="camp-ad-id" style="margin-bottom:0">${c.adId}</span>
         </div>
         <div class="camp-budget-day">Budget/day: ${PHP(c.budget)}</div>
+        ${campaignMetaLine(c)}
         ${adPacingBar(c, dates)}
       </div>
     </div>
@@ -2095,6 +2129,7 @@ function renderAdCardProduct(c, dates, isMultiAd) {
           <span class="camp-ad-id" style="margin-bottom:0">${c.adId}</span>
         </div>
         <div class="camp-budget-day">Budget/day: ${PHP(c.budget)}</div>
+        ${campaignMetaLine(c)}
         ${adPacingBar(c, dates)}
       </div>
     </div>
