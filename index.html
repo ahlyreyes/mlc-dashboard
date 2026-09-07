@@ -1103,6 +1103,13 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
 .ceo-rank-table th { text-align:left; color:var(--muted2); font-size:10px; text-transform:uppercase; letter-spacing:0.6px; padding:8px 14px; border-bottom:1px solid var(--border); font-weight:600; }
 .ceo-rank-table td { padding:9px 14px; border-bottom:1px solid #F8FAFC; }
 .ceo-rank-table tr:last-child td { border-bottom:none; }
+/* ── CEO RANGE TOGGLE (Today / WTD / MTD) ── */
+.ceo-range-toggle { display:inline-flex; background:#EEF2F6; border-radius:8px; padding:3px; gap:2px; }
+.ceo-range-btn { border:none; background:transparent; padding:5px 12px; border-radius:6px; font-size:11px; font-weight:600; color:var(--muted); cursor:pointer; font-family:'Inter',system-ui,sans-serif; }
+.ceo-range-btn.active { background:#fff; color:var(--amber-dark); box-shadow:0 1px 4px rgba(15,23,42,0.10); }
+/* ── PER-PRODUCT PACING ROWS ── */
+.ceo-prod-pacing-row { display:flex; align-items:center; gap:12px; padding:10px 14px; border-bottom:1px solid #F8FAFC; }
+.ceo-prod-pacing-row:last-child { border-bottom:none; }
 /* ── PACING BAR (per ad) ── */
 .ad-pacing-bar-wrap { height:3px; background:#E2E8F0; border-radius:2px; margin-top:4px; max-width:100px; }
 .ad-pacing-bar-fill { height:100%; border-radius:2px; }
@@ -1217,9 +1224,16 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
     <!-- CEO SUMMARY TAB -->
     <div id="tab-ceo" class="tab-content active">
       <div class="page-wrap">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-          <div style="font-size:13px;font-weight:700;color:var(--text)">Overview — Today</div>
-          <span class="last-updated-txt" id="ceoLastUpdated"></span>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+          <div style="font-size:13px;font-weight:700;color:var(--text)" id="ceo-range-title">Overview — Today</div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <div class="ceo-range-toggle">
+              <button class="ceo-range-btn active" data-mode="today" onclick="setCeoRangeMode('today')">Today</button>
+              <button class="ceo-range-btn" data-mode="wtd" onclick="setCeoRangeMode('wtd')">Week-to-date</button>
+              <button class="ceo-range-btn" data-mode="mtd" onclick="setCeoRangeMode('mtd')">Month-to-date</button>
+            </div>
+            <span class="last-updated-txt" id="ceoLastUpdated"></span>
+          </div>
         </div>
         <div id="ceoKpis" style="display:none">
           <div class="ceo-kpi-row">
@@ -1252,7 +1266,7 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
           </div>
           <div class="ceo-rank-wrap" style="margin-bottom:16px">
             <div class="ceo-rank-title" style="display:flex;justify-content:space-between;align-items:center">
-              <span>Today's Ad Spend Pacing</span>
+              <span id="ceo-pacing-title">Today's Ad Spend Pacing</span>
               <span style="font-size:11px;font-weight:600" id="ceo-pacing-pct">—</span>
             </div>
             <div style="padding:14px 16px">
@@ -1264,6 +1278,14 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
                 <div class="pacing-bar-fill" id="ceo-pacing-bar" style="width:0%;background:#D97706;position:absolute;top:0;left:0;height:100%;border-radius:4px"></div>
               </div>
             </div>
+          </div>
+          <div class="ceo-rank-wrap" style="margin-bottom:16px">
+            <div class="ceo-rank-title" id="ceo-prod-pacing-title">Per-Product Budget Pacing</div>
+            <div id="ceoProductPacing"></div>
+          </div>
+          <div class="ceo-rank-wrap" style="margin-bottom:16px">
+            <div class="ceo-rank-title">Delivery Performance — Per Product</div>
+            <div id="ceoProductDelivery"></div>
           </div>
           <div class="ceo-rank-wrap">
             <div class="ceo-rank-title">Product Performance</div>
@@ -2668,15 +2690,58 @@ function renderChecklist({ dates, campaigns }, endDate, savedBudgets = {}) {
 let sortBy = 'default';
 
 // ── CEO SUMMARY ──
+let ceoRangeMode = 'today'; // 'today' | 'wtd' | 'mtd'
+
+// Primary range for the selected mode, always ending on bizToday().
+function ceoRangeDates(mode, endStr) {
+  const end = new Date(endStr + 'T00:00:00Z');
+  let start;
+  if (mode === 'wtd') {
+    const dow = end.getUTCDay(); // 0=Sun..6=Sat, week starts Monday
+    start = new Date(end); start.setUTCDate(start.getUTCDate() - (dow === 0 ? 6 : dow - 1));
+  } else if (mode === 'mtd') {
+    start = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), 1));
+  } else {
+    start = new Date(end);
+  }
+  const fmt = d => d.toISOString().split('T')[0];
+  return { from: fmt(start), to: fmt(end) };
+}
+
+// Comparable prior period of the same length, immediately preceding the primary range —
+// "today" gets a 1-day range = yesterday (matches the old behavior exactly); WTD/MTD get
+// a trailing window of equal length rather than a calendar-aligned prior week/month, so the
+// comparison is always a fair like-for-like span even mid-week or mid-month.
+function ceoPrevRangeDates(range) {
+  const from = new Date(range.from + 'T00:00:00Z');
+  const to   = new Date(range.to   + 'T00:00:00Z');
+  const spanDays = Math.round((to - from) / 86400000) + 1;
+  const prevTo   = new Date(from); prevTo.setUTCDate(prevTo.getUTCDate() - 1);
+  const prevFrom = new Date(prevTo); prevFrom.setUTCDate(prevFrom.getUTCDate() - (spanDays - 1));
+  const fmt = d => d.toISOString().split('T')[0];
+  return { from: fmt(prevFrom), to: fmt(prevTo) };
+}
+
+function setCeoRangeMode(mode) {
+  ceoRangeMode = mode;
+  document.querySelectorAll('.ceo-range-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+  loadCEO();
+}
+
 async function loadCEO() {
-  const today = bizToday();
+  const range     = ceoRangeDates(ceoRangeMode, bizToday());
+  const prevRange = ceoPrevRangeDates(range);
   document.getElementById('loading-ceo').style.display = 'block';
   document.getElementById('ceoKpis').style.display = 'none';
   try {
-    const r = await fetch(`/api/ndap?endDate=${today}&days=2`);
-    const data = await r.json();
+    const [r, rPrev] = await Promise.all([
+      fetch(buildNdapUrl(range.from, range.to)),
+      fetch(buildNdapUrl(prevRange.from, prevRange.to)),
+    ]);
+    const data     = await r.json();
+    const dataPrev = await rPrev.json();
     if (data.error) throw new Error(data.error);
-    renderCEO(data);
+    renderCEO(data, dataPrev.error ? null : dataPrev);
     document.getElementById('ceoLastUpdated').textContent = 'Updated ' + new Date().toLocaleTimeString('en-PH');
   } catch(e) {
     document.getElementById('loading-ceo').innerHTML = `<span style="color:var(--kill);font-size:12px">${e.message}</span>`;
@@ -2686,80 +2751,118 @@ async function loadCEO() {
   }
 }
 
-function renderCEO({ dates, campaigns, productSalesByDate }) {
-  const today = dates[dates.length - 1];
-  const yest  = dates.length >= 2 ? dates[dates.length - 2] : null;
+function renderCEO({ dates, campaigns, productSalesByDate }, prevData) {
+  const periodDays = dates.length;
+  const modeLabel  = ceoRangeMode === 'wtd' ? 'Week-to-date' : ceoRangeMode === 'mtd' ? 'Month-to-date' : 'Today';
+  const vsLabel    = ceoRangeMode === 'today' ? 'vs yesterday' : ceoRangeMode === 'wtd' ? 'vs prior 7 days' : 'vs prior period';
+  document.getElementById('ceo-range-title').textContent   = 'Overview — ' + modeLabel;
+  document.getElementById('ceo-pacing-title').textContent  = modeLabel + "'s Ad Spend Pacing";
+  document.getElementById('ceo-prod-pacing-title').textContent = 'Per-Product Budget Pacing' + (periodDays > 1 ? ` (${modeLabel}, ${periodDays}d so far)` : '');
 
-  // All-product overview — Total Sales = gross POS; ad-attributed tracked for the split.
-  let todaySpend = 0, yesterSpend = 0, withAdToday = 0, todayInquiries = 0, yesterInquiries = 0;
-  const spendingAdsToday = []; // for CBO-safe declared-budget dedup
+  // All-product overview — sum across every date in the range (periodDays=1 for "today",
+  // so this is byte-identical to the old single-date behavior in that mode).
+  let periodSpend = 0, withAdPeriod = 0, periodInquiries = 0;
+  const spendingAdsPeriod = []; // for CBO-safe declared-budget dedup
   for (const c of campaigns) {
-    const tSpend = c.dates[today]?.spend || 0;
-    todaySpend     += tSpend;
-    withAdToday    += c.dates[today]?.grossSales      || 0;
-    todayInquiries += c.dates[today]?.messagesStarted || 0;
-    if (tSpend > 0) spendingAdsToday.push(c); // only ads that actually spent today count toward today's declared budget
-    if (yest) {
-      yesterSpend     += c.dates[yest]?.spend           || 0;
-      yesterInquiries += c.dates[yest]?.messagesStarted || 0;
+    let cSpend = 0;
+    for (const d of dates) {
+      const dd = c.dates[d];
+      if (!dd) continue;
+      cSpend          += dd.spend           || 0;
+      withAdPeriod    += dd.grossSales      || 0;
+      periodInquiries += dd.messagesStarted || 0;
     }
+    periodSpend += cSpend;
+    if (cSpend > 0) spendingAdsPeriod.push(c); // only ads that actually spent in-period count toward declared budget
   }
-  const todayBudget = dedupedBudget(spendingAdsToday); // avoids double-counting a shared CBO campaign budget
-  const gToday = grossForProducts(productSalesByDate, ALL_NDAP_PRODUCTS, [today]);
-  const gYest  = yest ? grossForProducts(productSalesByDate, ALL_NDAP_PRODUCTS, [yest]) : null;
-  const todaySales   = gToday.sales,  todayOrders  = gToday.orders;
-  const yesterSales  = gYest ? gYest.sales  : null;
-  const yesterOrders = gYest ? gYest.orders : null;
-  const withoutAdToday = Math.max(0, todaySales - withAdToday);
-  const todayRoas = todaySpend  > 0 ? todaySales  / todaySpend  : 0;
-  const yesterRoas= yesterSpend > 0 && yesterSales != null ? yesterSales / yesterSpend : 0;
-  const avgCpm    = todayInquiries  > 0 ? todaySpend  / todayInquiries  : 0;
-  const yesterCpm = yest && yesterInquiries > 0 ? yesterSpend / yesterInquiries : null;
+  // Declared budget is a DAILY figure — for a multi-day period, approximate the period's
+  // declared budget as daily × days elapsed so far. Simplification: assumes the currently
+  // configured daily budget held for the whole period, which is usually true short-term.
+  const periodBudget = dedupedBudget(spendingAdsPeriod) * periodDays;
+
+  const gCurr = grossForProducts(productSalesByDate, ALL_NDAP_PRODUCTS, dates);
+  const periodSales  = gCurr.sales, periodOrders = gCurr.orders;
+  const withoutAdPeriod = Math.max(0, periodSales - withAdPeriod);
+  const periodRoas = periodSpend > 0 ? periodSales / periodSpend : 0;
+  const avgCpm     = periodInquiries > 0 ? periodSpend / periodInquiries : 0;
+
+  // Comparison totals from the prior equivalent-length period (null if that fetch failed).
+  let prevSales = null, prevSpend = null, prevRoas = null, prevOrders = null, prevCpm = null;
+  if (prevData && prevData.campaigns) {
+    let pSpend = 0, pInquiries = 0;
+    for (const c of prevData.campaigns) {
+      for (const d of prevData.dates) {
+        const dd = c.dates[d];
+        if (!dd) continue;
+        pSpend     += dd.spend           || 0;
+        pInquiries += dd.messagesStarted || 0;
+      }
+    }
+    const gPrev = grossForProducts(prevData.productSalesByDate, ALL_NDAP_PRODUCTS, prevData.dates);
+    prevSales  = gPrev.sales;
+    prevOrders = gPrev.orders;
+    prevSpend  = pSpend;
+    prevRoas   = pSpend > 0 ? prevSales / pSpend : 0;
+    prevCpm    = pInquiries > 0 ? pSpend / pInquiries : null;
+  }
 
   function delta(now, prev) {
     if (prev === null || prev === 0) return '<span class="ceo-delta flat">—</span>';
     const pct = (now - prev) / prev * 100;
     const cls  = pct >= 0 ? 'up' : 'down';
     const sign = pct >= 0 ? '▲' : '▼';
-    return `<span class="ceo-delta ${cls}">${sign} ${Math.abs(pct).toFixed(1)}% vs yesterday</span>`;
+    return `<span class="ceo-delta ${cls}">${sign} ${Math.abs(pct).toFixed(1)}% ${vsLabel}</span>`;
   }
 
-  document.getElementById('ceo-sales').textContent   = PHP(todaySales);
+  document.getElementById('ceo-sales').textContent   = PHP(periodSales);
   document.getElementById('ceo-sales-breakdown').innerHTML =
-    `<span style="color:var(--muted);font-size:10px">w/ Ad: ${PHP(withAdToday)} &nbsp;·&nbsp; w/o Ad: ${PHP(withoutAdToday)}</span>`;
-  document.getElementById('ceo-spend').textContent   = PHP(todaySpend);
-  document.getElementById('ceo-roas').textContent    = todaySpend > 0 ? FMT2(todayRoas) : '—';
-  document.getElementById('ceo-orders').textContent  = NUM(todayOrders);
-  document.getElementById('ceo-sales-delta').innerHTML  = delta(todaySales,  yesterSales);
-  document.getElementById('ceo-spend-delta').innerHTML  = delta(todaySpend,  yesterSpend);
-  document.getElementById('ceo-roas-delta').innerHTML   = delta(todayRoas,   yesterRoas);
-  document.getElementById('ceo-orders-delta').innerHTML = delta(todayOrders, yesterOrders);
-  document.getElementById('ceo-cpm').textContent      = todayInquiries > 0 ? PHP(avgCpm) : '—';
-  document.getElementById('ceo-cpm-delta').innerHTML   = delta(avgCpm, yesterCpm);
+    `<span style="color:var(--muted);font-size:10px">w/ Ad: ${PHP(withAdPeriod)} &nbsp;·&nbsp; w/o Ad: ${PHP(withoutAdPeriod)}</span>`;
+  document.getElementById('ceo-spend').textContent   = PHP(periodSpend);
+  document.getElementById('ceo-roas').textContent    = periodSpend > 0 ? FMT2(periodRoas) : '—';
+  document.getElementById('ceo-orders').textContent  = NUM(periodOrders);
+  document.getElementById('ceo-sales-delta').innerHTML  = delta(periodSales,  prevSales);
+  document.getElementById('ceo-spend-delta').innerHTML  = delta(periodSpend,  prevSpend);
+  document.getElementById('ceo-roas-delta').innerHTML   = delta(periodRoas,   prevRoas);
+  document.getElementById('ceo-orders-delta').innerHTML = delta(periodOrders, prevOrders);
+  document.getElementById('ceo-cpm').textContent      = periodInquiries > 0 ? PHP(avgCpm) : '—';
+  document.getElementById('ceo-cpm-delta').innerHTML   = delta(avgCpm, prevCpm);
 
-  // Today's ad spend pacing — spend so far vs. declared budget of ads that spent today
-  const pacingPct   = todayBudget > 0 ? Math.min(150, todaySpend / todayBudget * 100) : 0;
+  // Overall ad spend pacing — spend so far in period vs. declared budget × days elapsed
+  const pacingPct   = periodBudget > 0 ? Math.min(150, periodSpend / periodBudget * 100) : 0;
   const pacingColor = pacingPct > 100 ? '#dc2626' : pacingPct >= 50 ? '#16a34a' : '#D97706';
-  document.getElementById('ceo-pacing-spend').textContent  = PHP(todaySpend);
-  document.getElementById('ceo-pacing-budget').textContent = PHP(todayBudget);
+  document.getElementById('ceo-pacing-spend').textContent  = PHP(periodSpend);
+  document.getElementById('ceo-pacing-budget').textContent = PHP(periodBudget);
   const pacingPctEl = document.getElementById('ceo-pacing-pct');
-  pacingPctEl.textContent = todayBudget > 0 ? pacingPct.toFixed(1) + '%' : '—';
+  pacingPctEl.textContent = periodBudget > 0 ? pacingPct.toFixed(1) + '%' : '—';
   pacingPctEl.style.color = pacingColor;
   const pacingBarEl = document.getElementById('ceo-pacing-bar');
   pacingBarEl.style.width      = Math.min(100, pacingPct) + '%';
   pacingBarEl.style.background = pacingColor;
 
-  // Product ranking — group today's data by product
+  // Product ranking + per-product pacing + per-product delivery — group period data by product
   const byProd = {};
   for (const c of campaigns) {
     const prod = (c.product || 'Other').toUpperCase();
-    if (!byProd[prod]) byProd[prod] = { spend:0, sales:0, orders:0, inquiries:0, ads:0 };
-    const dd = c.dates[today];
-    byProd[prod].spend     += dd?.spend           || 0;
-    byProd[prod].sales     += dd?.grossSales      || 0;
-    byProd[prod].orders    += dd?.orders          || 0;
-    byProd[prod].inquiries += dd?.messagesStarted || 0;
+    if (!byProd[prod]) byProd[prod] = {
+      spend: 0, sales: 0, orders: 0, inquiries: 0, ads: 0,
+      lifetimeDelivered: 0, lifetimeOrders: 0, spendingAds: []
+    };
+    let cSpend = 0;
+    for (const d of dates) {
+      const dd = c.dates[d];
+      if (!dd) continue;
+      byProd[prod].spend     += dd.spend           || 0;
+      byProd[prod].sales     += dd.grossSales      || 0;
+      byProd[prod].orders    += dd.orders          || 0;
+      byProd[prod].inquiries += dd.messagesStarted || 0;
+      cSpend += dd.spend || 0;
+    }
     byProd[prod].ads++;
+    if (cSpend > 0) byProd[prod].spendingAds.push(c);
+    // Lifetime (all-time), not range-scoped — same figures the campaign card's delivery
+    // badge uses (server.js's /api/ndap), so this always agrees with the per-ad badges.
+    byProd[prod].lifetimeDelivered += c.lifetimeDelivered || 0;
+    byProd[prod].lifetimeOrders    += c.lifetimeOrders    || 0;
   }
   const rows = Object.entries(byProd)
     .map(([prod, d]) => ({
@@ -2767,6 +2870,8 @@ function renderCEO({ dates, campaigns, productSalesByDate }) {
       roas: d.spend > 0 ? d.sales / d.spend : 0,
       cvr:  d.inquiries > 0 ? d.orders / d.inquiries * 100 : 0,
       cpm:  d.inquiries > 0 ? d.spend / d.inquiries : 0,
+      budget: dedupedBudget(d.spendingAds) * periodDays,
+      deliveryRate: d.lifetimeOrders > 0 ? d.lifetimeDelivered / d.lifetimeOrders * 100 : null,
       ...d
     }))
     .sort((a, b) => b.roas - a.roas);
@@ -2790,6 +2895,39 @@ function renderCEO({ dates, campaigns, productSalesByDate }) {
           <td>${p.inquiries > 0 ? PHP(p.cpm) : '—'}</td>
         </tr>`;
       }).join('')}</tbody>
+    </table>`;
+
+  // Per-product budget pacing — which specific products are over/underspending, not just
+  // the company-wide total above.
+  document.getElementById('ceoProductPacing').innerHTML = rows.map(p => {
+    const pct   = p.budget > 0 ? Math.min(150, p.spend / p.budget * 100) : 0;
+    const color = p.budget === 0 ? 'var(--muted2)' : pct > 100 ? '#dc2626' : pct >= 50 ? '#16a34a' : '#D97706';
+    const pill  = PRODUCT_PILLS[p.prod] || { bg:'#f5f4ef', color:'#555' };
+    return `<div class="ceo-prod-pacing-row">
+      <span class="product-pill" style="background:${pill.bg};color:${pill.color};min-width:90px;text-align:center">${p.prod}</span>
+      <div class="pacing-bar-wrap" style="flex:1;border-radius:4px;overflow:hidden;position:relative;height:8px;background:#E2E8F0">
+        <div style="width:${Math.min(100, pct)}%;background:${color};position:absolute;top:0;left:0;height:100%;border-radius:4px"></div>
+      </div>
+      <span style="font-size:11px;color:var(--muted);min-width:150px;text-align:right;white-space:nowrap">${PHP(p.spend)} / ${p.budget > 0 ? PHP(p.budget) : '—'}</span>
+      <span style="font-size:11px;font-weight:700;color:${color};min-width:44px;text-align:right">${p.budget > 0 ? pct.toFixed(0) + '%' : '—'}</span>
+    </div>`;
+  }).join('') || '<div style="padding:14px 16px;color:var(--muted2);font-size:12px">No product data for this period.</div>';
+
+  // Delivery performance per product — lifetime delivered/orders, independent of the
+  // range/mode toggle above (matches the per-ad delivery badge's own scope).
+  document.getElementById('ceoProductDelivery').innerHTML = `
+    <table class="ceo-rank-table">
+      <thead><tr><th>Product</th><th>Delivered</th><th>Orders</th><th>Delivery Rate (lifetime)</th></tr></thead>
+      <tbody>${rows.map(p => {
+        const pill = PRODUCT_PILLS[p.prod] || { bg:'#f5f4ef', color:'#555' };
+        const cls  = deliveryRateClass(p.deliveryRate);
+        return `<tr>
+          <td><span class="product-pill" style="background:${pill.bg};color:${pill.color}">${p.prod}</span></td>
+          <td>${NUM(p.lifetimeDelivered)}</td>
+          <td>${NUM(p.lifetimeOrders)}</td>
+          <td class="${cls}" style="font-weight:700">${p.deliveryRate != null ? p.deliveryRate.toFixed(1) + '%' : '—'}</td>
+        </tr>`;
+      }).join('') || `<tr><td colspan="4" style="color:var(--muted2)">No delivery data yet.</td></tr>`}</tbody>
     </table>`;
 }
 
