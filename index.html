@@ -1476,7 +1476,36 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
   </div>
 </div>
 
+<!-- FEATURE ANNOUNCEMENT: Delivery Rate + Launch Date — shows up to 3 times, then never again -->
+<div class="modal-overlay" id="featureAnnounceModal">
+  <div class="modal" style="max-width:400px">
+    <h3>🚚 Bago sa NDAP: Delivery Rate at Launch Date</h3>
+    <div class="modal-sub">Bawat campaign card, may makikita ka nang bago</div>
+    <div style="font-size:13px;color:var(--text);line-height:1.6;margin-bottom:18px">
+      <div style="margin-bottom:8px"><strong>Since &lt;date&gt;</strong> — pill sa tabi ng ad name, kung kailan talaga sinimulan tumakbo ang ad (galing mismo sa Meta).</div>
+      <div>🚚 <strong>Delivery Rate</strong> — i-hover ang truck icon sa tabi ng Ad ID para makita ang lifetime delivery rate ng campaign (delivered ÷ total orders, hindi apektado ng piniling date range).</div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-confirm" onclick="document.getElementById('featureAnnounceModal').classList.remove('show')">Got it</button>
+    </div>
+  </div>
+</div>
+
 <script>
+// Shows the feature-announcement modal above on page load, up to 3 times total per
+// browser, then stops for good. Bump the _v key (e.g. _v2) when announcing a NEW
+// feature later — a fresh key means a fresh 3-show budget instead of colliding with
+// whatever count this one already used.
+(function initFeatureAnnouncement() {
+  const KEY = 'ndapFeatureNotif_deliveryRate_v1';
+  const MAX_SHOWS = 3;
+  let count = 0;
+  try { count = parseInt(localStorage.getItem(KEY) || '0', 10) || 0; } catch(e) {}
+  if (count >= MAX_SHOWS) return;
+  try { localStorage.setItem(KEY, String(count + 1)); } catch(e) {}
+  document.getElementById('featureAnnounceModal').classList.add('show');
+})();
+
 let currentActionData = null;
 let actionLogs = {};
 let currentProductTab = null;
