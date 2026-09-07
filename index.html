@@ -1908,15 +1908,16 @@ function firstRunPillHtml(c) {
   return `<span class="camp-first-run-pill" title="Running since ${label}">Since ${label}</span>`;
 }
 
-// Hoverable delivery-rate badge for the campaign meta row. Delivered ÷ (Delivered + RTS) —
-// same "resolved orders" definition as the Logistics page's delClass, so this number always
-// agrees with Logistics for the same range. Hover-only for now; no click-through order list.
+// Hoverable delivery-rate badge for the campaign meta row. Delivered ÷ Total Orders for this
+// campaign — deliberately NOT the Logistics page's delivered/(delivered+RTS) "resolved" rate.
+// c.totalOrders (server.js's fetchPancakeSalesByDate) already excludes cancelled rows before
+// counting, and a deleted Pancake order never has a row in the sheet to begin with — so no
+// extra filtering is needed here, totalOrders is already "valid orders only".
 function deliveryRateBadgeHtml(c) {
-  const delivered = c.totalDelivered || 0;
-  const rts       = c.totalRts || 0;
-  const resolved  = delivered + rts;
-  if (resolved === 0) return '';
-  const rate = delivered / resolved * 100;
+  const delivered   = c.totalDelivered || 0;
+  const totalOrders = c.totalOrders || 0;
+  if (totalOrders === 0) return '';
+  const rate = delivered / totalOrders * 100;
   return `<div class="ad-dr-badge">
     <div class="ad-dr-icon">
       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -1925,7 +1926,7 @@ function deliveryRateBadgeHtml(c) {
     </div>
     <div class="ad-dr-tooltip">
       Delivery Rate &nbsp;<strong class="${deliveryRateClass(rate)}">${rate.toFixed(1)}%</strong><br>
-      <span style="opacity:.65">${delivered} delivered / ${resolved} resolved (${rts} RTS)</span>
+      <span style="opacity:.65">${delivered} delivered / ${totalOrders} orders</span>
     </div>
   </div>`;
 }
