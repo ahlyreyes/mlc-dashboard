@@ -908,7 +908,7 @@ async function fetchActiveAdsForAccount(account) {
   const result = [];
   try {
     let nextUrl = `https://graph.facebook.com/v19.0/${account.id}/ads` +
-      `?fields=id,name,campaign_id,campaign{name},created_time` +
+      `?fields=id,name,campaign_id,campaign{name},adset{start_time}` +
       `&filtering=[{"field":"ad.effective_status","operator":"IN","value":["ACTIVE","WITH_ISSUES","IN_PROCESS","PENDING_REVIEW","PREAPPROVED"]}]` +
       `&limit=100&access_token=${token}`;
     while (nextUrl) {
@@ -923,7 +923,7 @@ async function fetchActiveAdsForAccount(account) {
           campaignName,
           accountName: account.name,
           product: resolveProduct(account, campaignName),
-          createdTime: ad.created_time || null,
+          startTime: ad.adset?.start_time || null,
         });
       }
       nextUrl = res.paging && res.paging.next ? res.paging.next : null;
@@ -1365,7 +1365,7 @@ app.get('/api/ndap', requireAuth, async (req, res) => {
         accountName: ad.accountName,
         product: ad.product || '',
         budget: budgetMap[ad.adId] || 0,
-        createdTime: ad.createdTime || null,
+        startTime: ad.startTime || null,
         dates: {}
       };
     }

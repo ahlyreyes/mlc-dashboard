@@ -970,14 +970,29 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
   color: var(--muted);
   margin-top: 3px;
 }
-.camp-meta-line {
+.camp-first-run-pill {
+  flex-shrink: 0;
+  margin-left: 8px;
   font-size: 11px;
-  color: var(--muted);
-  margin-top: 3px;
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
+  font-weight: 500;
+  color: var(--muted2);
+  white-space: nowrap;
 }
+.ad-dr-badge { position: relative; display: inline-flex; align-items: center; flex-shrink: 0; }
+.ad-dr-icon {
+  width: 18px; height: 18px; background: rgba(52,211,153,.15); color: #16a34a;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; user-select: none; transition: transform .15s;
+}
+.ad-dr-badge:hover .ad-dr-icon { transform: scale(1.1); }
+.ad-dr-tooltip {
+  visibility: hidden; opacity: 0; position: absolute; top: calc(100% + 8px); left: 0;
+  background: #1a1a1a; color: #fff; font-size: 11.5px; font-weight: 400; line-height: 1.6;
+  border-radius: 8px; padding: 10px 13px; min-width: 190px; z-index: 300;
+  box-shadow: 0 4px 20px rgba(0,0,0,.5); white-space: normal; pointer-events: none;
+  transition: opacity .15s;
+}
+.ad-dr-badge:hover .ad-dr-tooltip { visibility: visible; opacity: 1; }
 .camp-r-row {
   display: flex;
   gap: 18px;
@@ -1884,20 +1899,35 @@ function deliveryRateClass(r) {
   return 'val-kill';
 }
 
-// Campaign-card summary line: overall Delivery Rate for the loaded range, plus how long
-// the ad has been running (Meta's created_time — real launch date, not a spend-based guess).
-function campaignMetaLine(c) {
-  const bits = [];
-  if (c.overallDelRate != null) {
-    const total = (c.totalDelivered || 0) + (c.totalRts || 0);
-    bits.push(`<span class="${deliveryRateClass(c.overallDelRate)}" style="font-weight:700">${c.overallDelRate.toFixed(1)}%</span> delivery rate (${c.totalDelivered || 0}/${total})`);
-  }
-  if (c.createdTime) {
-    const created = new Date(c.createdTime);
-    const days = Math.max(0, Math.round((Date.now() - created) / 86400000));
-    bits.push(`Running since ${created.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })} (${days}d)`);
-  }
-  return bits.length ? `<div class="camp-meta-line">${bits.join(' &nbsp;·&nbsp; ')}</div>` : '';
+// "Since <date>" pill next to the ad name — c.startTime is the ad set's Meta start_time
+// (the same field Ads Manager's "Starts" column reads), so it reflects actual delivery
+// start rather than the moment the ad object was created.
+function firstRunPillHtml(c) {
+  if (!c.startTime) return '';
+  const label = new Date(c.startTime).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
+  return `<span class="camp-first-run-pill" title="Running since ${label}">Since ${label}</span>`;
+}
+
+// Hoverable delivery-rate badge for the campaign meta row. Delivered ÷ (Delivered + RTS) —
+// same "resolved orders" definition as the Logistics page's delClass, so this number always
+// agrees with Logistics for the same range. Hover-only for now; no click-through order list.
+function deliveryRateBadgeHtml(c) {
+  const delivered = c.totalDelivered || 0;
+  const rts       = c.totalRts || 0;
+  const resolved  = delivered + rts;
+  if (resolved === 0) return '';
+  const rate = delivered / resolved * 100;
+  return `<div class="ad-dr-badge">
+    <div class="ad-dr-icon">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 5v4h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+      </svg>
+    </div>
+    <div class="ad-dr-tooltip">
+      Delivery Rate &nbsp;<strong class="${deliveryRateClass(rate)}">${rate.toFixed(1)}%</strong><br>
+      <span style="opacity:.65">${delivered} delivered / ${resolved} resolved (${rts} RTS)</span>
+    </div>
+  </div>`;
 }
 
 function overallRoasClass(roas) {
@@ -2097,13 +2127,13 @@ function renderAdCardNdap(c, dates, showCampaign) {
   return `<div class="camp-card">
     <div class="camp-card-2col">
       <div class="camp-card-2col-left">
-        <div class="camp-ad-name" style="display:flex;align-items:center;gap:0">${c.adName}${fatigueTag(c)}</div>
+        <div class="camp-ad-name" style="display:flex;align-items:center;gap:0">${c.adName}${fatigueTag(c)}${firstRunPillHtml(c)}</div>
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
           <span class="account-pill">${c.accountName}</span>
           <span class="camp-ad-id" style="margin-bottom:0">${c.adId}</span>
+          ${deliveryRateBadgeHtml(c)}
         </div>
         <div class="camp-budget-day">Budget/day: ${PHP(c.budget)}</div>
-        ${campaignMetaLine(c)}
         ${adPacingBar(c, dates)}
       </div>
     </div>
@@ -2122,14 +2152,14 @@ function renderAdCardProduct(c, dates, isMultiAd) {
     <div class="camp-card-2col">
       <div class="camp-card-2col-left">
         <div class="camp-ad-name" style="display:flex;align-items:center;gap:0">
-          <button class="btn-creative ${hasCreative?'has-creatives':''}" data-creative-key="${c.adId}" onclick="openCreativesModal('${safeAdId}','${safeAdName}')" title="View/submit creatives">📸</button>${c.adName}${fatigueTag(c)}
+          <button class="btn-creative ${hasCreative?'has-creatives':''}" data-creative-key="${c.adId}" onclick="openCreativesModal('${safeAdId}','${safeAdName}')" title="View/submit creatives">📸</button>${c.adName}${fatigueTag(c)}${firstRunPillHtml(c)}
         </div>
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
           <span class="account-pill">${c.accountName}</span>
           <span class="camp-ad-id" style="margin-bottom:0">${c.adId}</span>
+          ${deliveryRateBadgeHtml(c)}
         </div>
         <div class="camp-budget-day">Budget/day: ${PHP(c.budget)}</div>
-        ${campaignMetaLine(c)}
         ${adPacingBar(c, dates)}
       </div>
     </div>
