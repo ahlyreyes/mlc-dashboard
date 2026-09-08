@@ -296,18 +296,18 @@ async function logMPHistory(action, detail, email) {
 
 // ── ROLE-BASED PAGE ACCESS ──
 // admin = all pages; others limited to the listed paths.
-// Product Tracker + AI Ad Copy Generator are open to every signed-in role (no report
-// restriction), matching how they're gated server-side below (requireAuth only).
+// Product Tracker + AI Ad Copy Generator + Guide are open to every signed-in role (no
+// report restriction), matching how they're gated server-side below (requireAuth only).
 const ROLE_PAGES = {
   admin:      'ALL',
-  advertiser: ['/', '/ad-spend', '/logistics', '/product-tracker', '/ad-copy-generator'],
-  fsa:        ['/ad-spend', '/logistics', '/product-tracker', '/ad-copy-generator'],
-  logistics:  ['/ad-spend', '/logistics', '/product-tracker', '/ad-copy-generator'],
+  advertiser: ['/', '/ad-spend', '/logistics', '/product-tracker', '/ad-copy-generator', '/guide'],
+  fsa:        ['/ad-spend', '/logistics', '/product-tracker', '/ad-copy-generator', '/guide'],
+  logistics:  ['/ad-spend', '/logistics', '/product-tracker', '/ad-copy-generator', '/guide'],
 };
 function allowedPagesFor(user) {
   if (isAdmin(user)) return 'ALL';
   const role = String(user && user.role || '').toLowerCase();
-  return ROLE_PAGES[role] || ['/ad-spend', '/logistics'];
+  return ROLE_PAGES[role] || ['/ad-spend', '/logistics', '/guide'];
 }
 function canAccess(user, path) {
   const p = allowedPagesFor(user);
@@ -2266,5 +2266,6 @@ app.post('/api/ad-copy-generator/analyze-image', requireAuth, async (req, res) =
 // ── Pages ──
 app.get('/product-tracker',   requireAuth, (_req, res) => res.sendFile(path.join(__dirname, 'product-tracker.html')));
 app.get('/ad-copy-generator', requireAuth, (_req, res) => res.sendFile(path.join(__dirname, 'ad-copy-generator.html')));
+app.get('/guide',             requireAuth, (_req, res) => res.sendFile(path.join(__dirname, 'guide.html')));
 
 app.listen(PORT, () => console.log(`🐻 NDAP Dashboard at http://localhost:${PORT}`));

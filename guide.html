@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/png" href="/mlc-logo.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guide / SOP — MLC Insights</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', sans-serif; background: #EEF2FF; min-height: 100vh; padding: 24px 20px 60px; }
+.wrap { max-width: 880px; margin: 0 auto; }
+.app-header { background: linear-gradient(90deg, #1D4ED8 0%, #2563EB 60%, #3B82F6 100%); color: #fff;
+  padding: 0 22px; height: 54px; display: flex; align-items: center; justify-content: space-between;
+  border-radius: 16px; margin-bottom: 22px; box-shadow: 0 4px 20px rgba(37,99,235,0.25); }
+.header-logo { font-size: 1.05rem; font-weight: 800; }
+.header-logo span { opacity: 0.65; font-weight: 500; font-size: 0.8rem; margin-left: 8px; }
+.back-link { font-size: 0.75rem; font-weight: 600; color: #fff; text-decoration: none; opacity: 0.85;
+  padding: 5px 12px; border: 1px solid rgba(255,255,255,0.35); border-radius: 8px; }
+.back-link:hover { opacity: 1; background: rgba(255,255,255,0.15); }
+.page-title { font-size: 1.4rem; font-weight: 800; color: #0F172A; margin-bottom: 4px; }
+.page-sub { font-size: 0.82rem; color: #64748B; margin-bottom: 22px; line-height: 1.6; }
+
+.toc { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 26px; position: sticky; top: 12px; z-index: 5; }
+.toc a { font-size: 0.72rem; font-weight: 600; color: #1D4ED8; background: #fff; border: 1px solid #DBEAFE;
+  padding: 6px 12px; border-radius: 20px; text-decoration: none; box-shadow: 0 2px 8px rgba(15,23,42,0.05); }
+.toc a:hover { background: #EFF6FF; border-color: #93C5FD; }
+
+.section-label { font-size: 0.68rem; font-weight: 800; color: #94A3B8; text-transform: uppercase;
+  letter-spacing: 1px; margin: 34px 0 12px; padding-top: 4px; }
+.section-label:first-of-type { margin-top: 0; }
+
+.card { background: #fff; border: 1px solid #E2E8F0; border-radius: 16px; padding: 22px 24px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.05); margin-bottom: 16px; scroll-margin-top: 60px; }
+.card-title { font-size: 0.95rem; font-weight: 800; color: #0F172A; margin-bottom: 4px; }
+.card-desc { font-size: 0.8rem; color: #64748B; margin-bottom: 14px; line-height: 1.6; }
+
+.scenario-tag { display: inline-block; font-size: 0.6rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.6px; padding: 3px 9px; border-radius: 20px; margin-bottom: 10px; }
+.tag-basic { background: #DBEAFE; color: #1E40AF; }
+.tag-scenario { background: #FEF3C7; color: #92400E; }
+
+.sop-prereq { font-size: 0.78rem; color: #64748B; margin-bottom: 12px; font-style: italic;
+  background: #F8FAFC; border-left: 3px solid #CBD5E1; padding: 8px 12px; border-radius: 4px; }
+.sop-steps { margin: 0 0 4px 0; padding-left: 20px; }
+.sop-steps li { font-size: 0.84rem; color: #0F172A; line-height: 1.75; margin-bottom: 5px; }
+.sop-steps b { color: #1D4ED8; }
+.sop-steps ul { margin-top: 4px; margin-bottom: 6px; }
+.sop-field { font-family: monospace; background: #F1F5F9; padding: 1px 6px; border-radius: 5px; font-size: 0.78rem; color: #1E40AF; }
+.sop-example { background: #F8FAFF; border: 1px solid #DBEAFE; border-radius: 10px; padding: 12px 14px;
+  font-size: 0.8rem; color: #334155; margin-top: 10px; line-height: 1.65; }
+.sop-warn { background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 10px; padding: 10px 14px;
+  font-size: 0.78rem; color: #92400E; margin-top: 12px; }
+.sop-ok { background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 10px; padding: 10px 14px;
+  font-size: 0.78rem; color: #166534; margin-top: 12px; }
+code { font-family: monospace; background: #F1F5F9; padding: 1px 5px; border-radius: 4px; font-size: 0.85em; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="app-header">
+    <div class="header-logo">MLC<span>Guide / SOP</span></div>
+    <a href="/home" class="back-link">← Home</a>
+  </div>
+  <div class="page-title">📖 Guide / SOP</div>
+  <div class="page-sub">Step-by-step instructions para sa pag-manage ng Products, Ad Accounts, at Meta Tokens sa Manage Product page — kasama ang mga totoong sitwasyon na maaaring maranasan mo.</div>
+
+  <div class="toc">
+    <a href="#add-product">Add Product</a>
+    <a href="#add-account">Add Ad Account</a>
+    <a href="#add-token">Add Token</a>
+    <a href="#overrides">Account Overrides</a>
+    <a href="#edit-delete">Edit / Delete</a>
+    <a href="#scenario-onboard">Onboard New Advertiser</a>
+    <a href="#scenario-second-account">Add 2nd Account</a>
+    <a href="#scenario-two-products">1 Account, 2 Products</a>
+    <a href="#scenario-expired-token">Expired Token</a>
+    <a href="#scenario-retire">Retire a Product</a>
+    <a href="#scenario-wrong-product">Wrong Product</a>
+    <a href="#scenario-verify">Verify Changes</a>
+  </div>
+
+  <div class="section-label">Basic Tasks</div>
+
+  <div class="card" id="add-product">
+    <span class="scenario-tag tag-basic">Basic</span>
+    <div class="card-title">➕ Paano Mag-add ng Bagong Product</div>
+    <ol class="sop-steps">
+      <li>Pumunta sa <b>Manage Product → Products & Ad Accounts</b>.</li>
+      <li>Sa "Add Product" form, punan ang tatlong field:
+        <ul>
+          <li><span class="sop-field">Product Code</span> — internal code, CAPS at walang space (hal. <code>CANPRO</code>). Ito ang gagamitin sa likod ng system, hindi ito nagbabago.</li>
+          <li><span class="sop-field">Display Name</span> — pangalan na makikita sa reports at dashboard (hal. "CanPro").</li>
+          <li><span class="sop-field">POS Keyword</span> — salitang hahanapin sa sales sheet (Pancake CSV) para malaman kung aling order ang kabilang sa product na ito (hal. "canpro"). Case-insensitive, basta tumutugma sa kahit saang bahagi ng row.</li>
+        </ul>
+      </li>
+      <li>I-click ang <b>"Add Product"</b>. Awtomatiko itong lalabas sa dropdown pag mag-a-add ka na ng Ad Account.</li>
+    </ol>
+  </div>
+
+  <div class="card" id="add-account">
+    <span class="scenario-tag tag-basic">Basic</span>
+    <div class="card-title">➕ Paano Mag-add ng Bagong Ad Account</div>
+    <div class="sop-prereq">Prerequisite: dapat mayroon nang Product at Meta Token bago ito, dahil pinipili mo ang mga ito sa form.</div>
+    <ol class="sop-steps">
+      <li>Pumunta sa <b>Manage Product → Products & Ad Accounts</b>.</li>
+      <li>Sa "Add Ad Account" form, punan:
+        <ul>
+          <li><span class="sop-field">Ad Account ID</span> — yung Account ID mula sa Meta Ads Manager (Business Settings → Ad Accounts). Awtomatikong idadagdag ang "act_" prefix kung wala pa.</li>
+          <li><span class="sop-field">Account Name</span> — madaling makilalang pangalan (hal. "CanPro Main").</li>
+          <li><span class="sop-field">Product</span> — piliin ang DEFAULT na product para sa account na ito.</li>
+          <li><span class="sop-field">Meta Token</span> — piliin kung anong access token ang gagamitin para kumuha ng data mula kay Meta.</li>
+          <li><span class="sop-field">Assign Page</span> — (optional) para sa pag-match ng Pancake inquiries sa tamang Facebook Page.</li>
+        </ul>
+      </li>
+      <li>I-click ang <b>"Add Account"</b>.</li>
+    </ol>
+    <div class="sop-warn">⏱️ May cache ang app (hanggang 30 minuto) — hindi agad-agad makikita ang bagong account sa NDAP dashboard. Kung gusto mo agad, i-flush ang cache (see "Verify Changes" sa ibaba).</div>
+  </div>
+
+  <div class="card" id="add-token">
+    <span class="scenario-tag tag-basic">Basic</span>
+    <div class="card-title">🔑 Paano Mag-add ng Bagong Meta Token</div>
+    <ol class="sop-steps">
+      <li>Pumunta sa <b>Manage Product → Meta Tokens</b>.</li>
+      <li>Ilagay ang <span class="sop-field">Token Name</span> (para makilala mo kung kanino ito, hal. "Token 3 — Ejay") at ang <span class="sop-field">Access Token</span> mismo (galing sa Meta Graph API Explorer o sa advertiser).</li>
+      <li>I-click ang <b>"Add Token"</b>.</li>
+    </ol>
+    <div class="sop-warn">🔒 Ang mga token na naka-save dito ay masked (hindi buong ipinapakita) pagkatapos i-save — huwag i-share ang buong access token sa kahit kanino maliban sa mga taong kailangang mag-manage ng ad accounts.</div>
+  </div>
+
+  <div class="card" id="overrides">
+    <span class="scenario-tag tag-basic">Basic</span>
+    <div class="card-title">🔀 Account Overrides — 1 Ad Account, 2+ Products</div>
+    <p style="font-size:0.82rem;color:#334155;margin-bottom:10px;line-height:1.6">Kadalasan, isang ad account = isang product lang. Pero minsan may isang account na tumatakbo para sa <b>DALAWANG products nang sabay</b> — halimbawa, may hiwalay na campaign sa loob ng iisang account para sa bawat product. Dito papasok ang Account Overrides: kapag ang pangalan ng isang campaign ay may tumutugmang keyword, ic-cclassify ito bilang ibang product sa halip na yung default ng buong account.</p>
+    <ol class="sop-steps">
+      <li>Pumunta sa <b>Manage Product → Account Overrides</b>.</li>
+      <li>Piliin ang <span class="sop-field">Ad Account</span> na apektado.</li>
+      <li>Ilagay ang <span class="sop-field">Campaign Keyword</span> — dapat itong tumutugma sa bahagi ng pangalan ng campaign sa Meta (hindi case-sensitive, substring match lang).</li>
+      <li>Piliin ang <span class="sop-field">Override Product</span> — ito ang product na ipapalit sa mga campaign na tumugma sa keyword.</li>
+      <li>I-click ang <b>"Add Override"</b>.</li>
+    </ol>
+    <div class="sop-example"><b>Halimbawa:</b> ang account na "Clear Sight 1" ay may default na product na CLEAR SIGHT. Pero may campaign doon na pinangalanang "Sore Eyes Relaunch" na dapat sa ibang product (FIXORA). Mag-a-add ka ng override: Ad Account = <i>Clear Sight 1</i>, Keyword = <i>"sore eyes"</i>, Override Product = <i>FIXORA</i>. Kahit isang account lang ito, hahati ang datos sa dalawang tamang product sa NDAP.</div>
+  </div>
+
+  <div class="card" id="edit-delete">
+    <span class="scenario-tag tag-basic">Basic</span>
+    <div class="card-title">✏️ Pag-edit at Pagtanggal</div>
+    <ol class="sop-steps">
+      <li>Bawat listahan (Products, Ad Accounts, Overrides, Tokens) ay may <b>Edit</b> at <b>Remove</b> buttons sa kanang bahagi ng bawat row.</li>
+      <li>Hindi puwedeng burahin ang isang <b>Product</b> kung may mga Ad Account pa itong ginagamit — alisin/i-reassign muna ang mga account bago burahin ang product.</li>
+      <li>Hindi puwedeng burahin ang isang <b>Meta Token</b> kung may mga Ad Account pa itong ginagamit — sa halip, i-edit na lang ang account para gumamit ng ibang token.</li>
+      <li>Lahat ng ginawang pagbabago ay naka-log sa <b>Action History</b> tab — kasama kung sino at kailan ito ginawa.</li>
+    </ol>
+  </div>
+
+  <div class="section-label">Common Scenarios</div>
+
+  <div class="card" id="scenario-onboard">
+    <span class="scenario-tag tag-scenario">Scenario</span>
+    <div class="card-title">🆕 Onboarding ng Bagong Advertiser (Simula sa Zero)</div>
+    <div class="card-desc">May bagong advertiser/media buyer na dadalhin papasok sa NDAP, kasama ang bago niyang Meta ad account(s).</div>
+    <ol class="sop-steps">
+      <li>Kunin muna ang <b>Meta Access Token</b> ng advertiser (hihingin mo sa kanya, o kung siya mismo ang mag-generate, ibigay niya sa 'yo).</li>
+      <li><b>Add Token</b> — sundin ang "Paano Mag-add ng Bagong Meta Token" sa taas.</li>
+      <li>Kung bago ang product niya (hindi pa umiiral sa system), <b>Add Product</b> muna — sundin ang steps sa taas.</li>
+      <li><b>Add Ad Account</b> para sa bawat ad account na dadalhin niya, gamit ang bagong token at (bago o existing) na product.</li>
+      <li>Kung mayroon siyang Facebook Page para sa inquiries/messaging, i-set ang <span class="sop-field">Assign Page</span> habang nagdadagdag ng account.</li>
+      <li>I-verify sa NDAP dashboard na lumalabas na ang bagong account/product (see "Verify Changes" sa ibaba).</li>
+    </ol>
+  </div>
+
+  <div class="card" id="scenario-second-account">
+    <span class="scenario-tag tag-scenario">Scenario</span>
+    <div class="card-title">➕ Magdadagdag ng 2nd/3rd Ad Account para sa Existing Product</div>
+    <div class="card-desc">May bago kang ad account (hal. "CanPro 2") pero existing na ang product at token.</div>
+    <ol class="sop-steps">
+      <li>Diretso sa <b>Add Ad Account</b> — hindi mo na kailangang gumawa ng bagong Product o Token, piliin lang ang existing na mga ito sa dropdown.</li>
+      <li>Bigyan ng malinaw na Account Name para hindi malito sa unang account (hal. "CanPro Main" vs "CanPro 2").</li>
+    </ol>
+    <div class="sop-ok">✅ Ito ang pinakamadaling scenario — isang form lang, walang kailangang i-setup na bago.</div>
+  </div>
+
+  <div class="card" id="scenario-two-products">
+    <span class="scenario-tag tag-scenario">Scenario</span>
+    <div class="card-title">🔀 Bigla na Lang May 2 Products na Tumatakbo sa 1 Account</div>
+    <div class="card-desc">Nakapag-set up na ng bagong campaign ang advertiser para sa ibang product, sa loob ng parehong ad account.</div>
+    <ol class="sop-steps">
+      <li>Kumpirmahin muna sa Meta Ads Manager ang eksaktong pangalan ng bagong campaign, at alamin kung anong keyword doon ang unique lang sa bagong product (hindi tutugma sa mga campaign ng lumang product).</li>
+      <li>Gamitin ang <b>Account Overrides</b> (tingnan sa taas) — huwag palitan ang default Product ng buong account, dahil mawawala ang classification ng mga lumang campaign.</li>
+    </ol>
+  </div>
+
+  <div class="card" id="scenario-expired-token">
+    <span class="scenario-tag tag-scenario">Scenario</span>
+    <div class="card-title">🔑 Nag-expire o Nawalan ng Access ang Meta Token</div>
+    <div class="card-desc">Biglang tumigil ang datos sa NDAP para sa mga account na gumagamit ng isang token — malamang expired na o na-revoke ang token.</div>
+    <ol class="sop-steps">
+      <li>Humingi ng bagong Access Token sa may-ari ng account (o i-generate mo ulit kung ikaw ang admin).</li>
+      <li>Pumunta sa <b>Meta Tokens</b> tab, i-click ang <b>Edit</b> sa tapat ng tamang token.</li>
+      <li>I-paste ang bagong token sa "Bagong token" field — iwanan ang Name field kung hindi mo babaguhin.</li>
+      <li>I-save. Lahat ng ad account na gumagamit ng token na ito ay awtomatikong makakagamit ng bagong value — hindi mo na kailangang i-edit isa-isa ang mga account.</li>
+    </ol>
+    <div class="sop-warn">⚠️ Kung sadyang ibang token na ang gusto mong gamitin (hindi lang palit ng value), mas malinaw kung mag-<b>Add</b> ka na lang ng bagong token entry, tapos i-edit ang bawat apektadong ad account para piliin ang bagong token.</div>
+  </div>
+
+  <div class="card" id="scenario-retire">
+    <span class="scenario-tag tag-scenario">Scenario</span>
+    <div class="card-title">🗑️ Pag-retire ng Product/Account na Hindi Na Aktibo</div>
+    <div class="card-desc">Tumigil na ang isang product o na-pause na nang matagal ang ad account, gusto mong tanggalin sa Manage Product.</div>
+    <ol class="sop-steps">
+      <li>Alisin muna ang lahat ng <b>Ad Account</b> na naka-assign sa product na ire-retire mo (Remove per account).</li>
+      <li>Kapag wala nang naka-attach na account, saka mo lang puwedeng i-<b>Remove</b> ang Product mismo.</li>
+      <li>Kung isang account lang ang ire-retire (buhay pa ang product), tanggalin lang ang account na iyon — hindi na kailangang galawin ang product.</li>
+    </ol>
+    <div class="sop-ok">✅ Ligtas ito — hindi nabubura ang historical na Meta/Pancake data, itigil lang ang bagong classification papunta sa product/account na iyon.</div>
+  </div>
+
+  <div class="card" id="scenario-wrong-product">
+    <span class="scenario-tag tag-scenario">Scenario</span>
+    <div class="card-title">❗ Nasa Maling Product ang Isang Ad Account</div>
+    <div class="card-desc">Napansin mong lumalabas sa maling product sa NDAP ang isang buong account (o ilang campaign lang dun).</div>
+    <ol class="sop-steps">
+      <li><b>Kung MALI ang product ng BUONG account</b> — i-edit ang Ad Account (Products & Ad Accounts tab) at palitan ang Product field.</li>
+      <li><b>Kung tama ang default pero ilang campaign lang ang mali</b> — gamitin ang Account Overrides sa halip na palitan ang buong account.</li>
+    </ol>
+    <div class="sop-warn">⏱️ Tandaan: may hanggang 30 minutong cache — hindi agad-agad makikitang tama ang classification kahit ma-save na ang ayos. I-flush ang cache kung kailangan agad (see susunod).</div>
+  </div>
+
+  <div class="card" id="scenario-verify">
+    <span class="scenario-tag tag-scenario">Scenario</span>
+    <div class="card-title">✅ Pag-verify na Nakuha ang Bagong Setup</div>
+    <ol class="sop-steps">
+      <li>Buksan ang <b>NDAP dashboard</b> (Home → NDAP) at hanapin ang bagong account/product sa listahan ng campaigns.</li>
+      <li>Kung wala pa itong makita, maghintay ng hanggang 30 minuto (Meta/sales data cache), o i-flush kaagad ang cache: pumunta sa <code>/api/flush-cache</code> habang naka-login (i-type sa address bar, o hilingin sa developer/admin na gawin ito).</li>
+      <li>I-refresh ang NDAP dashboard pagkatapos mag-flush — dapat lumabas na agad ang bagong data sa susunod na fetch.</li>
+    </ol>
+  </div>
+
+</div>
+</body>
+</html>
