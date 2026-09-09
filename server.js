@@ -1473,12 +1473,17 @@ app.get('/api/ndap', requireAuth, async (req, res) => {
         lifetimeDelivered: lt.delivered, lifetimeOrders: lt.orders };
     });
 
-    // Only show ads that (a) actually spent in the selected date range AND
-    // (b) are still currently active in Meta — an ad turned OFF drops off the
-    // dashboard immediately (within the 30-min active-ads cache TTL) even if
-    // it had spend earlier in the range.
+    // Only show ads that actually spent in the selected date range, AND — only when that
+    // range includes TODAY (i.e. this is a "what's live right now" view, not a purely
+    // historical one) — are still currently active in Meta. An ad turned OFF drops off
+    // today's dashboard immediately (within the 30-min active-ads cache TTL) even if it had
+    // spend earlier in the range; but browsing a past date range that doesn't touch today
+    // should still show whatever genuinely ran back then, regardless of its status right now.
+    const rangeIncludesToday = dates.includes(new Date().toISOString().split('T')[0]);
     const currentlyActiveIds = new Set(activeAdsList.map(a => a.adId));
-    const activeCampaigns = campaigns.filter(c => c.totalSpend > 0 && currentlyActiveIds.has(c.adId));
+    const activeCampaigns = campaigns.filter(c =>
+      c.totalSpend > 0 && (!rangeIncludesToday || currentlyActiveIds.has(c.adId))
+    );
 
     // Mirror the manual NDAP order; unknown/new ads go to the end
     const AD_SORT_ORDER = [
