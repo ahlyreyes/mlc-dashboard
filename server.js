@@ -1473,17 +1473,22 @@ app.get('/api/ndap', requireAuth, async (req, res) => {
         lifetimeDelivered: lt.delivered, lifetimeOrders: lt.orders };
     });
 
-    // Only show ads that actually spent in the selected date range, AND — only when that
-    // range includes TODAY (i.e. this is a "what's live right now" view, not a purely
-    // historical one) — are still currently active in Meta. An ad turned OFF drops off
-    // today's dashboard immediately (within the 30-min active-ads cache TTL) even if it had
-    // spend earlier in the range; but browsing a past date range that doesn't touch today
-    // should still show whatever genuinely ran back then, regardless of its status right now.
-    const rangeIncludesToday = dates.includes(new Date().toISOString().split('T')[0]);
+    // Only show ads that actually spent in the selected date range. Beyond that, when the
+    // range includes TODAY (a "what's live right now" view, not a purely historical one), an
+    // ad also needs to be either still active in Meta OR have a locked-in spend snapshot for
+    // TODAY itself — so pausing an ad later today doesn't erase today's own already-recorded
+    // results, but an ad that's off now and only has OLDER spend within the window (nothing
+    // today) still drops out, which is the original problem this filter was built to fix
+    // (a stale ad inflating today's Declared Budget total). Browsing a past range that doesn't
+    // touch today skips this check entirely and shows whatever genuinely ran back then.
+    const todayStr = new Date().toISOString().split('T')[0];
+    const rangeIncludesToday = dates.includes(todayStr);
     const currentlyActiveIds = new Set(activeAdsList.map(a => a.adId));
-    const activeCampaigns = campaigns.filter(c =>
-      c.totalSpend > 0 && (!rangeIncludesToday || currentlyActiveIds.has(c.adId))
-    );
+    const activeCampaigns = campaigns.filter(c => {
+      if (c.totalSpend <= 0) return false;
+      if (!rangeIncludesToday) return true;
+      return currentlyActiveIds.has(c.adId) || (c.dates[todayStr]?.spend || 0) > 0;
+    });
 
     // Mirror the manual NDAP order; unknown/new ads go to the end
     const AD_SORT_ORDER = [
