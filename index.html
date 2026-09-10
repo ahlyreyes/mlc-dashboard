@@ -1138,6 +1138,8 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
 .ceo-range-toggle { display:inline-flex; background:#EEF2F6; border-radius:8px; padding:3px; gap:2px; }
 .ceo-range-btn { border:none; background:transparent; padding:5px 12px; border-radius:6px; font-size:11px; font-weight:600; color:var(--muted); cursor:pointer; font-family:'Inter',system-ui,sans-serif; }
 .ceo-range-btn.active { background:#fff; color:var(--amber-dark); box-shadow:0 1px 4px rgba(15,23,42,0.10); }
+.ceo-jump-link { border:none; background:none; padding:0; font-size:11px; font-weight:600; color:var(--amber-dark); cursor:pointer; font-family:'Inter',system-ui,sans-serif; text-decoration:underline; text-underline-offset:2px; }
+.ceo-jump-link:hover { opacity:0.75; }
 /* ── PER-PRODUCT PACING ROWS ── */
 .ceo-prod-pacing-row { display:flex; align-items:center; gap:12px; padding:10px 14px; border-bottom:1px solid #F8FAFC; }
 .ceo-prod-pacing-row:last-child { border-bottom:none; }
@@ -1311,7 +1313,10 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
           <div class="ceo-rank-wrap" style="margin-bottom:16px">
             <div class="ceo-rank-title" style="display:flex;justify-content:space-between;align-items:center">
               <span id="ceo-pacing-title">Today's Ad Spend Pacing</span>
-              <span style="font-size:11px;font-weight:600" id="ceo-pacing-pct">—</span>
+              <span style="display:flex;align-items:center;gap:10px">
+                <button class="ceo-jump-link" onclick="document.getElementById('ceoProductPacingSection').scrollIntoView({behavior:'smooth',block:'start'})">See per product ↓</button>
+                <span style="font-size:11px;font-weight:600" id="ceo-pacing-pct">—</span>
+              </span>
             </div>
             <div style="padding:14px 16px">
               <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:12px;color:var(--muted)">
@@ -1331,7 +1336,7 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
             <div class="ceo-rank-title">Top Performing Ads — Per Product</div>
             <div id="ceoTopAds"></div>
           </div>
-          <div class="ceo-rank-wrap" style="margin-bottom:16px">
+          <div class="ceo-rank-wrap" style="margin-bottom:16px" id="ceoProductPacingSection">
             <div class="ceo-rank-title" id="ceo-prod-pacing-title">Per-Product Budget Pacing</div>
             <div id="ceoProductPacing"></div>
           </div>
@@ -1690,7 +1695,7 @@ function closePanels() {
 function maybeShowCreativeCoachmark() {
   const MAX_SHOWS = 3;
   const userKey = (currentUser && (currentUser.email || currentUser.name)) || 'anon';
-  const KEY = 'ndapCoachmark_viewAd_v1_' + userKey;
+  const KEY = 'ndapCoachmark_viewAd_v2_' + userKey;
   let count = 0;
   try { count = parseInt(localStorage.getItem(KEY) || '0', 10) || 0; } catch(e) {}
   if (count >= MAX_SHOWS) return;
