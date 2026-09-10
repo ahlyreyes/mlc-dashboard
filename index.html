@@ -1142,8 +1142,8 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
 .ceo-prod-pacing-row { display:flex; align-items:center; gap:12px; padding:10px 14px; border-bottom:1px solid #F8FAFC; }
 .ceo-prod-pacing-row:last-child { border-bottom:none; }
 /* ── TOP PERFORMING ADS ── */
-.ceo-topads-group { padding:12px 14px; border-bottom:1px solid #F8FAFC; }
-.ceo-topads-group:last-child { border-bottom:none; }
+#ceoTopAds { display:grid; grid-template-columns:repeat(auto-fit, minmax(480px, 1fr)); gap:14px; padding:14px 16px; }
+.ceo-topads-group { border:1px solid var(--border); border-radius:10px; padding:12px 14px; }
 .ceo-topads-group-title { margin-bottom:10px; }
 .ceo-topads-row { display:flex; gap:10px; overflow-x:auto; padding-bottom:2px; }
 .ceo-topad-card { flex:0 0 auto; width:148px; border:1px solid var(--border); border-radius:10px; overflow:hidden; cursor:pointer; transition:box-shadow .15s, transform .15s; background:#fff; }

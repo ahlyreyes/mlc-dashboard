@@ -321,27 +321,16 @@ body {
     <div class="notice-sub">Recent updates to the platform</div>
 
     <div class="notice-section">
-      <div class="notice-section-label">NDAP</div>
+      <div class="notice-section-label">NDAP — Check Ad Creatives Automatically</div>
       <ul class="notice-list">
-        <li>Delivery rate and launch date now shown per campaign on the NDAP dashboard.</li>
-        <li>CEO Overview now has a Today / Week-to-date / Month-to-date toggle.</li>
-        <li>Per-product budget pacing and per-product delivery performance added to CEO Overview.</li>
-        <li>Ads that are turned off no longer stay listed on the dashboard.</li>
-      </ul>
-    </div>
-
-    <div class="notice-section">
-      <div class="notice-section-label">New: Guide / SOP</div>
-      <ul class="notice-list">
-        <li>Step-by-step instructions for adding products, ad accounts, tokens, and account overrides, plus common scenarios — available anytime from the Guide / SOP card below.</li>
+        <li>The camera icon on each ad card now opens the actual Facebook post or video for that ad directly in a new tab — no more hunting down and pasting a Google Drive link by hand.</li>
       </ul>
     </div>
 
     <div class="notice-section" style="margin-bottom:6px">
-      <div class="notice-section-label">NDAP — Check Ad Creatives Automatically</div>
+      <div class="notice-section-label">New: Top Performing Ads (CEO Overview)</div>
       <ul class="notice-list">
-        <li>The camera icon on each ad card now opens the actual Facebook post or video for that ad directly in a new tab — no more hunting down and pasting a Google Drive link by hand.</li>
-        <li>If Meta has no linked post for an ad, it falls back to the manual submit option automatically.</li>
+        <li>The top 3 best-ROAS ads per product are now shown on CEO Overview, with a thumbnail and a click straight through to the actual ad.</li>
       </ul>
     </div>
 
@@ -358,7 +347,7 @@ body {
   const MAX_SHOWS = 3;
   fetch('/api/me').then(r => r.json()).then(u => {
     const userKey = (u && (u.email || u.name)) || 'anon';
-    const KEY = 'homeUpdateNotif_ndapSopUpdate_v2_' + userKey;
+    const KEY = 'homeUpdateNotif_ndapSopUpdate_v3_' + userKey;
     let count = 0;
     try { count = parseInt(localStorage.getItem(KEY) || '0', 10) || 0; } catch(e) {}
     if (count >= MAX_SHOWS) return;
