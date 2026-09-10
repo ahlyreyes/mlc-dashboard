@@ -330,10 +330,18 @@ body {
       </ul>
     </div>
 
-    <div class="notice-section" style="margin-bottom:6px">
+    <div class="notice-section">
       <div class="notice-section-label">New: Guide / SOP</div>
       <ul class="notice-list">
         <li>Step-by-step instructions for adding products, ad accounts, tokens, and account overrides, plus common scenarios — available anytime from the Guide / SOP card below.</li>
+      </ul>
+    </div>
+
+    <div class="notice-section" style="margin-bottom:6px">
+      <div class="notice-section-label">NDAP — Check Ad Creatives Automatically</div>
+      <ul class="notice-list">
+        <li>The camera icon on each ad card now opens the actual Facebook post or video for that ad directly in a new tab — no more hunting down and pasting a Google Drive link by hand.</li>
+        <li>If Meta has no linked post for an ad, it falls back to the manual submit option automatically.</li>
       </ul>
     </div>
 
@@ -350,7 +358,7 @@ body {
   const MAX_SHOWS = 3;
   fetch('/api/me').then(r => r.json()).then(u => {
     const userKey = (u && (u.email || u.name)) || 'anon';
-    const KEY = 'homeUpdateNotif_ndapSopUpdate_v1_' + userKey;
+    const KEY = 'homeUpdateNotif_ndapSopUpdate_v2_' + userKey;
     let count = 0;
     try { count = parseInt(localStorage.getItem(KEY) || '0', 10) || 0; } catch(e) {}
     if (count >= MAX_SHOWS) return;

@@ -1062,6 +1062,34 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
   filter: drop-shadow(0 0 5px rgba(139,92,246,0.85));
 }
 
+/* ── CREATIVE COACHMARK — one-time arrow pointing at the camera icon ── */
+.creative-coachmark {
+  position: absolute;
+  z-index: 400;
+  background: #1a1a2e;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  white-space: nowrap;
+  cursor: pointer;
+  animation: coachmark-bounce 1.4s ease-in-out infinite;
+}
+.creative-coachmark::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 16px;
+  border: 6px solid transparent;
+  border-bottom-color: #1a1a2e;
+}
+@keyframes coachmark-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(5px); }
+}
+
 /* ── PACING BAR (3PM ALERT) ── */
 .pacing-bar-wrap {
   background: #E2E8F0;
@@ -1634,6 +1662,38 @@ function closePanels() {
     const b = document.getElementById(id);
     if (b) b.classList.remove('active');
   });
+}
+
+// Points a one-time bouncing arrow at the first camera icon on a product tab, up to 3 times
+// total per user, then stops for good. Triggered from loadProductTab after cards render,
+// since the camera icon only exists on product-specific tabs, not the CEO/combined view.
+function maybeShowCreativeCoachmark() {
+  const MAX_SHOWS = 3;
+  const userKey = (currentUser && (currentUser.email || currentUser.name)) || 'anon';
+  const KEY = 'ndapCoachmark_viewAd_v1_' + userKey;
+  let count = 0;
+  try { count = parseInt(localStorage.getItem(KEY) || '0', 10) || 0; } catch(e) {}
+  if (count >= MAX_SHOWS) return;
+  const btn = document.querySelector('.btn-creative');
+  if (!btn) return; // no camera icon rendered (e.g. empty product tab) — don't burn a show
+  try { localStorage.setItem(KEY, String(count + 1)); } catch(e) {}
+
+  const rect = btn.getBoundingClientRect();
+  const tip = document.createElement('div');
+  tip.className = 'creative-coachmark';
+  tip.textContent = 'Click here to check the creatives';
+  tip.style.top  = (rect.bottom + window.scrollY + 10) + 'px';
+  tip.style.left = (rect.left + window.scrollX) + 'px';
+  document.body.appendChild(tip);
+
+  const dismiss = () => {
+    tip.remove();
+    document.removeEventListener('click', dismiss);
+    clearTimeout(autoDismiss);
+  };
+  tip.addEventListener('click', dismiss);
+  setTimeout(() => document.addEventListener('click', dismiss), 0);
+  const autoDismiss = setTimeout(dismiss, 8000);
 }
 
 // ── VIEW AD (auto-resolved Facebook link, falls back to manual creatives modal) ──
@@ -3036,6 +3096,7 @@ async function loadProductTab(tabName) {
     // Gross POS total for this product (with + without Ad ID), from the POS export.
     renderBrandKPIs(campaigns, tabName, grossForProducts(data.productSalesByDate, products, data.dates), data.dates);
     renderProductCampaigns(campaigns, data.dates, tabName, displayName);
+    maybeShowCreativeCoachmark();
   } catch(e) {
     document.getElementById(`tableContainer-${tabName}`).innerHTML = `<div class="error-msg">${e.message}</div>`;
   } finally {
