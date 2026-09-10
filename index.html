@@ -1551,14 +1551,17 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
   </div>
 </div>
 
-<!-- FEATURE ANNOUNCEMENT: Delivery Rate + Launch Date — shows up to 3 times, then never again -->
+<!-- WHAT'S NEW: same announcement + key as home.html, so either page counts toward the
+     same 3-show budget per user instead of showing twice. -->
 <div class="modal-overlay" id="featureAnnounceModal">
-  <div class="modal" style="max-width:400px">
-    <h3>🚚 Bago sa NDAP: Delivery Rate at Launch Date</h3>
-    <div class="modal-sub">Bawat campaign card, may makikita ka nang bago</div>
+  <div class="modal" style="max-width:420px">
+    <h3>What's New</h3>
+    <div class="modal-sub">Recent updates to the platform</div>
     <div style="font-size:13px;color:var(--text);line-height:1.6;margin-bottom:18px">
-      <div style="margin-bottom:8px"><strong>Since &lt;date&gt;</strong> — pill sa tabi ng ad name, kung kailan talaga sinimulan tumakbo ang ad (galing mismo sa Meta).</div>
-      <div>🚚 <strong>Delivery Rate</strong> — i-hover ang truck icon sa tabi ng Ad ID para makita ang lifetime delivery rate ng campaign (delivered ÷ total orders, hindi apektado ng piniling date range).</div>
+      <div style="font-size:11px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">NDAP — Check Ad Creatives Automatically</div>
+      <div style="margin-bottom:14px">The camera icon on each ad card now opens the actual Facebook post or video for that ad directly in a new tab — no more hunting down and pasting a Google Drive link by hand.</div>
+      <div style="font-size:11px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">New: Top Performing Ads (CEO Overview)</div>
+      <div>The top 3 best-ROAS ads per product are now shown on CEO Overview, with a thumbnail and a click straight through to the actual ad.</div>
     </div>
     <div class="modal-btns">
       <button class="btn-confirm" onclick="document.getElementById('featureAnnounceModal').classList.remove('show')">Got it</button>
@@ -1567,18 +1570,20 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
 </div>
 
 <script>
-// Shows the feature-announcement modal above on page load, up to 3 times total per
-// browser, then stops for good. Bump the _v key (e.g. _v2) when announcing a NEW
-// feature later — a fresh key means a fresh 3-show budget instead of colliding with
-// whatever count this one already used.
+// Shows the "What's New" modal above on page load, up to 3 times total per user (same
+// localStorage key as home.html's copy of this notice — opening either page counts toward
+// the same budget, so it doesn't show twice as often just because there are two pages).
 (function initFeatureAnnouncement() {
-  const KEY = 'ndapFeatureNotif_deliveryRate_v1';
   const MAX_SHOWS = 3;
-  let count = 0;
-  try { count = parseInt(localStorage.getItem(KEY) || '0', 10) || 0; } catch(e) {}
-  if (count >= MAX_SHOWS) return;
-  try { localStorage.setItem(KEY, String(count + 1)); } catch(e) {}
-  document.getElementById('featureAnnounceModal').classList.add('show');
+  fetch('/api/me').then(r => r.json()).then(u => {
+    const userKey = (u && (u.email || u.name)) || 'anon';
+    const KEY = 'homeUpdateNotif_ndapSopUpdate_v3_' + userKey;
+    let count = 0;
+    try { count = parseInt(localStorage.getItem(KEY) || '0', 10) || 0; } catch(e) {}
+    if (count >= MAX_SHOWS) return;
+    try { localStorage.setItem(KEY, String(count + 1)); } catch(e) {}
+    document.getElementById('featureAnnounceModal').classList.add('show');
+  }).catch(() => {});
 })();
 
 let currentActionData = null;
