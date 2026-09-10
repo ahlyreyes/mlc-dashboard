@@ -1636,6 +1636,33 @@ function closePanels() {
   });
 }
 
+// ── VIEW AD (auto-resolved Facebook link, falls back to manual creatives modal) ──
+async function handleViewAd(adId, adName, accountName) {
+  // Open the tab synchronously, inside the click's own call stack — browsers only honor
+  // window.open() as a direct user gesture at this point. The link isn't known yet (the fetch
+  // below can take a moment on an uncached ad), and opening only after awaiting it loses the
+  // gesture context, so popup blockers silently swallow it. Navigating this already-open tab
+  // once the link resolves sidesteps that. Deliberately no 'noopener' window feature — most
+  // browsers return null from window.open() when it's set, which would always fall into the
+  // async window.open() branch below (outside the gesture context, blocked). Severing
+  // `.opener` manually after the fact achieves the same isolation without losing the handle.
+  const newTab = window.open('', '_blank');
+  if (newTab) newTab.opener = null;
+  try {
+    const r = await fetch(`/api/ad-link?accountName=${encodeURIComponent(accountName)}&adId=${encodeURIComponent(adId)}`);
+    if (r.ok) {
+      const data = await r.json();
+      if (data.link) {
+        if (newTab) newTab.location.href = data.link;
+        else window.open(data.link, '_blank', 'noopener');
+        return;
+      }
+    }
+  } catch(e) { /* fall through to manual submission below */ }
+  if (newTab) newTab.close();
+  openCreativesModal(adId, adName);
+}
+
 // ── CREATIVES MODALS ──
 function openCreativesModal(adId, adName) {
   currentCreativeKey  = adId;
@@ -2209,14 +2236,15 @@ function renderAdCardNdap(c, dates, showCampaign) {
 
 // ── AD CARD: PRODUCT SUBPAGE (two-column, camera icon, action badge in day header) ──
 function renderAdCardProduct(c, dates, isMultiAd) {
-  const hasCreative = (allCreatives[c.adId]||[]).length > 0;
+  const hasCreative = (allCreatives[c.adId]||[]).length > 0 || !!c.hasStoryId;
   const safeAdId    = c.adId.replace(/'/g,"\\'");
   const safeAdName  = c.adName.replace(/'/g,"\\'").replace(/"/g,'&quot;');
+  const safeAcctName = (c.accountName||'').replace(/'/g,"\\'");
   return `<div class="camp-card">
     <div class="camp-card-2col">
       <div class="camp-card-2col-left">
         <div class="camp-ad-name" style="display:flex;align-items:center;gap:0">
-          <button class="btn-creative ${hasCreative?'has-creatives':''}" data-creative-key="${c.adId}" onclick="openCreativesModal('${safeAdId}','${safeAdName}')" title="View/submit creatives">📸</button>${c.adName}${fatigueTag(c)}${firstRunPillHtml(c)}
+          <button class="btn-creative ${hasCreative?'has-creatives':''}" data-creative-key="${c.adId}" onclick="handleViewAd('${safeAdId}','${safeAdName}','${safeAcctName}')" title="View Ad">📸</button>${c.adName}${fatigueTag(c)}${firstRunPillHtml(c)}
         </div>
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
           <span class="account-pill">${c.accountName}</span>

@@ -908,7 +908,7 @@ async function fetchActiveAdsForAccount(account) {
   const result = [];
   try {
     let nextUrl = `https://graph.facebook.com/v19.0/${account.id}/ads` +
-      `?fields=id,name,campaign_id,campaign{name},adset{start_time}` +
+      `?fields=id,name,campaign_id,campaign{name},adset{start_time},creative{effective_object_story_id,video_id}` +
       `&filtering=[{"field":"ad.effective_status","operator":"IN","value":["ACTIVE","WITH_ISSUES","IN_PROCESS","PENDING_REVIEW","PREAPPROVED"]}]` +
       `&limit=100&access_token=${token}`;
     while (nextUrl) {
@@ -924,6 +924,11 @@ async function fetchActiveAdsForAccount(account) {
           accountName: account.name,
           product: resolveProduct(account, campaignName),
           startTime: ad.adset?.start_time || null,
+          // Whether the camera icon's auto-fetch (fetchAdFacebookLink, /api/ad-link) has
+          // anything to resolve — same field it reads. Surfaced here so the frontend can light
+          // up the icon without a per-card lookup call; the actual link is still resolved
+          // lazily on click.
+          hasStoryId: !!ad.creative?.effective_object_story_id,
         });
       }
       nextUrl = res.paging && res.paging.next ? res.paging.next : null;
@@ -940,6 +945,56 @@ async function fetchAllActiveAds() {
     results.push(...ads);
   }
   return results;
+}
+
+// Non-video creatives (image/carousel) resolve through the ad-preview endpoint — the same one
+// Ads Manager's own "View on Facebook" opens, valid for any ad type without needing Page-level
+// permission (unlike a guessed permalink.php URL, which fails for dark-post ads — nearly every
+// ad creative, since it's never actually published to the page's own timeline).
+async function fetchAdPreviewLink(adId, token) {
+  try {
+    const url = `https://graph.facebook.com/v21.0/${adId}/previews` +
+      `?ad_format=DESKTOP_FEED_STANDARD&access_token=${token || ''}`;
+    const res = await fetchJson(url);
+    if (res.error) { console.warn(`⚠️  fetchAdPreviewLink error for ad ${adId}: ${res.error.message}`); return null; }
+    const body = res?.data?.[0]?.body;
+    // body is an <iframe src="..." ...></iframe> HTML snippet — the src itself is a directly
+    // openable facebook.com/ads/api/preview_iframe.php URL.
+    const match = typeof body === 'string' && body.match(/src="([^"]+)"/);
+    return match ? match[1].replace(/&amp;/g, '&') : null;
+  } catch(e) { console.warn(`⚠️  fetchAdPreviewLink failed for ad ${adId}: ${e.message}`); return null; }
+}
+
+// Auto-resolves the "View Ad" link for a camera-icon click — the same URL a human gets from
+// Ads Manager (select ad → Preview → View on Facebook), built from the ad's linked page post
+// (creative.effective_object_story_id, format "{page_id}_{post_id}") plus video_id for video
+// ads. The Graph API's own permalink_url field needs Page-level read permission our ad-scoped
+// tokens don't have, so the URL is built from fields ads_read already exposes instead.
+const adLinkCache = new Map();
+const AD_LINK_CACHE_TTL = 12 * 60 * 60 * 1000; // 12 hours — a resolved link rarely changes once live
+async function fetchAdFacebookLink(adId, account) {
+  const cached = cacheGet(adLinkCache, adId, AD_LINK_CACHE_TTL);
+  if (cached) return cached;
+  let link = null;
+  try {
+    const url = `https://graph.facebook.com/v21.0/${adId}` +
+      `?fields=creative{effective_object_story_id,video_id}&access_token=${account.token || ''}`;
+    const res = await fetchJson(url);
+    const storyId = res?.creative?.effective_object_story_id;
+    if (res.error) {
+      console.warn(`⚠️  fetchAdFacebookLink error for ad ${adId}: ${res.error.message}`);
+    } else if (res.creative?.video_id && storyId) {
+      const pageId = storyId.slice(0, storyId.indexOf('_'));
+      link = `https://www.facebook.com/${pageId}/videos/${res.creative.video_id}/`;
+    } else if (storyId) {
+      link = await fetchAdPreviewLink(adId, account.token);
+    }
+  } catch(e) { console.warn(`⚠️  fetchAdFacebookLink failed for ad ${adId}: ${e.message}`); }
+  // Only cache a successful resolution — a failure can be a genuine "no linked post" (dynamic/
+  // Advantage+ creative) but just as easily a transient API hiccup, and this cache isn't wired
+  // into /api/flush-cache, so a cached null would have no way to recover before the 12h TTL.
+  if (link) cacheSet(adLinkCache, adId, { link });
+  return { link };
 }
 
 // ── GRANULAR IN-MEMORY CACHE ──
@@ -1267,6 +1322,18 @@ app.get('/api/action-logs/:campaign_key', requireAuth, async (req, res) => {
   } catch(e) { res.json([]); }
 });
 
+// Auto-resolved "View on Facebook" link for the camera-icon click — see fetchAdFacebookLink.
+app.get('/api/ad-link', requireAuth, async (req, res) => {
+  const { adId, accountName } = req.query;
+  if (!adId || !accountName) return res.status(400).json({ error: 'adId and accountName required' });
+  const account = AD_ACCOUNTS.find(a => a.name === accountName);
+  if (!account) return res.json({ link: null });
+  try {
+    const result = await fetchAdFacebookLink(adId, account);
+    res.json(result);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/creatives', requireAuth, async (_req, res) => {
   try {
     const result = await pool.query('SELECT * FROM creatives ORDER BY created_at DESC');
@@ -1380,6 +1447,7 @@ app.get('/api/ndap', requireAuth, async (req, res) => {
         product: ad.product || '',
         budget: budgetMap[ad.adId] || 0,
         startTime: ad.startTime || null,
+        hasStoryId: !!ad.hasStoryId,
         dates: {}
       };
     }
