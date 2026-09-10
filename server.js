@@ -908,7 +908,7 @@ async function fetchActiveAdsForAccount(account) {
   const result = [];
   try {
     let nextUrl = `https://graph.facebook.com/v19.0/${account.id}/ads` +
-      `?fields=id,name,campaign_id,campaign{name},adset{start_time},creative{effective_object_story_id,video_id}` +
+      `?fields=id,name,campaign_id,campaign{name},adset{start_time},creative{effective_object_story_id,video_id,thumbnail_url}` +
       `&filtering=[{"field":"ad.effective_status","operator":"IN","value":["ACTIVE","WITH_ISSUES","IN_PROCESS","PENDING_REVIEW","PREAPPROVED"]}]` +
       `&limit=100&access_token=${token}`;
     while (nextUrl) {
@@ -929,6 +929,10 @@ async function fetchActiveAdsForAccount(account) {
           // up the icon without a per-card lookup call; the actual link is still resolved
           // lazily on click.
           hasStoryId: !!ad.creative?.effective_object_story_id,
+          // Cover image for an image ad, or the cover frame for a video ad — same field either
+          // way. Used for the "Top Performing Ads" thumbnails; no extra API call, already part
+          // of this fetch.
+          thumbnailUrl: ad.creative?.thumbnail_url || null,
         });
       }
       nextUrl = res.paging && res.paging.next ? res.paging.next : null;
@@ -1448,6 +1452,7 @@ app.get('/api/ndap', requireAuth, async (req, res) => {
         budget: budgetMap[ad.adId] || 0,
         startTime: ad.startTime || null,
         hasStoryId: !!ad.hasStoryId,
+        thumbnailUrl: ad.thumbnailUrl || null,
         dates: {}
       };
     }

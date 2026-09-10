@@ -1065,6 +1065,9 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
 /* ── CREATIVE COACHMARK — one-time arrow pointing at the camera icon ── */
 .creative-coachmark {
   position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 10px;
   z-index: 400;
   background: #1a1a2e;
   color: #fff;
@@ -1138,6 +1141,19 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
 /* ── PER-PRODUCT PACING ROWS ── */
 .ceo-prod-pacing-row { display:flex; align-items:center; gap:12px; padding:10px 14px; border-bottom:1px solid #F8FAFC; }
 .ceo-prod-pacing-row:last-child { border-bottom:none; }
+/* ── TOP PERFORMING ADS ── */
+.ceo-topads-group { padding:12px 14px; border-bottom:1px solid #F8FAFC; }
+.ceo-topads-group:last-child { border-bottom:none; }
+.ceo-topads-group-title { margin-bottom:10px; }
+.ceo-topads-row { display:flex; gap:10px; overflow-x:auto; padding-bottom:2px; }
+.ceo-topad-card { flex:0 0 auto; width:148px; border:1px solid var(--border); border-radius:10px; overflow:hidden; cursor:pointer; transition:box-shadow .15s, transform .15s; background:#fff; }
+.ceo-topad-card:hover { box-shadow:0 6px 18px rgba(0,0,0,0.12); transform:translateY(-1px); }
+.ceo-topad-thumb, .ceo-topad-thumb-placeholder { width:100%; height:88px; display:block; object-fit:cover; background:#F1F5F9; }
+.ceo-topad-thumb-placeholder { display:flex; align-items:center; justify-content:center; color:var(--muted2); font-size:22px; }
+.ceo-topad-body { padding:8px 10px; }
+.ceo-topad-name { font-size:11px; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-bottom:4px; }
+.ceo-topad-roas { font-size:12px; font-weight:700; }
+.ceo-topad-sales { font-size:10px; color:var(--muted); margin-top:1px; }
 /* ── PACING BAR (per ad) ── */
 .ad-pacing-bar-wrap { height:3px; background:#E2E8F0; border-radius:2px; margin-top:4px; max-width:100px; }
 .ad-pacing-bar-fill { height:100%; border-radius:2px; }
@@ -1310,6 +1326,10 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
           <div class="ceo-rank-wrap" style="margin-bottom:16px">
             <div class="ceo-rank-title">Product Performance</div>
             <div id="ceoProductRank"></div>
+          </div>
+          <div class="ceo-rank-wrap" style="margin-bottom:16px">
+            <div class="ceo-rank-title">Top Performing Ads — Per Product</div>
+            <div id="ceoTopAds"></div>
           </div>
           <div class="ceo-rank-wrap" style="margin-bottom:16px">
             <div class="ceo-rank-title" id="ceo-prod-pacing-title">Per-Product Budget Pacing</div>
@@ -1678,16 +1698,22 @@ function maybeShowCreativeCoachmark() {
   if (!btn) return; // no camera icon rendered (e.g. empty product tab) — don't burn a show
   try { localStorage.setItem(KEY, String(count + 1)); } catch(e) {}
 
-  const rect = btn.getBoundingClientRect();
+  // Anchored via CSS (position:relative on the icon's own row + position:absolute on the
+  // tip), not manually computed pixel coordinates — a scroll position or reflow between
+  // measuring and painting was landing the old getBoundingClientRect()-based version rows
+  // away from the actual icon.
+  const anchor = btn.parentElement;
+  const hadPosition = anchor.style.position;
+  if (!hadPosition) anchor.style.position = 'relative';
+
   const tip = document.createElement('div');
   tip.className = 'creative-coachmark';
   tip.textContent = 'Click here to check the creatives';
-  tip.style.top  = (rect.bottom + window.scrollY + 10) + 'px';
-  tip.style.left = (rect.left + window.scrollX) + 'px';
-  document.body.appendChild(tip);
+  anchor.appendChild(tip);
 
   const dismiss = () => {
     tip.remove();
+    anchor.style.position = hadPosition;
     document.removeEventListener('click', dismiss);
     clearTimeout(autoDismiss);
   };
@@ -2960,6 +2986,9 @@ function renderCEO({ dates, campaigns, productSalesByDate }, prevData) {
       cpm:  d.inquiries > 0 ? d.spend / d.inquiries : 0,
       budget: dedupedBudget(d.spendingAds) * periodDays,
       deliveryRate: d.lifetimeOrders > 0 ? d.lifetimeDelivered / d.lifetimeOrders * 100 : null,
+      // Best-ROAS ads that actually spent in-period — reusing spendingAds rather than a fresh
+      // filter/sort of every campaign, since "performing" shouldn't include zero-spend ads.
+      topAds: [...d.spendingAds].sort((a, b) => (b.totalRoas || 0) - (a.totalRoas || 0)).slice(0, 3),
       ...d
     }))
     .sort((a, b) => b.roas - a.roas);
@@ -2984,6 +3013,35 @@ function renderCEO({ dates, campaigns, productSalesByDate }, prevData) {
         </tr>`;
       }).join('')}</tbody>
     </table>`;
+
+  // Top performing ads per product — best ROAS, with thumbnail (image cover, or video cover
+  // frame) and a click straight through to the actual ad (handleViewAd, same as the campaign
+  // card's camera icon).
+  const topAdsGroups = rows.filter(p => p.topAds.length > 0);
+  document.getElementById('ceoTopAds').innerHTML = topAdsGroups.length ? topAdsGroups.map(p => {
+    const pill = PRODUCT_PILLS[p.prod] || { bg:'#f5f4ef', color:'#555' };
+    const cards = p.topAds.map(a => {
+      const rc = a.totalRoas >= 3 ? 'var(--scale)' : a.totalRoas >= 2.7 ? 'var(--stay)' : 'var(--kill)';
+      const safeId   = (a.adId || '').replace(/'/g,"\\'");
+      const safeName = (a.adName || '').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+      const safeAcct = (a.accountName || '').replace(/'/g,"\\'");
+      const thumb = a.thumbnailUrl
+        ? `<img class="ceo-topad-thumb" src="${a.thumbnailUrl}" alt="" loading="lazy">`
+        : `<div class="ceo-topad-thumb-placeholder">🖼</div>`;
+      return `<div class="ceo-topad-card" onclick="handleViewAd('${safeId}','${safeName}','${safeAcct}')" title="Click to view ad">
+        ${thumb}
+        <div class="ceo-topad-body">
+          <div class="ceo-topad-name">${a.adName || ''}</div>
+          <div class="ceo-topad-roas" style="color:${rc}">${FMT2(a.totalRoas)} ROAS</div>
+          <div class="ceo-topad-sales">${PHP(a.totalSales)} sales</div>
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="ceo-topads-group">
+      <div class="ceo-topads-group-title"><span class="product-pill" style="background:${pill.bg};color:${pill.color}">${p.prod}</span></div>
+      <div class="ceo-topads-row">${cards}</div>
+    </div>`;
+  }).join('') : '<div style="padding:14px 16px;color:var(--muted2);font-size:12px">No ad data for this period.</div>';
 
   // Per-product budget pacing — which specific products are over/underspending, not just
   // the company-wide total above.
