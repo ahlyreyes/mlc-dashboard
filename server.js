@@ -225,6 +225,17 @@ app.use(passport.initialize());
 app.use(passport.session());
 app.use(express.json());
 
+// Never let the browser cache app pages — this dashboard deploys many times a day, and a
+// stale cached HTML/JS bundle silently hiding a shipped fix (making it look like the fix
+// never landed) is worse than the minor cost of re-fetching a small HTML file every visit.
+// Static image/style/script assets are left alone so those still benefit from normal caching.
+app.use((req, res, next) => {
+  if (req.method === 'GET' && !req.path.startsWith('/api/') && !/\.(png|svg|jpg|jpeg|ico|css|js)$/i.test(req.path)) {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+  }
+  next();
+});
+
 passport.use(new GoogleStrategy({
   clientID: GOOGLE_CLIENT_ID,
   clientSecret: GOOGLE_CLIENT_SECRET,
