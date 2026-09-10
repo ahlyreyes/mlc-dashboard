@@ -1700,7 +1700,7 @@ function closePanels() {
 function maybeShowCreativeCoachmark() {
   const MAX_SHOWS = 3;
   const userKey = (currentUser && (currentUser.email || currentUser.name)) || 'anon';
-  const KEY = 'ndapCoachmark_viewAd_v2_' + userKey;
+  const KEY = 'ndapCoachmark_viewAd_v3_' + userKey;
   let count = 0;
   try { count = parseInt(localStorage.getItem(KEY) || '0', 10) || 0; } catch(e) {}
   if (count >= MAX_SHOWS) return;
@@ -1721,15 +1721,19 @@ function maybeShowCreativeCoachmark() {
   tip.textContent = 'Click here to check the creatives';
   anchor.appendChild(tip);
 
+  // Only dismisses on its own click or the camera icon's click — NOT on any click anywhere
+  // on the page — so it doesn't vanish before it's even noticed just because the user clicked
+  // something else nearby (e.g. scrolling, or clicking a different ad card). 20s auto-dismiss
+  // is a fallback, not the primary way this goes away.
   const dismiss = () => {
     tip.remove();
     anchor.style.position = hadPosition;
-    document.removeEventListener('click', dismiss);
+    btn.removeEventListener('click', dismiss);
     clearTimeout(autoDismiss);
   };
   tip.addEventListener('click', dismiss);
-  setTimeout(() => document.addEventListener('click', dismiss), 0);
-  const autoDismiss = setTimeout(dismiss, 8000);
+  btn.addEventListener('click', dismiss);
+  const autoDismiss = setTimeout(dismiss, 20000);
 }
 
 // ── VIEW AD (auto-resolved Facebook link, falls back to manual creatives modal) ──
