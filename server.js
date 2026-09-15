@@ -341,16 +341,6 @@ const PANCAKE_CSV_URLS = [
   'https://docs.google.com/spreadsheets/d/e/2PACX-1vRLF19rMm5u0IUkiJHDB9jZBWoEiaLJOu5mZrDcZuhztXkYgyiM7dJPSDg8BDiYWYq9UyMLGoujZd5S/pub?output=csv', // September 2026
 ];
 
-// MLC mainfile — source for AOV & CVR FSA report (John Hovey Cabatic, Lex Dela Cruz)
-// Monthly MLC mainfile CSVs — add a new URL each month
-const MLC_MAINFILE_CSV_URLS = [
-  'https://docs.google.com/spreadsheets/d/e/2PACX-1vRTziENAURT5p8ix0v0FOizV9a_i-p4Igeovw21jv09aqbJbqvsjKMEftGVfG8Dm0rmVvcKUv0MQkul/pub?output=csv', // April 2026
-  'https://docs.google.com/spreadsheets/d/e/2PACX-1vQKR8ZYu_ov1xrnk99ronJjmnnMMJqJ9orMR5LJDLUT35K4CzUYKW84ryywFg-K9rTQayZbEIY5PrBr/pub?output=csv',   // May 2026
-  'https://docs.google.com/spreadsheets/d/e/2PACX-1vS80NfIGrjxEXGi-KN4hxYh5GlMxlWPmxco7OchDT29n9nm_fCuyJyuL9auyXa2iAx7yBUv75aPDgs3/pub?output=csv',   // June 2026
-  'https://docs.google.com/spreadsheets/d/e/2PACX-1vR6FNkNs9U2PaZ6w_J68GAhwDsP2K3AQGJ9OaVWFczNLS-4WqRRZ6XS7UqIn0wId30jFn97Hq5N4Mdh/pub?output=csv',   // July 2026
-  'https://docs.google.com/spreadsheets/d/e/2PACX-1vQFVbzwEmGv7f-YgXhwzjSG3ElzlFetYN8dCr2r53hrBZ0xfMHAloxkDXCUQ8Zfh212s0mhCY7Q4SjQ/pub?output=csv',   // August 2026
-];
-
 // Per-page Pancake access tokens (page-scoped, longer-lived)
 const PANCAKE_PAGE_TOKENS = {
   '183224001550935': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjE4MzIyNDAwMTU1MDkzNSIsInRpbWVzdGFtcCI6MTc3ODA4ODAwMH0.KT2svFupRuq_bJiHKrysIR0pLyGIKBKQ1CPLyLeiLUI', // CS OPTICAL CARE
@@ -402,9 +392,6 @@ function fsaNameMatch(a, b) {
   const nb = (b || '').toLowerCase().replace(/\s+/g, '');
   return na.length > 0 && nb.length > 0 && (na.includes(nb) || nb.includes(na));
 }
-
-// Clear Sight main FSAs — shown first in the report; other sellers appear after
-const CS_FSA_PRIORITY = ['John Hovey Cabatic', 'Lex Dela Cruz'];
 
 // All active Clear Sight Pancake page IDs — always fetch conversations from these for SDI count
 const CS_ALL_PAGE_IDS = [
@@ -1407,7 +1394,6 @@ app.get('/admin',             requireAdmin,         (_req, res) => res.sendFile(
 app.get('/manage-products',   requireAdmin,         (_req, res) => res.sendFile(path.join(__dirname, 'manage-products.html')));
 app.get('/roas-report',       requireAdmin,         (_req, res) => res.sendFile(path.join(__dirname, 'roas-report.html')));
 app.get('/income-statement',  requireAdmin,         (_req, res) => res.sendFile(path.join(__dirname, 'income-statement.html')));
-app.get('/aov-cvr-report',    requireAdmin,         (_req, res) => res.sendFile(path.join(__dirname, 'aov-cvr-report.html')));
 app.get('/sales-report',      requireAdmin,         (_req, res) => res.sendFile(path.join(__dirname, 'sales-report.html')));
 app.get('/',                  pageGuard('/'),          (_req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
@@ -1830,149 +1816,6 @@ app.get('/api/out-for-delivery', requireAuth, async (_req, res) => {
   try {
     res.json(await fetchOutForDelivery());
   } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-app.get('/api/aov-cvr', requireAuth, async (req, res) => {
-  try {
-    const fromDate = req.query.from || new Date().toISOString().split('T')[0];
-    const toDate   = req.query.to   || fromDate;
-
-    // Step 1 — Fetch POS orders from all monthly MLC mainfiles and combine
-    const csvChunks = await Promise.all(MLC_MAINFILE_CSV_URLS.map(url => fetchRaw(url)));
-    const rows = csvChunks.flatMap(csv => parseCSV(csv));
-
-    const fromDt = new Date(fromDate + 'T00:00:00Z');
-    const toDt   = new Date(toDate   + 'T23:59:59Z');
-
-    const orders = [];
-    const pageIdsNeeded = new Set();
-
-    for (const row of rows) {
-      const sellerRaw = (row['assigning seller'] || '').trim();
-      if (!sellerRaw) continue;
-
-      const productName = (row['product name'] || '').toLowerCase();
-      const pageName    = (row['facebook page'] || '').toLowerCase();
-      const isClearSight = productName.includes('clear sight') ||
-                           productName.includes('clear vision') ||
-                           pageName.includes('clear sight') ||
-                           pageName.includes('clear vision') ||
-                           pageName.includes('eyecare hub');
-      if (!isClearSight) continue;
-
-      const dateRaw = row['sales date'] || '';
-      if (!dateRaw) continue;
-      let dateStr;
-      try {
-        const d = new Date(dateRaw);
-        if (isNaN(d.getTime())) continue;
-        dateStr = d.toISOString().split('T')[0];
-      } catch(e) { continue; }
-
-      const orderDt = new Date(dateStr + 'T00:00:00Z');
-      if (orderDt < fromDt || orderDt > toDt) continue;
-
-      const posPageName    = (row['facebook page'] || '').trim();
-      const pageKey        = normCxName(posPageName);
-      const pageId         = POS_PAGE_ID_MAP[pageKey] || null;
-      const pageShortName  = pageId ? (PANCAKE_PAGE_META[pageId]?.short || posPageName) : posPageName;
-      if (pageId) pageIdsNeeded.add(pageId);
-
-      const amount        = parseFloat((row['unit price'] || '0').replace(/,/g, '')) || 0;
-      const status        = (row['status'] || '').trim();
-      if (status.toUpperCase().includes('CANCEL')) continue;
-
-      const cxName        = (row['customer'] || '').trim();
-      const contactNumber = (row['contact number'] || '').trim();
-
-      orders.push({ date: dateStr, fsa: sellerRaw, cxName, contactNumber, posPageName, pageId, pageShortName,
-        amount, status, remarks: [], upsells: 'W/O UPSELL', typeOfInq: 'FUI', remarksForOrder: '' });
-    }
-
-    // Step 2-4 — Fetch Pancake conversations + tag defs for ALL CS pages (for accurate SDI count)
-    // plus any additional pages found in orders
-    const pageIdList = [...new Set([...CS_ALL_PAGE_IDS, ...pageIdsNeeded])];
-    const [convResults, tagResults] = await Promise.all([
-      Promise.all(pageIdList.map(async pid => ({ pid, convs: await fetchPancakeConvs(pid, fromDate, toDate) }))),
-      Promise.all(pageIdList.map(async pid => ({ pid, tagDefs: await fetchPancakeTagDefs(pid) }))),
-    ]);
-
-    // Build flat phone lookup: "pageId|normPhone" → conv  +  tag def map
-    const convByPhone   = {}; // "pageId|normPhone" → conv
-    const tagDefsMap    = {}; // pid → { tagId → tagName }
-    const pageInquiries = {}; // pid → { shortName }
-
-    for (const { pid, tagDefs } of tagResults) tagDefsMap[pid] = tagDefs;
-
-    for (const { pid, convs } of convResults) {
-      pageInquiries[pid] = { shortName: PANCAKE_PAGE_META[pid]?.short || pid };
-      for (const conv of convs) {
-        const phone = normPhone(getConvPhone(conv));
-        const key   = pid + '|' + phone;
-        if (phone && !convByPhone[key]) convByPhone[key] = conv;
-      }
-    }
-
-    // Step 5 — SDI/FUI classification + tag enrichment
-    // SDI = phone match found AND conv was created on toDate (PHT)
-    // FUI = phone match found but conv created on a different day
-    //       OR no phone match (hidden phone, name-only, or no match at all)
-    // NO PAGE = order has no mapped Pancake page (excluded from SDI/CVR)
-    const REMARK_TAGS = ['CALLED', 'UNATTENDED', 'CBR', 'CVC'];
-    for (const order of orders) {
-      if (!order.pageId) {
-        order.typeOfInq = 'NO PAGE';
-        continue;
-      }
-
-      const orderPhone = normPhone(order.contactNumber);
-      const convKey    = order.pageId + '|' + orderPhone;
-      const conv       = orderPhone ? convByPhone[convKey] : null;
-      const tagDefs    = tagDefsMap[order.pageId] || {};
-
-      if (conv && conv.has_phone !== false) {
-        // Phone matched — determine SDI vs FUI by creation date in PHT vs report end date
-        const convDate = toPHTDateStr(conv.inserted_at || conv.created_at);
-        order.typeOfInq = (convDate === toDate) ? 'SDI' : 'FUI';
-
-        const convTagNames = (conv.tags || []).map(id => tagDefs[id] || '').filter(Boolean);
-        order.remarks = convTagNames.filter(t => REMARK_TAGS.includes(t));
-        if (convTagNames.includes('AI UPSELL'))       order.upsells = 'AI UPSELL';
-        else if (convTagNames.includes('FSA UPSELL')) order.upsells = 'FSA UPSELL';
-        if (convTagNames.includes('FSA SPIELS'))           order.remarksForOrder = 'FSA SPIELS';
-        else if (convTagNames.includes('TELECONSULT'))     order.remarksForOrder = 'TELECONSULT';
-        else if (convTagNames.includes('AUTO ORDER'))      order.remarksForOrder = 'AUTO ORDER';
-      }
-      // else: hidden phone, no phone in CSV, or no match → FUI (already default)
-    }
-
-    // Step 6 — Per-FSA inquiry count via pages.fm v2 API (both CS pages combined)
-    // PHT = UTC+8; convert date range to Unix timestamps
-    const sinceTs = Math.floor(new Date(fromDate + 'T00:00:00+08:00').getTime() / 1000);
-    const untilTs = Math.floor(new Date(toDate   + 'T23:59:59+08:00').getTime() / 1000);
-
-    const v2ConvArrays = await Promise.all(
-      CS_INQUIRY_PAGES.map(({ pageId, token }) => fetchPancakeConvsV2(pageId, token, sinceTs, untilTs))
-    );
-    // Count conversations per Pancake assignee name (all pages combined)
-    // Count all conversations assigned to each FSA that were active on the date range.
-    // The v2 API since/until already filters by last-activity date, so every conv
-    // returned was handled by someone on the target day.
-    const fsaInquiries = {}; // pancakeName → count
-    for (const convs of v2ConvArrays) {
-      for (const conv of convs) {
-        for (const user of (conv.current_assign_users || [])) {
-          const name = (user.name || '').trim();
-          if (name) fsaInquiries[name] = (fsaInquiries[name] || 0) + 1;
-        }
-      }
-    }
-
-    res.json({ from: fromDate, to: toDate, orders, pageInquiries, fsaInquiries, fsaPriority: CS_FSA_PRIORITY });
-  } catch(e) {
-    console.error('aov-cvr error:', e.message);
-    res.status(500).json({ error: e.message });
-  }
 });
 
 // ══════════════════════════════════════════════════════════════════════════════════════
