@@ -231,6 +231,12 @@ body {
   font-family: 'Inter', sans-serif;
 }
 .notice-btn:hover { opacity: 0.92; }
+.notice-actions { display: flex; gap: 8px; margin-top: 6px; }
+.notice-actions .notice-btn { margin-top: 0; text-align: center; text-decoration: none; display: block; flex: 1.4; }
+.notice-btn-secondary { flex: 1; background: #F1F5F9; color: #475569; border: none; border-radius: 10px; padding: 10px 0; font-size: 0.85rem; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; }
+.unreg-row { display: flex; justify-content: space-between; gap: 12px; font-size: 0.82rem; color: #334155; padding: 7px 0; border-bottom: 1px solid #F1F5F9; }
+.unreg-row:last-child { border-bottom: none; }
+.unreg-row span:last-child { color: #64748B; white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -331,6 +337,18 @@ body {
   </div>
 </div>
 
+<div class="notice-overlay" id="unregNoticeModal">
+  <div class="notice-modal">
+    <div class="notice-title">Products with sales not yet added</div>
+    <div class="notice-sub" id="unregSub">These products have recent sales but are not in Manage Product, so they are missing from NDAP totals.</div>
+    <div class="notice-section" id="unregList" style="margin-bottom:14px"></div>
+    <div class="notice-actions">
+      <button class="notice-btn-secondary" onclick="dismissUnregNotice()">Remind me tomorrow</button>
+      <a class="notice-btn" href="/manage-products">Go to Manage Product</a>
+    </div>
+  </div>
+</div>
+
 <script>
 // Shows the "What's New" modal above on Home page load, up to 3 times total per browser
 // per logged-in user, then stops for good. Bump the _v key when there's a new update to
@@ -346,6 +364,46 @@ body {
     if (count >= MAX_SHOWS) return;
     try { localStorage.setItem(KEY, String(count + 1)); } catch(e) {}
     document.getElementById('updateNoticeModal').classList.add('show');
+  }).catch(() => {});
+})();
+
+// Admin-only notice: products that have recent sales in the POS sheet but aren't registered in
+// Manage Product (so they silently drop out of NDAP totals). Snoozed per day per browser, and
+// re-shown the same day only if a different set of products appears.
+let _unregSig = '';
+function unregSnoozeKey(email) { return 'unregSalesNotif_snooze_' + email; }
+function dismissUnregNotice() {
+  document.getElementById('unregNoticeModal').classList.remove('show');
+  try { localStorage.setItem(_unregKey, JSON.stringify({ day: _unregDay, sig: _unregSig })); } catch(e) {}
+}
+let _unregKey = '', _unregDay = '';
+(function initUnregNotice() {
+  fetch('/api/me').then(r => r.json()).then(async u => {
+    if (!u || !u.isAdmin) return;
+    const r = await fetch('/api/mp/unregistered-sales', { headers: { Accept: 'application/json' } });
+    if (!r.ok) return;
+    const data = await r.json();
+    if (!data.products || !data.products.length) return;
+    _unregKey = unregSnoozeKey(u.email || u.name || 'admin');
+    _unregDay = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
+    _unregSig = data.products.map(p => p.name).sort().join('|');
+    try {
+      const snooze = JSON.parse(localStorage.getItem(_unregKey) || 'null');
+      if (snooze && snooze.day === _unregDay && snooze.sig === _unregSig) return;
+    } catch(e) {}
+    const peso = n => '\u20B1' + Number(n).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    document.getElementById('unregSub').textContent =
+      'These products have sales in the last ' + data.days + ' days but are not in Manage Product, so they are missing from NDAP totals.';
+    document.getElementById('unregList').innerHTML = data.products.map(p =>
+      '<div class="unreg-row"><span>' + p.name.replace(/</g, '&lt;') + '</span><span>' + p.orders + ' order' + (p.orders === 1 ? '' : 's') + ' \u00B7 ' + peso(p.sales) + '</span></div>'
+    ).join('');
+    // Wait for the What's New popup (if showing) to be closed first so the two never stack.
+    const wn = document.getElementById('updateNoticeModal');
+    const show = () => document.getElementById('unregNoticeModal').classList.add('show');
+    setTimeout(() => {
+      if (!wn || !wn.classList.contains('show')) return show();
+      const t = setInterval(() => { if (!wn.classList.contains('show')) { clearInterval(t); show(); } }, 600);
+    }, 1200);
   }).catch(() => {});
 })();
 

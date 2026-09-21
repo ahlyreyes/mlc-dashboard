@@ -677,6 +677,7 @@ async function fetchPancakeSalesByDate() {
     const clearSightByDate = {};  // ALL Clear Sight sales incl. no-ad rows
     const allSalesByDate   = {};  // ALL products total (Clear Sight + Haplunas + others)
     const productSalesByDate = {};// per-NDAP-product gross POS: { 'CANPRO': { date: {sales,orders} }, ... }
+    const unregisteredByDate = {};// sales for products NOT in Manage Product: { date: { 'TAGURO OIL': {sales,orders} } }
 
     let skipNoDate=0, skipCancel=0, skipNonClearSight=0, countedCS=0;
 
@@ -740,6 +741,15 @@ async function fetchPancakeSalesByDate() {
       }
 
       // ── Per-NDAP-product gross POS total (incl. no-ad rows & cancelled, to match mainfile) ──
+      // Products with sales but no matching Manage Product entry — surfaced to admins via
+      // /api/mp/unregistered-sales so they don't silently drop out of NDAP totals.
+      if (!isCancelled && !isHaplunas && !mpProducts.some(p => p.code === ndapProduct)) {
+        const pname = ((row['product name'] || row['product variation'] || 'UNKNOWN').trim() || 'UNKNOWN').toUpperCase();
+        if (!unregisteredByDate[dateStr]) unregisteredByDate[dateStr] = {};
+        if (!unregisteredByDate[dateStr][pname]) unregisteredByDate[dateStr][pname] = { sales: 0, orders: 0 };
+        unregisteredByDate[dateStr][pname].sales  += price;
+        unregisteredByDate[dateStr][pname].orders += 1;
+      }
       if (ndapProduct) {
         if (!productSalesByDate[ndapProduct]) productSalesByDate[ndapProduct] = {};
         if (!productSalesByDate[ndapProduct][dateStr]) productSalesByDate[ndapProduct][dateStr] = { sales: 0, orders: 0 };
@@ -756,12 +766,12 @@ async function fetchPancakeSalesByDate() {
     console.log(`📊 Pancake parse: ${countedCS} Clear Sight rows counted, ${skipCancel} cancelled, ${skipNoDate} no-date, ${skipNonClearSight} non-CS`);
     console.log('📅 clearSightByDate totals:', Object.entries(clearSightByDate).map(([d,v])=>`${d}:₱${v.sales.toFixed(0)}(${v.orders})`).join(', '));
 
-    const result = { salesByDate, clearSightByDate, allSalesByDate, productSalesByDate };
+    const result = { salesByDate, clearSightByDate, allSalesByDate, productSalesByDate, unregisteredByDate };
     cacheSet(pancakeCache, 'pancake', result);
     return result;
   } catch(e) {
     console.error('Pancake CSV error:', e.message);
-    return { salesByDate: {}, clearSightByDate: {}, allSalesByDate: {}, productSalesByDate: {} };
+    return { salesByDate: {}, clearSightByDate: {}, allSalesByDate: {}, productSalesByDate: {}, unregisteredByDate: {} };
   }
 }
 
@@ -1118,6 +1128,27 @@ app.get('/api/mp/config', requireAdmin, (_req, res) => {
     pages: Object.entries(PANCAKE_PAGE_META).map(([id, m]) => ({ id, name: m.short })),
   });
 });
+// Products that have recent sales in the POS sheet but aren't registered in Manage Product —
+// drives the admin "unregistered products" notice on Home/NDAP.
+app.get('/api/mp/unregistered-sales', requireAdmin, async (_req, res) => {
+  try {
+    const DAYS = 7;
+    const { unregisteredByDate } = await fetchPancakeSalesByDate();
+    const base = new Date(Date.now() + 3 * 60 * 60 * 1000); // same 5AM-PHT business-day rollover as the frontend
+    const totals = {};
+    for (let i = 0; i < DAYS; i++) {
+      const d = new Date(base); d.setUTCDate(d.getUTCDate() - i);
+      const day = (unregisteredByDate || {})[d.toISOString().split('T')[0]] || {};
+      for (const [name, v] of Object.entries(day)) {
+        if (!totals[name]) totals[name] = { name, orders: 0, sales: 0 };
+        totals[name].orders += v.orders;
+        totals[name].sales  += v.sales;
+      }
+    }
+    res.json({ days: DAYS, products: Object.values(totals).sort((a, b) => b.sales - a.sales) });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/mp/history', requireAdmin, async (_req, res) => {
   try { const r = await pool.query('SELECT action, detail, done_by, created_at FROM mp_history ORDER BY created_at DESC LIMIT 200'); res.json(r.rows); }
   catch(e) { res.json([]); }

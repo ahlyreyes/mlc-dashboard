@@ -1551,6 +1551,20 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
   </div>
 </div>
 
+<!-- ADMIN NOTICE: products with sales but not registered in Manage Product. Same snooze key and
+     logic as home.html's copy, so dismissing on either page covers both for the day. -->
+<div class="modal-overlay" id="unregNoticeModal">
+  <div class="modal" style="max-width:440px">
+    <h3>Products with sales not yet added</h3>
+    <div class="modal-sub" id="unregSub">These products have recent sales but are not in Manage Product, so they are missing from NDAP totals.</div>
+    <div id="unregList" style="font-size:13px;margin-bottom:16px"></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="dismissUnregNotice()">Remind me tomorrow</button>
+      <a class="btn-confirm" href="/manage-products" style="text-decoration:none">Go to Manage Product</a>
+    </div>
+  </div>
+</div>
+
 <!-- WHAT'S NEW: same announcement + key as home.html, so either page counts toward the
      same 3-show budget per user instead of showing twice. -->
 <div class="modal-overlay" id="featureAnnounceModal">
@@ -1583,6 +1597,46 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
     if (count >= MAX_SHOWS) return;
     try { localStorage.setItem(KEY, String(count + 1)); } catch(e) {}
     document.getElementById('featureAnnounceModal').classList.add('show');
+  }).catch(() => {});
+})();
+
+
+// Admin-only notice: products with recent POS sales that aren't registered in Manage Product
+// (so they silently drop out of NDAP totals). Snoozed per day per browser; re-shown the same day
+// only if a different set of products appears. Shares its snooze key with home.html.
+let _unregKey = '', _unregDay = '', _unregSig = '';
+function dismissUnregNotice() {
+  document.getElementById('unregNoticeModal').classList.remove('show');
+  try { localStorage.setItem(_unregKey, JSON.stringify({ day: _unregDay, sig: _unregSig })); } catch(e) {}
+}
+(function initUnregNotice() {
+  fetch('/api/me').then(r => r.json()).then(async u => {
+    if (!u || !u.isAdmin) return;
+    const r = await fetch('/api/mp/unregistered-sales', { headers: { Accept: 'application/json' } });
+    if (!r.ok) return;
+    const data = await r.json();
+    if (!data.products || !data.products.length) return;
+    _unregKey = 'unregSalesNotif_snooze_' + (u.email || u.name || 'admin');
+    _unregDay = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
+    _unregSig = data.products.map(p => p.name).sort().join('|');
+    try {
+      const snooze = JSON.parse(localStorage.getItem(_unregKey) || 'null');
+      if (snooze && snooze.day === _unregDay && snooze.sig === _unregSig) return;
+    } catch(e) {}
+    const peso = n => '\u20B1' + Number(n).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    document.getElementById('unregSub').textContent =
+      'These products have sales in the last ' + data.days + ' days but are not in Manage Product, so they are missing from NDAP totals.';
+    document.getElementById('unregList').innerHTML = data.products.map(p =>
+      '<div style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--border)"><span>' +
+      p.name.replace(/</g, '&lt;') + '</span><span style="color:var(--muted);white-space:nowrap">' + p.orders + ' order' + (p.orders === 1 ? '' : 's') + ' \u00B7 ' + peso(p.sales) + '</span></div>'
+    ).join('');
+    // Wait for the What's New popup (if showing) to be closed first so the two never stack.
+    const wn = document.getElementById('featureAnnounceModal');
+    const show = () => document.getElementById('unregNoticeModal').classList.add('show');
+    setTimeout(() => {
+      if (!wn || !wn.classList.contains('show')) return show();
+      const t = setInterval(() => { if (!wn.classList.contains('show')) { clearInterval(t); show(); } }, 600);
+    }, 1200);
   }).catch(() => {});
 })();
 
