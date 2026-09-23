@@ -3,6 +3,7 @@ const express = require('express');
 const path = require('path');
 const https = require('https');
 const session = require('express-session');
+const PgSession = require('connect-pg-simple')(session);
 const passport = require('passport');
 const { Strategy: GoogleStrategy } = require('passport-google-oauth20');
 
@@ -214,8 +215,10 @@ async function initDB() {
 }
 initDB();
 
-// Session + Passport
+// Session + Passport — stored in Postgres (not memory) so logins survive
+// server restarts/redeploys instead of forcing everyone to log in again.
 app.use(session({
+  store: new PgSession({ pool, tableName: 'user_sessions', createTableIfMissing: true }),
   secret: process.env.SESSION_SECRET || 'snowball-ndap-secret-2026',
   resave: false,
   saveUninitialized: false,
