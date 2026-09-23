@@ -1018,11 +1018,11 @@ async function fetchAdFacebookLink(adId, account) {
 
 // ── GRANULAR IN-MEMORY CACHE ──
 const metaInsightsCache = new Map(); // key: accountId_date       TTL: 30 min
-const pancakeCache       = new Map(); // key: 'pancake'            TTL: 30 min
+const pancakeCache       = new Map(); // key: 'pancake'            TTL: 15 min
 const budgetCache        = new Map(); // key: accountId            TTL: 1 hour
 
 const TTL_META    = 30 * 60 * 1000;
-const TTL_PANCAKE = 30 * 60 * 1000;
+const TTL_PANCAKE = 15 * 60 * 1000;
 const TTL_BUDGET  =  1 * 60 * 60 * 1000;
 
 function cacheGet(map, key, ttl) {
