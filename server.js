@@ -708,7 +708,11 @@ async function fetchPancakeSalesByDate() {
       const rowText      = Object.values(row).join(' ').toLowerCase();
       const isClearSight = rowText.includes('clear sight') || rowText.includes('clearsight');
       const isHaplunas   = rowText.includes('haplunas');
-      const ndapProduct  = classifyNdapProduct(rowText); // 'CLEAR SIGHT'|'CANPRO'|'FIXORA'|'HEARWELL'|null
+      // Product name/variation are the intended signal for classification. Try those first —
+      // falling straight to a whole-row scan lets an unrelated column (ad tag, notes, seller)
+      // that happens to mention another product's keyword hijack the match.
+      const productText  = `${row['product name'] || ''} ${row['product variation'] || ''}`.toLowerCase();
+      const ndapProduct  = classifyNdapProduct(productText, rowText); // 'CLEAR SIGHT'|'CANPRO'|'FIXORA'|'HEARWELL'|null
 
       // ── Per-ad sales (NDAP matching) — excluded sellers, cancelled, and Haplunas skipped ──
       if (!isExcludedSeller && !isCancelled && adId && !isHaplunas) {
@@ -778,22 +782,35 @@ async function fetchPancakeSalesByDate() {
   }
 }
 
-// Classify a POS row into an NDAP product label (must match AD_ACCOUNTS product values)
-function classifyNdapProduct(rowText) {
-  // Dynamic: match each managed product's keyword (from Manage Product config).
-  // Longest keyword first, so a specific variant (e.g. "clear sight ultra")
-  // wins over a shorter parent keyword that's also a substring match
-  // (e.g. "clear sight") instead of losing to whichever product was created first.
-  const sorted = [...mpProducts].sort((a, b) => (b.keyword || '').length - (a.keyword || '').length);
-  for (const p of sorted) {
-    const kw = (p.keyword || '').trim().toLowerCase();
-    if (kw && rowText.includes(kw)) return p.code;
+// A product's "keyword" field may list several spelling variants the POS sheet uses for the
+// same product (sellers type it differently), comma-separated — e.g. "hairfix, hair fix".
+function keywordVariants(p) {
+  return (p.keyword || '').split(',').map(k => k.trim().toLowerCase()).filter(Boolean);
+}
+
+// Classify a POS row into an NDAP product label (must match AD_ACCOUNTS product values).
+// `productText` = just the row's product name/variation columns (the intended signal);
+// `fallbackText` = the whole row, scanned only if productText finds nothing — this catches
+// CSV header/casing variants without letting an unrelated column (ad tag, notes, seller)
+// that happens to mention another product hijack the match.
+function classifyNdapProduct(productText, fallbackText) {
+  // Longest keyword variant first, so a specific one (e.g. "clear sight ultra") wins over a
+  // shorter parent keyword that's also a substring match (e.g. "clear sight").
+  const sorted = mpProducts
+    .map(p => ({ p, variants: keywordVariants(p) }))
+    .sort((a, b) => Math.max(0, ...b.variants.map(v => v.length)) - Math.max(0, ...a.variants.map(v => v.length)));
+
+  for (const { p, variants } of sorted) {
+    if (variants.some(kw => productText.includes(kw))) return p.code;
+  }
+  for (const { p, variants } of sorted) {
+    if (variants.some(kw => fallbackText.includes(kw))) return p.code;
   }
   // Legacy fallbacks / aliases
-  if (rowText.includes('clear sight') || rowText.includes('clearsight')) return 'CLEAR SIGHT';
-  if (rowText.includes('can pro') || rowText.includes('canro')) return 'CANPRO';
-  if (rowText.includes('hearing aid') || rowText.includes('hearingaid') || rowText.includes('audicure')) return 'FIXORA';
-  if (rowText.includes('hear well')) return 'HEARWELL';
+  if (fallbackText.includes('clear sight') || fallbackText.includes('clearsight')) return 'CLEAR SIGHT';
+  if (fallbackText.includes('can pro') || fallbackText.includes('canro')) return 'CANPRO';
+  if (fallbackText.includes('hearing aid') || fallbackText.includes('hearingaid') || fallbackText.includes('audicure')) return 'FIXORA';
+  if (fallbackText.includes('hear well')) return 'HEARWELL';
   return null;
 }
 
@@ -1719,7 +1736,8 @@ async function fetchLogistics(fromDate, toDate, basis = 'order') {
     if (d < from || d > to) continue;
 
     const price  = parseFloat((row['unit price'] || '0').replace(/,/g,'')) || 0;
-    const prodKey = classifyNdapProduct(Object.values(row).join(' ').toLowerCase());
+    const productText = `${row['product name'] || ''} ${row['product variation'] || ''}`.toLowerCase();
+    const prodKey = classifyNdapProduct(productText, Object.values(row).join(' ').toLowerCase());
     const product = prodKey ? (PROD_LABEL[prodKey] || prodKey) : ((row['product name'] || 'Other').trim() || 'Other');
     const region  = (row['by region'] || '').trim() || 'Unknown';
 
