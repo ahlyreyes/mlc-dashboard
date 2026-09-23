@@ -529,8 +529,8 @@ function renderBreakdown() {
     const m = metricsFor(p.set);
     rows += `<tr class="row-click ${p.key === currentKey ? 'active' : ''}" data-key="${p.key}" onclick="selectProduct('${p.key}')">
       <td class="prod-name">${p.label}</td>
-      <td>${fmt(m.spend)}</td>
       <td>${fmt(m.sales)}</td>
+      <td>${fmt(m.spend)}</td>
       <td>${NUM(m.orders)}</td>
       <td class="${roasClass(m.roas, m.spend)}">${m.spend > 0 ? fmtRoas(m.roas) : '—'}</td>
       <td>${NUM(m.inquiries)}</td>
@@ -540,8 +540,8 @@ function renderBreakdown() {
   const t = metricsFor(ALL_PRODUCTS);
   rows += `<tr class="total-row">
     <td>All Products</td>
-    <td>${fmt(t.spend)}</td>
     <td>${fmt(t.sales)}</td>
+    <td>${fmt(t.spend)}</td>
     <td>${NUM(t.orders)}</td>
     <td class="${roasClass(t.roas, t.spend)}">${t.spend > 0 ? fmtRoas(t.roas) : '—'}</td>
     <td>${NUM(t.inquiries)}</td>
@@ -563,7 +563,7 @@ function renderAll() {
       <div class="breakdown-title">Compare All Products</div>
       <table class="breakdown-table">
         <thead><tr>
-          <th>Product</th><th>Spend</th><th>Sales</th><th>Orders</th><th>ROAS</th><th>Inquiries</th><th>CVR</th>
+          <th>Product</th><th>Sales</th><th>Spend</th><th>Orders</th><th>ROAS</th><th>Inquiries</th><th>CVR</th>
         </tr></thead>
         <tbody id="breakdownBody"></tbody>
       </table>
