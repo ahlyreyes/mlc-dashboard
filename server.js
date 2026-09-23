@@ -777,8 +777,12 @@ async function fetchPancakeSalesByDate() {
 
 // Classify a POS row into an NDAP product label (must match AD_ACCOUNTS product values)
 function classifyNdapProduct(rowText) {
-  // Dynamic: match each managed product's keyword (from Manage Product config)
-  for (const p of mpProducts) {
+  // Dynamic: match each managed product's keyword (from Manage Product config).
+  // Longest keyword first, so a specific variant (e.g. "clear sight ultra")
+  // wins over a shorter parent keyword that's also a substring match
+  // (e.g. "clear sight") instead of losing to whichever product was created first.
+  const sorted = [...mpProducts].sort((a, b) => (b.keyword || '').length - (a.keyword || '').length);
+  for (const p of sorted) {
     const kw = (p.keyword || '').trim().toLowerCase();
     if (kw && rowText.includes(kw)) return p.code;
   }
