@@ -367,6 +367,22 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
 }
 .product-stats span { color: var(--text); font-weight: 500; }
 
+/* ── PAGE SUBHEADER (splits a product's ads by detected Facebook Page) ── */
+.page-subheader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 16px 6px 26px;
+  background: #FCFCFD;
+  border-bottom: 1px solid var(--border);
+  border-left: 3px solid #CBD5E1;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.page-stats { display: flex; gap: 12px; font-size: 11px; color: var(--muted); margin-left: auto; font-weight: 400; }
+.page-stats span { color: var(--text); font-weight: 500; }
+
 /* ── CAMPAIGN CARD ── */
 .camp-card {
   border-bottom: 1px solid var(--border);
@@ -2418,6 +2434,50 @@ function renderCampaignGroupsOLD(camps, dates, isProduct) {
   return html;
 }
 
+// Page id → display name, loaded once from Manage Product's known-pages registry (see initPages()).
+let PAGE_NAMES = {};
+function pageLabel(id) { return PAGE_NAMES[id] || id; }
+
+// Splits a product's ads into sub-groups by the Facebook Page they were actually detected
+// running on (server-resolved via mp_page_products / effective_object_story_id), so one ad
+// account running to several Pages/products shows up correctly instead of as one blended list.
+// Ads with no detected Page (e.g. dynamic/catalog ads) fall into "No Page Detected" at the end.
+// When every ad in the product shares the same page (the common case), skips the extra layer
+// entirely so single-page products render exactly as before.
+function renderProductAdsByPage(camps, dates) {
+  const byPage = {};
+  for (const c of camps) {
+    const key = c.pageId || '__none';
+    (byPage[key] ||= []).push(c);
+  }
+  const keys = Object.keys(byPage);
+  if (keys.length <= 1) return renderCampaignGroups(camps, dates, false);
+
+  keys.sort((a, b) => {
+    if (a === '__none') return 1;
+    if (b === '__none') return -1;
+    return pageLabel(a).localeCompare(pageLabel(b));
+  });
+
+  let html = '';
+  for (const key of keys) {
+    const ads = byPage[key];
+    const label = key === '__none' ? 'No Page Detected' : pageLabel(key);
+    const spend = ads.reduce((s, c) => s + c.totalSpend, 0);
+    const sales = ads.reduce((s, c) => s + c.totalSales, 0);
+    const roas = spend > 0 ? sales / spend : 0;
+    html += `<div class="page-subgroup">
+      <div class="page-subheader">
+        <span>📄 ${label}</span>
+        <span>${ads.length} ads</span>
+        <div class="page-stats">Spend: <span>${PHP(spend)}</span>&nbsp;&nbsp;Sales: <span>${PHP(sales)}</span>&nbsp;&nbsp;ROAS: <span style="color:${roas>=3?'var(--scale)':roas>=2.7?'var(--stay)':'var(--kill)'}">${FMT2(roas)}</span></div>
+      </div>
+      ${renderCampaignGroups(ads, dates, false)}
+    </div>`;
+  }
+  return html;
+}
+
 function applySortOrder(arr) {
   if (sortBy === 'roas')  return [...arr].sort((a,b) => (b.totalRoas||0) - (a.totalRoas||0));
   if (sortBy === 'spend') return [...arr].sort((a,b) => (b.totalSpend||0) - (a.totalSpend||0));
@@ -2458,7 +2518,7 @@ function render({ dates, campaigns }) {
           <span style="font-size:10px;color:var(--muted)">${camps.length} ads</span>
           <div class="product-stats">Spend: <span>${PHP(pSpend)}</span>&nbsp;&nbsp;Sales: <span>${PHP(pSales)}</span>&nbsp;&nbsp;ROAS: <span style="color:${pRoas>=3?'var(--scale)':pRoas>=2.7?'var(--stay)':'var(--kill)'}">${FMT2(pRoas)}</span></div>
         </div>
-        ${renderCampaignGroups(camps, dates, false)}
+        ${renderProductAdsByPage(camps, dates)}
       </div>`;
     }
     html += `</div>`;
@@ -2480,7 +2540,7 @@ function render({ dates, campaigns }) {
           <span class="product-pill" style="background:#f5f4ef;color:#555">${prod}</span>
           <div class="product-stats">Spend: <span>${PHP(pSpend)}</span>&nbsp;&nbsp;Sales: <span>${PHP(pSales)}</span>&nbsp;&nbsp;ROAS: <span style="color:${pRoas>=3?'var(--scale)':pRoas>=2.7?'var(--stay)':'var(--kill)'}">${FMT2(pRoas)}</span></div>
         </div>
-        ${renderCampaignGroups(camps, dates, false)}
+        ${renderProductAdsByPage(camps, dates)}
       </div>
     </div>`;
   }
@@ -2488,7 +2548,7 @@ function render({ dates, campaigns }) {
 }
 
 // Build product tabs/subpages from Manage Product first, then load the overview
-initProducts().then(loadCEO);
+Promise.all([initProducts(), initPages()]).then(loadCEO);
 check3PMAlert();
 // Auto-refresh every 30 minutes
 setInterval(() => {
@@ -2582,6 +2642,13 @@ async function initProducts() {
     const ps = await (await fetch('/api/products')).json();
     buildProductUI(Array.isArray(ps) && ps.length ? ps : FALLBACK_NDAP_PRODUCTS);
   } catch(e) { buildProductUI(FALLBACK_NDAP_PRODUCTS); }
+}
+
+async function initPages() {
+  try {
+    const pages = await (await fetch('/api/pages')).json();
+    PAGE_NAMES = Object.fromEntries(pages.map(p => [p.id, p.name]));
+  } catch(e) { /* falls back to raw page id in pageLabel() */ }
 }
 
 function toggleSubGroup(id) {

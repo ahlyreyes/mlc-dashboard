@@ -930,6 +930,7 @@ async function fetchAccountInsights(account, date) {
       return {
         accountName: account.name,
         product: resolveProduct(account, r.campaign_name, pageMap[r.ad_id]),
+        pageId: pageMap[r.ad_id] || null,
         adId: r.ad_id, adName: r.ad_name,
         campaignId: r.campaign_id, campaignName: r.campaign_name,
         spend: parseFloat(r.spend || 0) * fxRate,
@@ -1196,6 +1197,8 @@ const maskToken = t => !t ? '' : (t.length <= 12 ? '••••' : t.slice(0, 6
 const normAcctId = v => { v = (v || '').trim(); return v && !v.startsWith('act_') ? 'act_' + v : v; };
 
 app.get('/api/products', requireAuth, (_req, res) => res.json(mpProducts.map(p => ({ code: p.code, label: p.label }))));
+// Page id → display name, for any dashboard that groups ads by their detected Facebook Page.
+app.get('/api/pages', requireAuth, (_req, res) => res.json(Object.entries(PANCAKE_PAGE_META).map(([id, m]) => ({ id, name: m.short }))));
 
 app.get('/api/mp/config', requireAdmin, (_req, res) => {
   res.json({
@@ -1617,6 +1620,7 @@ app.get('/api/ndap', requireAuth, async (req, res) => {
         adId: ad.adId, adName: ad.adName,
         accountName: ad.accountName,
         product: ad.product || '',
+        pageId: ad.pageId || null,
         budget: budgetMap[ad.adId] || 0,
         startTime: ad.startTime || null,
         hasStoryId: !!ad.hasStoryId,
@@ -1654,6 +1658,7 @@ app.get('/api/ndap', requireAuth, async (req, res) => {
             adId: row.adId, adName: row.adName,
             accountName: row.accountName,
             product: row.product || '',
+            pageId: row.pageId || null,
             budget: budgetMap[row.adId] || 0,
             dates: {}
           };
