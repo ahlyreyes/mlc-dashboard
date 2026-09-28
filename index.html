@@ -2463,14 +2463,14 @@ function pageLabel(id) { return PAGE_NAMES[id] || id; }
 // Ads with no detected Page (e.g. dynamic/catalog ads) fall into "No Page Detected" at the end.
 // When every ad in the product shares the same page (the common case), skips the extra layer
 // entirely so single-page products render exactly as before.
-function renderProductAdsByPage(camps, dates) {
+function renderProductAdsByPage(camps, dates, isProduct) {
   const byPage = {};
   for (const c of camps) {
     const key = c.pageId || '__none';
     (byPage[key] ||= []).push(c);
   }
   const keys = Object.keys(byPage);
-  if (keys.length <= 1) return renderCampaignGroups(camps, dates, false);
+  if (keys.length <= 1) return renderCampaignGroups(camps, dates, isProduct);
 
   keys.sort((a, b) => {
     if (a === '__none') return 1;
@@ -2491,7 +2491,7 @@ function renderProductAdsByPage(camps, dates) {
         <span>${ads.length} ads</span>
         <div class="page-stats">Spend: <span>${PHP(spend)}</span>&nbsp;&nbsp;Sales: <span>${PHP(sales)}</span>&nbsp;&nbsp;ROAS: <span style="color:${roas>=3?'var(--scale)':roas>=2.7?'var(--stay)':'var(--kill)'}">${FMT2(roas)}</span></div>
       </div>
-      ${renderCampaignGroups(ads, dates, false)}
+      ${renderCampaignGroups(ads, dates, isProduct)}
     </div>`;
   }
   return html;
@@ -3279,7 +3279,7 @@ function renderProductCampaigns(campaigns, dates, prefix, displayName) {
       <span style="font-size:10px;color:var(--muted)">${campaigns.length} ads</span>
       <div class="product-stats">Spend: <span>${PHP(prodSpend)}</span>&nbsp;&nbsp;Sales: <span>${PHP(prodSales)}</span>&nbsp;&nbsp;ROAS: <span style="color:${prodRoas>=3?'var(--scale)':prodRoas>=2.7?'var(--stay)':'var(--kill)'}">${FMT2(prodRoas)}</span></div>
     </div>
-    ${renderCampaignGroups(campaigns, dates, true)}
+    ${renderProductAdsByPage(campaigns, dates, true)}
   </div>`;
   document.getElementById(`tableContainer-${prefix}`).innerHTML = html;
 }
@@ -3307,7 +3307,7 @@ function renderFiltered({ dates, campaigns }, prefix) {
         <span style="font-size:10px;color:var(--muted)">${camps.length} ads</span>
         <div class="product-stats">Spend: <span>${PHP(pSpend)}</span>&nbsp;&nbsp;Sales: <span>${PHP(pSales)}</span>&nbsp;&nbsp;ROAS: <span style="color:${pRoas>=3?'var(--scale)':pRoas>=2.7?'var(--stay)':'var(--kill)'}">${FMT2(pRoas)}</span></div>
       </div>
-      ${renderCampaignGroups(camps, dates, false)}
+      ${renderProductAdsByPage(camps, dates, false)}
     </div>`;
   }
   document.getElementById(`tableContainer-${prefix}`).innerHTML = html;
