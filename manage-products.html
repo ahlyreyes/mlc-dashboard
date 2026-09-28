@@ -64,6 +64,7 @@ tr:last-child td { border-bottom: none; }
   <div class="tabs">
     <button class="tab active" data-v="accounts" onclick="switchTab('accounts')">Products &amp; Ad Accounts</button>
     <button class="tab" data-v="overrides" onclick="switchTab('overrides')">Account Overrides</button>
+    <button class="tab" data-v="pagemap" onclick="switchTab('pagemap')">Page Mapping</button>
     <button class="tab" data-v="tokens" onclick="switchTab('tokens')">Meta Tokens</button>
     <button class="tab" data-v="history" onclick="switchTab('history')">Action History</button>
     <button class="tab" data-v="guide" onclick="switchTab('guide')">📖 Guide / SOP</button>
@@ -121,6 +122,31 @@ tr:last-child td { border-bottom: none; }
     </div>
   </div>
 
+  <!-- PAGE MAPPING -->
+  <div id="v-pagemap" class="view">
+    <div class="card">
+      <div class="card-title">➕ Add Page Mapping</div>
+      <div class="form-grid" style="grid-template-columns: 1.4fr 1fr auto">
+        <div class="field"><label>Facebook Page ID</label><input id="pp-page" placeholder="e.g. 183224001550935"><div class="hint">Kunin sa "Detected Pages" list sa ibaba, o mula mismo sa Page</div></div>
+        <div class="field"><label>Product</label><select id="pp-product"></select></div>
+        <div class="field"><button class="btn" id="ppAddBtn" onclick="addPageProduct()">Add Mapping</button></div>
+      </div>
+      <div class="msg" id="pp-msg"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📍 Page → Product Mapping</div>
+      <div class="page-sub" style="margin-bottom:14px">Auto-detected mula mismo sa Facebook Page kung saan tumatakbo ang ad (hindi campaign name) — kaya kahit magbago pangalan ng campaign o may bagong page sa parehong ad account, tama pa rin ang classification, walang manual override na kailangan. Nangunguna ito kaysa sa Account Overrides kapag pareho silang may match.</div>
+      <div id="pageProductsTable"><div class="state-msg">Loading...</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🔎 Detected Pages (walang mapping pa)</div>
+      <div class="page-sub" style="margin-bottom:14px">Mga Page na nakita sa mga kasalukuyang tumatakbong ads pero wala pang product mapping — nagfa-fallback pa rin sila sa account override o account default. I-copy ang Page ID papunta sa form sa itaas para i-lock ang classification.</div>
+      <div id="unmappedPagesTable"><div class="state-msg">Loading...</div></div>
+    </div>
+  </div>
+
   <!-- TOKENS -->
   <div id="v-tokens" class="view">
     <div class="card">
@@ -159,14 +185,15 @@ tr:last-child td { border-bottom: none; }
 
 <script>
 const esc = s => String(s == null ? '' : s).replace(/"/g, '&quot;').replace(/'/g, "\\'");
-let CFG = { products: [], tokens: [], accounts: [], overrides: [], pages: [] };
-let editAcct = null, editTok = null, editProd = null, editOv = null;
+let CFG = { products: [], tokens: [], accounts: [], overrides: [], pageProducts: [], pages: [] };
+let editAcct = null, editTok = null, editProd = null, editOv = null, editPP = null;
 
 function switchTab(v) {
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.v === v));
   document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
   document.getElementById('v-' + v).classList.add('active');
   if (v === 'history') loadHistory();
+  if (v === 'pagemap') loadUnmappedPages();
 }
 function msg(id, text, ok) { const el = document.getElementById(id); el.textContent = text; el.className = 'msg ' + (ok ? 'ok' : 'err'); }
 
@@ -185,6 +212,7 @@ async function loadConfig() {
     fillSelects();
     renderAccounts();
     renderOverrides();
+    renderPageProducts();
     renderTokens();
   } catch(e) {
     document.getElementById('accountsTable').innerHTML = `<div class="state-msg" style="color:#dc2626">${e.message}</div>`;
@@ -197,6 +225,7 @@ function fillSelects() {
   document.getElementById('a-page').innerHTML = '<option value="">— None —</option>' + CFG.pages.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
   document.getElementById('o-account').innerHTML = CFG.accounts.map(a => `<option value="${a.account_id}">${a.name} (${a.account_id})</option>`).join('');
   document.getElementById('o-product').innerHTML = CFG.products.map(p => `<option value="${p.code}">${p.label}</option>`).join('');
+  document.getElementById('pp-product').innerHTML = CFG.products.map(p => `<option value="${p.code}">${p.label}</option>`).join('');
 }
 
 function tokName(id) { const t = CFG.tokens.find(t => t.id === id); return t ? t.name : '—'; }
@@ -312,6 +341,70 @@ async function delOverride(id) {
   if (!confirm('Remove override?')) return;
   try { await api('/api/mp/overrides/' + id, 'DELETE'); loadConfig(); } catch(e) { alert(e.message); }
 }
+
+// Page Mapping
+function renderPageProducts() {
+  if (!CFG.pageProducts.length) { document.getElementById('pageProductsTable').innerHTML = '<div class="state-msg">Wala pang page mapping. Gamitin ito kapag may ad account na tumatakbo papunta sa iba\'t-ibang Pages.</div>'; return; }
+  let html = '<table><thead><tr><th>Facebook Page</th><th>→ Product</th><th style="text-align:right">Action</th></tr></thead><tbody>';
+  for (const pp of CFG.pageProducts) {
+    if (editPP === pp.id) {
+      html += `<tr><td colspan="3">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <input class="edit-input" id="epp-page" value="${esc(pp.page_id)}" placeholder="Page ID" style="max-width:200px">
+          <select class="edit-input" id="epp-product" style="max-width:150px">${CFG.products.map(p => `<option value="${p.code}" ${p.code === pp.product_code ? 'selected' : ''}>${p.label}</option>`).join('')}</select>
+          <button class="btn-sm" onclick="savePageProduct(${pp.id})">Save</button>
+          <button class="btn-del" onclick="editPP=null;renderPageProducts()">Cancel</button>
+        </div></td></tr>`;
+    } else {
+      html += `<tr>
+        <td style="font-weight:600">${pageName(pp.page_id)} <span class="mono">(${pp.page_id})</span></td>
+        <td><span class="pill">${prodLabel(pp.product_code)}</span></td>
+        <td style="text-align:right;white-space:nowrap"><button class="btn-edit" onclick="startEditPageProduct(${pp.id})">Edit</button><button class="btn-del" onclick="delPageProduct(${pp.id})">Remove</button></td>
+      </tr>`;
+    }
+  }
+  html += '</tbody></table>';
+  document.getElementById('pageProductsTable').innerHTML = html;
+}
+
+async function addPageProduct() {
+  const page_id = document.getElementById('pp-page').value.trim(), product_code = document.getElementById('pp-product').value;
+  if (!page_id || !product_code) { msg('pp-msg', 'Page ID at product ay required.', false); return; }
+  try { await api('/api/mp/page-products', 'POST', { page_id, product_code }); msg('pp-msg', '✓ Naidagdag ang page mapping.', true);
+    document.getElementById('pp-page').value = ''; loadConfig(); loadUnmappedPages();
+  } catch(e) { msg('pp-msg', e.message, false); }
+}
+function startEditPageProduct(id) { editPP = id; renderPageProducts(); }
+async function savePageProduct(id) {
+  const page_id = document.getElementById('epp-page').value.trim(), product_code = document.getElementById('epp-product').value;
+  try { await api('/api/mp/page-products/' + id, 'PUT', { page_id, product_code }); editPP = null; loadConfig(); loadUnmappedPages(); }
+  catch(e) { msg('pp-msg', e.message, false); }
+}
+async function delPageProduct(id) {
+  if (!confirm('Remove page mapping?')) return;
+  try { await api('/api/mp/page-products/' + id, 'DELETE'); loadConfig(); loadUnmappedPages(); } catch(e) { alert(e.message); }
+}
+
+async function loadUnmappedPages() {
+  const el = document.getElementById('unmappedPagesTable');
+  el.innerHTML = '<div class="state-msg">Loading...</div>';
+  try {
+    const rows = await (await fetch('/api/mp/detected-pages')).json();
+    if (!rows.length) { el.innerHTML = '<div class="state-msg">Wala nang unmapped na Page sa mga kasalukuyang tumatakbong ads.</div>'; return; }
+    let html = '<table><thead><tr><th>Facebook Page</th><th>Seen on</th><th># Active Ads</th><th style="text-align:right">Action</th></tr></thead><tbody>';
+    for (const r of rows) {
+      html += `<tr>
+        <td style="font-weight:600">${r.pageName || '(unknown name)'} <span class="mono">(${r.pageId})</span></td>
+        <td>${esc(r.accountName)}</td>
+        <td>${r.adCount}</td>
+        <td style="text-align:right"><button class="btn-sm" onclick="prefillPageProduct('${esc(r.pageId)}')">Map this Page</button></td>
+      </tr>`;
+    }
+    html += '</tbody></table>';
+    el.innerHTML = html;
+  } catch(e) { el.innerHTML = `<div class="state-msg" style="color:#dc2626">${e.message}</div>`; }
+}
+function prefillPageProduct(pageId) { document.getElementById('pp-page').value = pageId; document.getElementById('pp-page').scrollIntoView({ behavior: 'smooth', block: 'center' }); }
 
 // Products
 async function addProduct() {

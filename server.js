@@ -131,6 +131,12 @@ async function initDB() {
     await pool.query(`CREATE TABLE IF NOT EXISTS mp_account_overrides (
       id SERIAL PRIMARY KEY, account_id TEXT NOT NULL, keyword TEXT NOT NULL, product_code TEXT NOT NULL,
       created_at TIMESTAMP DEFAULT NOW() )`);
+    // Auto-detected classification: the Facebook Page an ad actually posts to (read straight off
+    // the ad's creative via the Graph API) maps directly to a product. Lets one ad account run
+    // ads for several Pages/products without anyone maintaining a campaign-name override per case.
+    await pool.query(`CREATE TABLE IF NOT EXISTS mp_page_products (
+      id SERIAL PRIMARY KEY, page_id TEXT UNIQUE NOT NULL, product_code TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW() )`);
     await pool.query(`CREATE TABLE IF NOT EXISTS mp_history (
       id SERIAL PRIMARY KEY, action TEXT NOT NULL, detail TEXT, done_by TEXT, created_at TIMESTAMP DEFAULT NOW() )`);
 
@@ -276,16 +282,19 @@ async function loadDbUsers() {
 // Load Manage Product config and rebuild the live AD_ACCOUNTS list
 async function loadMPConfig() {
   try {
-    const [pr, tk, ac, ov] = await Promise.all([
+    const [pr, tk, ac, ov, pp] = await Promise.all([
       pool.query('SELECT code, label, keyword FROM mp_products ORDER BY created_at'),
       pool.query('SELECT id, name, token FROM mp_tokens ORDER BY id'),
       pool.query('SELECT id, account_id, name, product_code, token_id, page_id FROM mp_accounts ORDER BY created_at'),
       pool.query('SELECT id, account_id, keyword, product_code FROM mp_account_overrides ORDER BY created_at'),
+      pool.query('SELECT id, page_id, product_code FROM mp_page_products ORDER BY created_at'),
     ]);
     if (pr.rows.length) mpProducts = pr.rows;
-    mpTokens    = tk.rows;
-    mpAccounts  = ac.rows;
-    mpOverrides = ov.rows;
+    mpTokens      = tk.rows;
+    mpAccounts    = ac.rows;
+    mpOverrides   = ov.rows;
+    mpPageProducts = pp.rows;
+    PAGE_PRODUCT_MAP = Object.fromEntries(mpPageProducts.map(p => [p.page_id, p.product_code]));
     if (mpAccounts.length) {
       const tokById = Object.fromEntries(mpTokens.map(t => [t.id, t.token]));
       AD_ACCOUNTS = mpAccounts.map(a => ({
@@ -554,10 +563,25 @@ let mpProducts  = [...SEED_PRODUCTS];
 let mpTokens    = [];
 let mpAccounts  = [];
 let mpOverrides = [];
+let mpPageProducts   = [];
+let PAGE_PRODUCT_MAP = {}; // { page_id: product_code } — auto-detected classification
 
-// Resolve which product a campaign belongs to: account default, unless an
-// override keyword matches the campaign name (case-insensitive substring).
-function resolveProduct(account, campaignName) {
+// A creative's effective_object_story_id (or object_story_spec) is "{page_id}_{post_id}" —
+// pull the page_id back out of it.
+function extractPageId(storyId) {
+  if (!storyId || typeof storyId !== 'string') return null;
+  const idx = storyId.indexOf('_');
+  return idx > 0 ? storyId.slice(0, idx) : null;
+}
+
+// Resolve which product a campaign belongs to. Priority:
+//   1. The Page the ad actually posts to (auto-detected from Meta, if we could read one and it's
+//      mapped in Manage Product → Page Mapping) — the ground truth, no manual upkeep needed.
+//   2. A manual override keyword matching the campaign name (case-insensitive substring) — the
+//      fallback for ads with no linked Page post (e.g. dynamic/catalog ads).
+//   3. The account's default product.
+function resolveProduct(account, campaignName, pageId) {
+  if (pageId && PAGE_PRODUCT_MAP[pageId]) return PAGE_PRODUCT_MAP[pageId];
   const cn = (campaignName || '').toLowerCase();
   for (const o of (account.overrides || [])) {
     if (cn.includes(o.keyword)) return o.product;
@@ -814,12 +838,40 @@ function classifyNdapProduct(productText, fallbackText) {
   return null;
 }
 
+// ad_id → detected page_id for every ad in an account, read once from the /ads edge (not the
+// date-scoped /insights edge, which can't return creative fields) and cached independently of
+// date so a multi-day report only pays for this once per account per TTL window.
+const adPageCache = new Map();
+const TTL_AD_PAGE = 60 * 60 * 1000; // page linkage on an ad essentially never changes once live
+async function fetchAdPageMap(account) {
+  const cached = cacheGet(adPageCache, account.id, TTL_AD_PAGE);
+  if (cached) return cached;
+  const token = account.token || '';
+  const map = {};
+  try {
+    let nextUrl = `https://graph.facebook.com/v19.0/${account.id}/ads` +
+      `?fields=id,creative{effective_object_story_id}&limit=500&access_token=${token}`;
+    while (nextUrl) {
+      const res = await fetchJson(nextUrl);
+      if (res.error) { console.warn(`⚠️  Ad-page fetch error for ${account.name}: ${res.error.message}`); break; }
+      for (const ad of (res.data || [])) {
+        const pageId = extractPageId(ad.creative?.effective_object_story_id);
+        if (pageId) map[ad.id] = pageId;
+      }
+      nextUrl = res.paging && res.paging.next ? res.paging.next : null;
+    }
+  } catch(e) { console.error(`❌ fetchAdPageMap failed for ${account.name}: ${e.message}`); }
+  cacheSet(adPageCache, account.id, map);
+  return map;
+}
+
 async function fetchAccountInsights(account, date) {
   const metaKey = `${account.id}_${date}`;
   const cached = cacheGet(metaInsightsCache, metaKey, TTL_META);
   if (cached) { console.log(`✅ Meta cache hit: ${metaKey}`); return cached; }
   const token = account.token || '';
   const fxRate = FX_TO_PHP[account.currency || 'PHP'] || 1;
+  const pageMap = await fetchAdPageMap(account);
 
   // Fetch all pages of ad-level insights
   const allRows = [];
@@ -877,7 +929,7 @@ async function fetchAccountInsights(account, date) {
 
       return {
         accountName: account.name,
-        product: resolveProduct(account, r.campaign_name),
+        product: resolveProduct(account, r.campaign_name, pageMap[r.ad_id]),
         adId: r.ad_id, adName: r.ad_name,
         campaignId: r.campaign_id, campaignName: r.campaign_name,
         spend: parseFloat(r.spend || 0) * fxRate,
@@ -948,13 +1000,15 @@ async function fetchActiveAdsForAccount(account) {
       if (res.error) { console.warn(`⚠️  Active ads fetch error for ${account.name}: ${res.error.message}`); break; }
       for (const ad of (res.data || [])) {
         const campaignName = ad.campaign ? ad.campaign.name : '';
+        const pageId = extractPageId(ad.creative?.effective_object_story_id);
         result.push({
           adId: ad.id,
           adName: ad.name,
           campaignId: ad.campaign_id,
           campaignName,
           accountName: account.name,
-          product: resolveProduct(account, campaignName),
+          product: resolveProduct(account, campaignName, pageId),
+          pageId,
           startTime: ad.adset?.start_time || null,
           // Whether the camera icon's auto-fetch (fetchAdFacebookLink, /api/ad-link) has
           // anything to resolve — same field it reads. Surfaced here so the frontend can light
@@ -1149,6 +1203,7 @@ app.get('/api/mp/config', requireAdmin, (_req, res) => {
     tokens: mpTokens.map(t => ({ id: t.id, name: t.name, tokenMasked: maskToken(t.token) })),
     accounts: mpAccounts.map(a => ({ id: a.id, account_id: a.account_id, name: a.name, product_code: a.product_code, token_id: a.token_id, page_id: a.page_id })),
     overrides: mpOverrides.map(o => ({ id: o.id, account_id: o.account_id, keyword: o.keyword, product_code: o.product_code })),
+    pageProducts: mpPageProducts.map(p => ({ id: p.id, page_id: p.page_id, product_code: p.product_code })),
     pages: Object.entries(PANCAKE_PAGE_META).map(([id, m]) => ({ id, name: m.short })),
   });
 });
@@ -1305,6 +1360,67 @@ app.delete('/api/mp/overrides/:id', requireAdmin, async (req, res) => {
     await pool.query('DELETE FROM mp_account_overrides WHERE id=$1', [id]);
     await logMPHistory('Delete override', 'override#' + id, req.user.email);
     await loadMPConfig(); res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Page mapping — auto-detected classification. A page_id maps straight to a product,
+// so any ad found posting to that Page is classified as that product regardless of which
+// ad account or campaign it's under. Takes priority over account overrides.
+app.post('/api/mp/page-products', requireAdmin, async (req, res) => {
+  try {
+    const page_id = (req.body.page_id || '').trim();
+    const product_code = (req.body.product_code || '').trim().toUpperCase();
+    if (!page_id || !product_code) return res.status(400).json({ error: 'Page at product ay required.' });
+    await pool.query('INSERT INTO mp_page_products (page_id,product_code) VALUES ($1,$2)', [page_id, product_code]);
+    await logMPHistory('Add page mapping', `${page_id} → ${product_code}`, req.user.email);
+    await loadMPConfig(); res.json({ success: true });
+  } catch(e) {
+    if (e.code === '23505') return res.status(409).json({ error: 'May mapping na ang Page na ito.' });
+    res.status(500).json({ error: e.message });
+  }
+});
+app.put('/api/mp/page-products/:id', requireAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id), page_id = (req.body.page_id || '').trim();
+    const product_code = (req.body.product_code || '').trim().toUpperCase();
+    if (!page_id || !product_code) return res.status(400).json({ error: 'Page at product ay required.' });
+    const r = await pool.query('UPDATE mp_page_products SET page_id=$1, product_code=$2 WHERE id=$3', [page_id, product_code, id]);
+    if (!r.rowCount) return res.status(404).json({ error: 'Page mapping not found.' });
+    await logMPHistory('Edit page mapping', `#${id}: ${page_id} → ${product_code}`, req.user.email);
+    await loadMPConfig(); res.json({ success: true });
+  } catch(e) {
+    if (e.code === '23505') return res.status(409).json({ error: 'May mapping na ang Page na ito.' });
+    res.status(500).json({ error: e.message });
+  }
+});
+app.delete('/api/mp/page-products/:id', requireAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    await pool.query('DELETE FROM mp_page_products WHERE id=$1', [id]);
+    await logMPHistory('Delete page mapping', 'page-mapping#' + id, req.user.email);
+    await loadMPConfig(); res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+// Pages seen on currently-running ads that have no product mapping yet — surfaces exactly the
+// "1 ad account, different Pages" case so an admin can map them instead of waiting for a
+// campaign-name collision to force a manual override.
+app.get('/api/mp/detected-pages', requireAdmin, async (_req, res) => {
+  try {
+    const ads = await fetchAllActiveAds();
+    const groups = {};
+    for (const ad of ads) {
+      if (!ad.pageId || PAGE_PRODUCT_MAP[ad.pageId]) continue;
+      if (!groups[ad.pageId]) {
+        groups[ad.pageId] = {
+          pageId: ad.pageId,
+          pageName: PANCAKE_PAGE_META[ad.pageId]?.short || null,
+          accountName: ad.accountName,
+          adCount: 0,
+        };
+      }
+      groups[ad.pageId].adCount++;
+    }
+    res.json(Object.values(groups).sort((a, b) => b.adCount - a.adCount));
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
