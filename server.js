@@ -234,12 +234,14 @@ app.use(passport.initialize());
 app.use(passport.session());
 app.use(express.json());
 
-// Never let the browser cache app pages — this dashboard deploys many times a day, and a
-// stale cached HTML/JS bundle silently hiding a shipped fix (making it look like the fix
-// never landed) is worse than the minor cost of re-fetching a small HTML file every visit.
-// Static image/style/script assets are left alone so those still benefit from normal caching.
+// Never let the browser cache app pages or API responses — this dashboard deploys many times
+// a day and its data changes continuously, so a stale cached HTML/JS bundle silently hiding a
+// shipped fix, or a 304'd API response silently hiding fresh spend/sales data (Express's
+// default weak ETag will happily serve a stale body when it happens to hash-match), is worse
+// than the minor cost of re-fetching every visit. Static image/style/script assets are left
+// alone so those still benefit from normal caching.
 app.use((req, res, next) => {
-  if (req.method === 'GET' && !req.path.startsWith('/api/') && !/\.(png|svg|jpg|jpeg|ico|css|js)$/i.test(req.path)) {
+  if (req.method === 'GET' && !/\.(png|svg|jpg|jpeg|ico|css|js)$/i.test(req.path)) {
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
   }
   next();

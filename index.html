@@ -1265,6 +1265,7 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
       <span class="topbar-label">To</span>
       <input type="date" id="toDate">
       <button class="btn-refresh" id="refreshBtn" onclick="applyDateRange()">Apply</button>
+      <button class="btn-refresh" id="forceRefreshBtn" onclick="forceRefresh()" title="Clears cached Meta/sales data on the server and reloads immediately — use this instead of waiting out the cache">⟳ Force Refresh</button>
       <select class="ctrl-sort" id="sortSelect" onchange="sortBy=this.value;loadData()">
         <option value="default">Sort: Default</option>
         <option value="roas">ROAS ↓</option>
@@ -1924,6 +1925,24 @@ function applyDateRange() {
   closePanels();
   if (currentProductTab) loadProductTab(currentProductTab);
   else loadData();
+}
+
+// Clears the server's in-memory Meta/Pancake cache (up to 30 min stale otherwise) and reloads
+// right away — for when you need this instant's real numbers instead of waiting out the TTL.
+async function forceRefresh() {
+  const btn = document.getElementById('forceRefreshBtn');
+  const original = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Refreshing...';
+  try {
+    await fetch('/api/flush-cache');
+    closePanels();
+    if (currentProductTab) await loadProductTab(currentProductTab);
+    else await loadData();
+  } catch(e) {
+    alert('Force refresh failed: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = original;
+  }
 }
 
 // CEO is default tab — hide ndap controls on load
