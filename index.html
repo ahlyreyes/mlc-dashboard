@@ -430,6 +430,16 @@ input[type="date"]:focus, select:focus { border-color: var(--amber); box-shadow:
   color: #3B82F6;
 }
 
+.page-pill {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 4px;
+  padding: 1px 7px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #64748B;
+}
+
 .camp-overall {
   display: flex;
   align-items: center;
@@ -2357,6 +2367,7 @@ function renderAdCardNdap(c, dates, showCampaign) {
         <div class="camp-ad-name" style="display:flex;align-items:center;gap:0">${c.adName}${fatigueTag(c)}${firstRunPillHtml(c)}</div>
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
           <span class="account-pill">${c.accountName}</span>
+          ${pageTagHtml(c)}
           <span class="camp-ad-id" style="margin-bottom:0">${c.adId}</span>
           ${deliveryRateBadgeHtml(c)}
         </div>
@@ -2384,6 +2395,7 @@ function renderAdCardProduct(c, dates, isMultiAd) {
         </div>
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
           <span class="account-pill">${c.accountName}</span>
+          ${pageTagHtml(c)}
           <span class="camp-ad-id" style="margin-bottom:0">${c.adId}</span>
           ${deliveryRateBadgeHtml(c)}
         </div>
@@ -2456,6 +2468,9 @@ function renderCampaignGroupsOLD(camps, dates, isProduct) {
 // Page id → display name, loaded once from Manage Product's known-pages registry (see initPages()).
 let PAGE_NAMES = {};
 function pageLabel(id) { return PAGE_NAMES[id] || id; }
+// Per-ad page tag — shown on every ad card regardless of whether the product got split into
+// page sub-groups, so the Page is visible even for a single-page product or a lone unmapped ad.
+function pageTagHtml(c) { return `<span class="page-pill">📄 ${c.pageId ? pageLabel(c.pageId) : 'No Page Detected'}</span>`; }
 
 // Splits a product's ads into sub-groups by the Facebook Page they were actually detected
 // running on (server-resolved via mp_page_products / effective_object_story_id), so one ad
