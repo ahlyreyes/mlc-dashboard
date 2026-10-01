@@ -353,6 +353,7 @@ const PANCAKE_CSV_URLS = [
   'https://docs.google.com/spreadsheets/d/e/2PACX-1vR6FNkNs9U2PaZ6w_J68GAhwDsP2K3AQGJ9OaVWFczNLS-4WqRRZ6XS7UqIn0wId30jFn97Hq5N4Mdh/pub?output=csv', // July 2026
   'https://docs.google.com/spreadsheets/d/e/2PACX-1vQFVbzwEmGv7f-YgXhwzjSG3ElzlFetYN8dCr2r53hrBZ0xfMHAloxkDXCUQ8Zfh212s0mhCY7Q4SjQ/pub?output=csv', // August 2026
   'https://docs.google.com/spreadsheets/d/e/2PACX-1vRLF19rMm5u0IUkiJHDB9jZBWoEiaLJOu5mZrDcZuhztXkYgyiM7dJPSDg8BDiYWYq9UyMLGoujZd5S/pub?output=csv', // September 2026
+  'https://docs.google.com/spreadsheets/d/e/2PACX-1vT4u2MfVaUFN4bS2xv8xWb0c98sZ9KgGjKAtWRyx7Ui5iQCB4H4HPOEQgl4kvUe8qfAiLDaAT-pAxJM/pub?output=csv', // October 2026
 ];
 
 // Per-page Pancake access tokens (page-scoped, longer-lived)
