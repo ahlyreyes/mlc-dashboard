@@ -2349,7 +2349,6 @@ function renderDayCardsProduct(c, dates, isMultiAd) {
         <div class="day-row"><span class="day-row-label">Delivery Rate</span><span class="day-row-val">${dd&&dd.delRate!=null?dd.delRate.toFixed(1)+'%':'—'}</span></div>
       </div>
       <div class="day-card-footer">
-        ${ap.text?`<div class="day-card-ap-label">Action Guide</div><div style="margin-bottom:6px"><span class="action-badge ${ap.cls}" style="display:inline-block;padding:2px 10px;border-radius:999px;font-size:11px;font-weight:700">${ap.text}</span></div>`:''}
         <div class="day-card-ap-label">Action Plan</div>
         ${dayLog ? `<div class="day-card-ap-val">${dayLog.action_taken}${dayLog.done_by_name?' · '+dayLog.done_by_name:''}${dayLog.notes?' · '+dayLog.notes:''}</div>` : ''}
       </div>
