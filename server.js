@@ -879,7 +879,7 @@ async function fetchAccountInsights(account, date) {
   // Fetch all pages of ad-level insights
   const allRows = [];
   let nextUrl = `https://graph.facebook.com/v19.0/${account.id}/insights` +
-    `?fields=ad_id,ad_name,campaign_id,campaign_name,spend,impressions,clicks,frequency,cost_per_action_type,actions` +
+    `?fields=ad_id,ad_name,campaign_id,campaign_name,spend,impressions,clicks,frequency,cost_per_action_type,actions,video_play_actions,video_thruplay_watched_actions` +
     `&level=ad&time_range={"since":"${date}","until":"${date}"}` +
     `&limit=500&access_token=${token}`;
 
@@ -940,6 +940,9 @@ async function fetchAccountInsights(account, date) {
         impressions: parseInt(r.impressions || 0),
         clicks: parseInt(r.clicks || 0),
         frequency: parseFloat(r.frequency || 0),
+        video3sViews: parseInt(((r.actions || []).find(a => a.action_type === 'video_view') || {}).value || 0),
+        videoPlays: (r.video_play_actions || []).reduce((sum, a) => sum + parseInt(a.value || 0), 0),
+        video15sViews: (r.video_thruplay_watched_actions || []).reduce((sum, a) => sum + parseInt(a.value || 0), 0),
         costPerMessage,
         messagesStarted
       };
@@ -1672,6 +1675,7 @@ app.get('/api/ndap', requireAuth, async (req, res) => {
           adMap[row.adId].dates[date] = {
             spend: 0, grossSales: 0, orders: 0,
             impressions: 0, clicks: 0, frequency: 0,
+            video3sViews: 0, videoPlays: 0, video15sViews: 0,
             costPerMessage: 0, messagesStarted: 0,
             delivered: 0, deliveredValue: 0,
             rts: 0, rtsValue: 0, shipped: 0, shippedValue: 0
@@ -1683,6 +1687,9 @@ app.get('/api/ndap', requireAuth, async (req, res) => {
         d.orders         += sales.orders || 0;
         d.impressions    += row.impressions;
         d.clicks         += row.clicks;
+        d.video3sViews   += row.video3sViews || 0;
+        d.videoPlays     += row.videoPlays || 0;
+        d.video15sViews  += row.video15sViews || 0;
         d.messagesStarted += row.messagesStarted || 0;
         if (row.frequency > d.frequency) d.frequency = row.frequency;
         d.costPerMessage  += row.costPerMessage || 0;
@@ -1701,6 +1708,10 @@ app.get('/api/ndap', requireAuth, async (req, res) => {
         d.roas    = d.spend > 0 ? d.grossSales / d.spend : 0;
         d.cpp     = d.orders > 0 ? d.spend / d.orders : 0;
         d.cpm     = d.messagesStarted > 0 ? d.spend / d.messagesStarted : 0;
+        d.ctr      = d.impressions > 0 ? d.clicks / d.impressions * 100 : 0;
+        d.hookRate = d.impressions > 0 && d.video3sViews > 0 ? d.video3sViews / d.impressions * 100 : 0;
+        d.holdRate = d.video3sViews > 0 && d.video15sViews > 0 ? d.video15sViews / d.video3sViews * 100 : 0;
+        d.ctaRate  = d.videoPlays > 0 && d.messagesStarted > 0 ? d.messagesStarted / d.videoPlays * 100 : 0;
         d.delRate = (d.delivered + d.rts) > 0 ? (d.delivered / (d.delivered + d.rts) * 100) : null;
       }
     }
